@@ -65,7 +65,7 @@ func SetupGatewayRoutes(app *fiber.App, config Config) {
 		}
 
 		prefix := service.Prefix
-		app.All(prefix+"*", func(c *fiber.Ctx) error {
+		app.All(prefix+"/*", func(c *fiber.Ctx) error {
 			forwardPath := c.Path()[len(prefix):]
 			log.WithFields(log.Fields{
 				"service":      service.Name,
