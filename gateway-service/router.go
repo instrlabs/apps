@@ -10,7 +10,6 @@ import (
 
 func SetupGatewayRoutes(app *fiber.App, config Config) {
 	app.Get("/health", func(c *fiber.Ctx) error {
-		// Base health status
 		health := map[string]interface{}{
 			"status":   "ok",
 			"services": map[string]string{},
@@ -18,7 +17,6 @@ func SetupGatewayRoutes(app *fiber.App, config Config) {
 
 		servicesStatus := health["services"].(map[string]string)
 
-		// Check health for all configured services
 		for _, service := range config.Services {
 			if service.URL == "" {
 				servicesStatus[service.Name] = "not configured"
@@ -46,7 +44,6 @@ func SetupGatewayRoutes(app *fiber.App, config Config) {
 			}
 		}
 
-		// Check if any service is in error state
 		for _, status := range servicesStatus {
 			if status == "error" {
 				health["status"] = "partial"
@@ -67,41 +64,41 @@ func SetupGatewayRoutes(app *fiber.App, config Config) {
 			}).Fatal("Failed to parse service URL")
 		}
 
-		for _, prefix := range service.Prefixes {
-			app.All(prefix+"*", func(c *fiber.Ctx) error {
-				log.WithFields(log.Fields{
-					"service":      service.Name,
-					"method":       c.Method(),
-					"path":         c.Path(),
-					"forwarded_to": targetURL.String() + c.Path(),
-				}).Info("Forwarding request")
-
-				c.Request().Header.Set("X-Gateway", "true")
-
-				url := targetURL.String() + c.Path()
-				if err := proxy.Do(c, url); err != nil {
-					log.WithFields(log.Fields{
-						"service": service.Name,
-						"method":  c.Method(),
-						"path":    c.Path(),
-						"error":   err.Error(),
-					}).Error("Proxy error")
-
-					return c.Status(fiber.StatusBadGateway).JSON(map[string]string{
-						"error":   "Bad Gateway",
-						"message": "The service is currently unavailable",
-					})
-				}
-
-				return nil
-			})
-
+		prefix := service.Prefix
+		app.All(prefix+"*", func(c *fiber.Ctx) error {
+			forwardPath := c.Path()[len(prefix):]
 			log.WithFields(log.Fields{
-				"service": service.Name,
-				"prefix":  prefix,
-				"target":  service.URL,
-			}).Info("Registered route")
-		}
+				"service":      service.Name,
+				"method":       c.Method(),
+				"path":         forwardPath,
+				"forwarded_to": targetURL.String(),
+			}).Info("Forwarding request")
+
+			c.Request().Header.Set("X-Gateway", "true")
+
+			url := targetURL.String() + forwardPath
+			if err := proxy.Do(c, url); err != nil {
+				log.WithFields(log.Fields{
+					"service": service.Name,
+					"method":  c.Method(),
+					"path":    forwardPath,
+					"error":   err.Error(),
+				}).Error("Proxy error")
+
+				return c.Status(fiber.StatusBadGateway).JSON(map[string]string{
+					"error":   "Bad Gateway",
+					"message": "The service is currently unavailable",
+				})
+			}
+
+			return nil
+		})
+
+		log.WithFields(log.Fields{
+			"service": service.Name,
+			"prefix":  prefix,
+			"target":  service.URL,
+		}).Info("Registered route")
 	}
 
 	app.Use(func(c *fiber.Ctx) error {

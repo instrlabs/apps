@@ -51,7 +51,7 @@ func main() {
 		TimeZone:   "UTC",
 	}))
 
-	app.Get("/swagger/*", swagger.HandlerDefault) // default
+	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
@@ -60,20 +60,15 @@ func main() {
 		})
 	})
 
-	api := app.Group("/api")
-	v1 := api.Group("/v1")
-
-	// Auth routes
-	auth := v1.Group("/auth")
-	auth.Post("/register", userHandler.Register)
-	auth.Post("/login", userHandler.Login)
-	auth.Post("/refresh", userHandler.RefreshToken)
-	auth.Post("/forgot-password", userHandler.ForgotPassword)
-	auth.Post("/reset-password", userHandler.ResetPassword)
+	app.Post("/register", userHandler.Register)
+	app.Post("/login", userHandler.Login)
+	app.Post("/refresh", userHandler.RefreshToken)
+	app.Post("/forgot-password", userHandler.ForgotPassword)
+	app.Post("/reset-password", userHandler.ResetPassword)
 
 	// Google OAuth routes
-	auth.Get("/google", userHandler.GoogleLogin)
-	auth.Post("/google/callback", userHandler.GoogleCallback)
+	app.Get("/google", userHandler.GoogleLogin)
+	app.Post("/google/callback", userHandler.GoogleCallback)
 
 	log.Fatal(app.Listen(cfg.Port))
 }
