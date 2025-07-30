@@ -3,13 +3,13 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { loginUser } from "@/services/auth";
+import { registerUser } from "@/services/auth";
 import GoogleSignInButton from "@/components/google-signin";
 import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
 import { ROUTES } from "@/constants/routes";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const { showNotification } = useNotification();
   const [email, setEmail] = useState("");
@@ -21,15 +21,15 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const data = await loginUser(email, password);
-      if (data.token) localStorage.setItem("authToken", data.token);
-      router.push(ROUTES.HOME);
+      const data = await registerUser(email, password);
+      showNotification(data.message, "success", 2000);
+      setTimeout(() => router.replace(ROUTES.LOGIN), 2500);
     } catch (err) {
-      showNotification(
-        err instanceof Error ? err.message : "An error occurred during login",
-        "error",
-        5000
-      );
+      const message = err instanceof Error
+        ? err.message
+        : "An error occurred during registration";
+
+      showNotification(message, "error", 5000);
     } finally {
       setIsLoading(false);
     }
@@ -37,7 +37,7 @@ export default function LoginPage() {
 
   return (
     <div className="h-screen w-full flex flex-col justify-center items-center p-10">
-      <h2 className="text-2xl font-semibold mb-6">Log in to your account</h2>
+      <h2 className="text-2xl font-semibold mb-6">Create your account</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm">
         <div className="space-y-1">
           <label htmlFor="email" className="text-sm font-medium">
@@ -60,28 +60,23 @@ export default function LoginPage() {
           <input
             id="password"
             type="password"
-            placeholder="Enter your password"
+            placeholder="Create a password"
             className="px-2 py-2.5 rounded w-full outline-none text-sm border border-gray-300"
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
           />
-          <div className="text-right">
-            <a className="text-sm text-blue-600 hover:underline" href={ROUTES.FORGOT_PASSWORD}>
-              Forgot password?
-            </a>
-          </div>
         </div>
-        <Button type="submit" isLoading={isLoading} loadingText="Signing in...">
-          Sign in
+        <Button type="submit" isLoading={isLoading} loadingText="Signing up...">
+          Sign up
         </Button>
       </form>
-      <div className="flex flex-col gap-5 w-sm">
+      <div className="flex flex-col gap-5 w-sm mt-5">
         <GoogleSignInButton />
         <div className="text-sm text-center">
-          Don&#39;t have an account?{" "}
-          <a className="underline" href={ROUTES.REGISTER}>
-            Sign up
+          Already have an account?{" "}
+          <a className="underline" href={ROUTES.LOGIN}>
+            Sign in
           </a>
         </div>
       </div>
