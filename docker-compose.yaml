@@ -104,7 +104,7 @@ services:
     deploy:
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.auth-service.rule=Host(`${HOSTNAME}`)"
+        - "traefik.http.routers.auth-service.rule=Host(`${AUTH_SERVICE_HOST}`)"
         - "traefik.http.routers.auth-service.entrypoints=websecure"
         - "traefik.http.routers.auth-service.tls=true"
         - "traefik.http.services.auth-service.loadbalancer.server.port=3000"
@@ -122,7 +122,7 @@ services:
     deploy:
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.gateway-service.rule=Host(`${GATEWAY_HOST}`)"
+        - "traefik.http.routers.gateway-service.rule=Host(`${GATEWAY_SERVICE_HOST}`)"
         - "traefik.http.routers.gateway-service.entrypoints=websecure"
         - "traefik.http.routers.gateway-service.tls=true"
         - "traefik.http.services.gateway-service.loadbalancer.server.port=3000"
