@@ -21,7 +21,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// UserController handles business logic for user operations
 type UserController struct {
 	userRepo    *repositories.UserRepository
 	config      *constants.Config
@@ -49,7 +48,6 @@ func NewUserController(userRepo *repositories.UserRepository, config *constants.
 	}
 }
 
-// RegisterUser handles the business logic for user registration
 func (c *UserController) RegisterUser(email, password string) (*models.User, error) {
 	user, err := models.NewUser(email, password)
 	if err != nil {
@@ -64,7 +62,6 @@ func (c *UserController) RegisterUser(email, password string) (*models.User, err
 	return user, nil
 }
 
-// generateRefreshToken generates a random refresh token
 func (c *UserController) generateRefreshToken() (string, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
@@ -74,15 +71,11 @@ func (c *UserController) generateRefreshToken() (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-// generateAccessToken generates a JWT access token for a user
 func (c *UserController) generateAccessToken(userID string) (string, error) {
-	// Generate JWT token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": userID,
-		"exp": time.Now().Add(time.Hour * time.Duration(c.config.TokenExpiryHours)).Unix(), // Token expiration from config
 	})
 
-	// Sign the token with the secret key
 	tokenString, err := token.SignedString([]byte(c.config.JWTSecret))
 	if err != nil {
 		return "", errors.New("failed to generate token")
@@ -91,32 +84,26 @@ func (c *UserController) generateAccessToken(userID string) (string, error) {
 	return tokenString, nil
 }
 
-// LoginUser handles the business logic for user login
 func (c *UserController) LoginUser(email, password string) (map[string]string, error) {
-	// Find user by email
 	user, err := c.userRepo.FindByEmail(email)
 	if err != nil {
 		return nil, errors.New("invalid email or password")
 	}
 
-	// Verify password
 	if !user.ComparePassword(password) {
 		return nil, errors.New("invalid email or password")
 	}
 
-	// Generate access token
 	accessToken, err := c.generateAccessToken(user.ID.Hex())
 	if err != nil {
 		return nil, err
 	}
 
-	// Generate refresh token
 	refreshToken, err := c.generateRefreshToken()
 	if err != nil {
 		return nil, errors.New("failed to generate refresh token")
 	}
 
-	// Save refresh token to user
 	err = c.userRepo.UpdateRefreshToken(user.ID.Hex(), refreshToken)
 	if err != nil {
 		return nil, errors.New("failed to save refresh token")
@@ -128,27 +115,22 @@ func (c *UserController) LoginUser(email, password string) (map[string]string, e
 	}, nil
 }
 
-// RefreshToken handles the business logic for refreshing an access token
 func (c *UserController) RefreshToken(refreshToken string) (map[string]string, error) {
-	// Find user by refresh token
 	user, err := c.userRepo.FindByRefreshToken(refreshToken)
 	if err != nil {
 		return nil, errors.New("invalid refresh token")
 	}
 
-	// Generate new access token
 	accessToken, err := c.generateAccessToken(user.ID.Hex())
 	if err != nil {
 		return nil, err
 	}
 
-	// Generate new refresh token
 	newRefreshToken, err := c.generateRefreshToken()
 	if err != nil {
 		return nil, errors.New("failed to generate refresh token")
 	}
 
-	// Save new refresh token to user
 	err = c.userRepo.UpdateRefreshToken(user.ID.Hex(), newRefreshToken)
 	if err != nil {
 		return nil, errors.New("failed to save refresh token")
@@ -160,7 +142,6 @@ func (c *UserController) RefreshToken(refreshToken string) (map[string]string, e
 	}, nil
 }
 
-// generateResetToken generates a random reset token
 func (c *UserController) generateResetToken() (string, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
@@ -179,13 +160,11 @@ func (c *UserController) sendResetEmail(email, resetToken string) error {
 	from := c.config.EmailFrom
 	to := []string{email}
 
-	// Construct email body
 	resetURL := fmt.Sprintf("%s?token=%s", c.config.FEResetPassword, resetToken)
 	subject := "Password Reset Request"
 	body := fmt.Sprintf("Click the link below to reset your password:\n\n%s\n\nIf you did not request a password reset, please ignore this email.", resetURL)
 	message := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", from, email, subject, body)
 
-	// Connect to the SMTP server
 	auth := smtp.PlainAuth("", c.config.SMTPUsername, c.config.SMTPPassword, c.config.SMTPHost)
 	err := smtp.SendMail(c.config.SMTPHost+":"+c.config.SMTPPort, auth, from, to, []byte(message))
 	return err

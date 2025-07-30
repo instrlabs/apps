@@ -10,13 +10,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// MongoDB represents the MongoDB client
 type MongoDB struct {
 	Client *mongo.Client
 	DB     *mongo.Database
 }
 
-// NewMongoDB creates a new MongoDB connection
 func NewMongoDB(cfg *constants.Config) *MongoDB {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -43,7 +41,6 @@ func NewMongoDB(cfg *constants.Config) *MongoDB {
 	}
 }
 
-// Close closes the MongoDB connection
 func (m *MongoDB) Close() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

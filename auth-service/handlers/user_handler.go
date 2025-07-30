@@ -6,12 +6,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// UserHandler handles HTTP requests for users
 type UserHandler struct {
 	userController *controllers.UserController
 }
 
-// NewUserHandler creates a new UserHandler
 func NewUserHandler(userController *controllers.UserController) *UserHandler {
 	return &UserHandler{
 		userController: userController,
