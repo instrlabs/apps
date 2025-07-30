@@ -13,6 +13,71 @@ func SetupGatewayRoutes(app *fiber.App, config Config) {
 		return c.JSON(map[string]string{"status": "ok"})
 	})
 
+	app.Get("/check-auth", func(c *fiber.Ctx) error {
+		// Find auth-service configuration
+		var authServiceURL string
+		for _, service := range config.Services {
+			if service.Name == "auth-service" {
+				authServiceURL = service.URL
+				break
+			}
+		}
+
+		if authServiceURL == "" {
+			return c.Status(fiber.StatusInternalServerError).JSON(map[string]string{
+				"status":  "error",
+				"message": "Auth service not configured",
+			})
+		}
+
+		// Create a new Fiber agent for making HTTP requests
+		agent := fiber.AcquireAgent()
+		defer fiber.ReleaseAgent(agent)
+
+		// Set up the request to auth service health endpoint
+		req := agent.Request()
+		req.SetRequestURI(authServiceURL + "/health")
+		req.Header.SetMethod(fiber.MethodGet)
+
+		// Send the request with a timeout
+		if err := agent.Parse(); err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("Failed to parse request to auth service")
+
+			return c.Status(fiber.StatusInternalServerError).JSON(map[string]string{
+				"status":  "error",
+				"message": "Failed to connect to auth service",
+				"error":   err.Error(),
+			})
+		}
+
+		// Check the response
+		code, body, errs := agent.Bytes()
+		if len(errs) > 0 {
+			log.WithFields(log.Fields{
+				"errors": errs,
+			}).Error("Failed to connect to auth service")
+
+			return c.Status(fiber.StatusServiceUnavailable).JSON(map[string]string{
+				"status":  "error",
+				"message": "Auth service is unavailable",
+				"error":   errs[0].Error(),
+			})
+		}
+
+		if code != fiber.StatusOK {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(map[string]string{
+				"status":  "error",
+				"message": "Auth service returned non-OK status",
+				"code":    string(code),
+			})
+		}
+
+		// Return the response from auth service
+		return c.Status(code).Send(body)
+	})
+
 	for _, service := range config.Services {
 		targetURL, err := url.Parse(service.URL)
 		if err != nil {
