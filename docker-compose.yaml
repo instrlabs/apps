@@ -1,0 +1,77 @@
+services:
+  traefik:
+    image: traefik:v3.5
+
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`${DASHBOARD_HOST}`)"
+      - "traefik.http.routers.dashboard.entrypoints=web"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+
+  mongo:
+    image: mongo:8.0.12
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+
+    volumes:
+      - ./mongo/data:/data/db
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+
+
+    env_file:
+      - ./auth-service/.env.local
+
+    command: [ "./app" ]
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth-service.rule=Host(`${AUTH_SERVICE_HOST}`)"
+      - "traefik.http.routers.auth-service.entrypoints=web"
+      - "traefik.http.services.auth-service.loadbalancer.server.port=3000"
+
+  gateway-service:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+
+    env_file:
+      - ./gateway-service/.env.local
+
+    command: [ "./app" ]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gateway-service.rule=Host(`${GATEWAY_SERVICE_HOST}`)"
+      - "traefik.http.routers.gateway-service.entrypoints=web"
+      - "traefik.http.services.gateway-service.loadbalancer.server.port=3000"
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+
+    env_file:
+      - ./web/.env.local
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`${WEB_HOST}`)"
+      - "traefik.http.routers.web.entrypoints=web"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"

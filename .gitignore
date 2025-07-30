@@ -1,1 +1,4 @@
 .idea
+
+# Volumes
+mongo/data

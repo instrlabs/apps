@@ -10,7 +10,51 @@ import (
 
 func SetupGatewayRoutes(app *fiber.App, config Config) {
 	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(map[string]string{"status": "ok"})
+		// Base health status
+		health := map[string]interface{}{
+			"status":   "ok",
+			"services": map[string]string{},
+		}
+
+		servicesStatus := health["services"].(map[string]string)
+
+		// Check health for all configured services
+		for _, service := range config.Services {
+			if service.URL == "" {
+				servicesStatus[service.Name] = "not configured"
+				continue
+			}
+
+			agent := fiber.AcquireAgent()
+			req := agent.Request()
+			req.SetRequestURI(service.URL + "/health")
+			req.Header.SetMethod(fiber.MethodGet)
+
+			if err := agent.Parse(); err != nil {
+				servicesStatus[service.Name] = "error"
+				fiber.ReleaseAgent(agent)
+				continue
+			}
+
+			code, _, errs := agent.Bytes()
+			fiber.ReleaseAgent(agent)
+
+			if len(errs) > 0 || code != fiber.StatusOK {
+				servicesStatus[service.Name] = "error"
+			} else {
+				servicesStatus[service.Name] = "ok"
+			}
+		}
+
+		// Check if any service is in error state
+		for _, status := range servicesStatus {
+			if status == "error" {
+				health["status"] = "partial"
+				break
+			}
+		}
+
+		return c.JSON(health)
 	})
 
 	for _, service := range config.Services {
