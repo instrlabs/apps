@@ -17,10 +17,10 @@ import (
 func main() {
 	cfg := constants.NewConfig()
 
-	mongoDB := database.NewMongoDB(cfg)
-	defer mongoDB.Close()
+	mongo := database.NewMongoDB(cfg)
+	defer mongo.Close()
 
-	userRepo := repositories.NewUserRepository(mongoDB)
+	userRepo := repositories.NewUserRepository(mongo)
 
 	userController := controllers.NewUserController(userRepo, cfg)
 
@@ -52,6 +52,7 @@ func main() {
 	app.Post("/refresh", userHandler.RefreshToken)
 	app.Post("/forgot-password", userHandler.ForgotPassword)
 	app.Post("/reset-password", userHandler.ResetPassword)
+	app.Post("/verify-token", userHandler.VerifyToken)
 
 	// Google OAuth routes
 	app.Get("/google", userHandler.GoogleLogin)

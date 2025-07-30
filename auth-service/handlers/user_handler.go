@@ -230,3 +230,33 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		"refresh_token": tokens["refresh_token"],
 	})
 }
+
+func (h *UserHandler) VerifyToken(c *fiber.Ctx) error {
+	var input struct {
+		Token string `json:"token" validate:"required"`
+	}
+
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": constants.ErrInvalidRequestBody,
+		})
+	}
+
+	if input.Token == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Token is required",
+		})
+	}
+
+	user, err := h.userController.VerifyToken(input.Token)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Invalid token",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Token verified successfully",
+		"user":    user,
+	})
+}
