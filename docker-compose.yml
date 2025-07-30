@@ -21,7 +21,7 @@ services:
       - ./traefik/dynamic:/dynamic:ro
 
     env_file:
-      - ./environments/.env.traefik
+      - ./traefik/.env.local
 
     command:
       - "--entrypoints.web.address=:80"
@@ -70,7 +70,7 @@ services:
     networks:
       - labs_proxy
     env_file:
-      - ./environments/.env.whoami
+      - ./traefik/.env.local
     deploy:
       labels:
         - "traefik.enable=true"
@@ -84,28 +84,31 @@ services:
     networks:
       - labs_internal
     env_file:
-      - ./environments/.env.mongo
+      - ./mongo/.env.local
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     volumes:
-      - ./data/mongo:/data/db
+      - ./mongo/data:/data/db
 
   auth-service:
-    image: histweety/labs-auth-service@sha256:2a8dc6d0702920f87f3a7ae327cebe008b21c526cc341f9de9170a676dd49663
+    build:
+      dockerfile: ./auth-service/Dockerfile
     networks:
       - labs_proxy
       - labs_internal
     env_file:
-      - ./environments/.env.auth-service
+      - ./auth-service/.env.local
     command: [ "./app" ]
     deploy:
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.auth-service.rule=Host(`${AUTH_SERVICE_HOST}`)"
+        - "traefik.http.routers.auth-service.rule=Host(`${HOSTNAME}`)"
         - "traefik.http.routers.auth-service.entrypoints=websecure"
         - "traefik.http.routers.auth-service.tls=true"
         - "traefik.http.services.auth-service.loadbalancer.server.port=3000"
+
+#   TODO: add gateway-service
 
 networks:
   labs_proxy:
