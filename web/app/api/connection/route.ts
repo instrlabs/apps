@@ -19,8 +19,10 @@ export async function GET() {
 
     return NextResponse.json({
       status: 'ok',
-      message: 'Successfully connected to gateway service',
-      gateway: 'ok'
+      message: 'HOT RELOAD TEST - Successfully connected to gateway service',
+      gateway: 'ok',
+      timestamp: new Date().toISOString(),
+      version: 2
     });
   } catch (error) {
     console.error('Error connecting to gateway service:', error);

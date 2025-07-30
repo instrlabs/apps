@@ -71,13 +71,13 @@ services:
     
     develop:
       watch:
-        - path: ./web
+        - action: sync
+          path: ./web
           target: /app
-          action: sync
           ignore:
             - node_modules/
-        - path: ./web/package.json
-          action: rebuild
+        - action: rebuild
+          path: ./web/package.json
 
     labels:
       - "traefik.enable=true"
