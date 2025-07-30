@@ -1,0 +1,19 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package.json package-lock.json* ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy the rest of the application code
+# Note: In development mode with watch, this will be overridden by the volume mount
+COPY . .
+
+# Expose the port the app runs on
+EXPOSE 3000
+
+# Command to run the development server
+CMD ["npm", "run", "dev"]

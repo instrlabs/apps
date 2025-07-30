@@ -65,10 +65,19 @@ services:
   web:
     build:
       context: ./web
-      dockerfile: Dockerfile
-
+      dockerfile: Dockerfile.dev
     env_file:
       - ./web/.env.local
+    
+    develop:
+      watch:
+        - path: ./web
+          target: /app
+          action: sync
+          ignore:
+            - node_modules/
+        - path: ./web/package.json
+          action: rebuild
 
     labels:
       - "traefik.enable=true"
