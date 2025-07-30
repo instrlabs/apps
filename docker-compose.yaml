@@ -93,7 +93,8 @@ services:
 
   auth-service:
     build:
-      dockerfile: ./auth-service/Dockerfile
+      context: ./auth-service
+      dockerfile: Dockerfile
     networks:
       - labs_proxy
       - labs_internal
@@ -108,7 +109,39 @@ services:
         - "traefik.http.routers.auth-service.tls=true"
         - "traefik.http.services.auth-service.loadbalancer.server.port=3000"
 
-#   TODO: add gateway-service
+  gateway-service:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    networks:
+      - labs_proxy
+      - labs_internal
+    env_file:
+      - ./gateway-service/.env.local
+    command: [ "./app" ]
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.gateway-service.rule=Host(`${GATEWAY_HOST}`)"
+        - "traefik.http.routers.gateway-service.entrypoints=websecure"
+        - "traefik.http.routers.gateway-service.tls=true"
+        - "traefik.http.services.gateway-service.loadbalancer.server.port=3000"
+          
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    networks:
+      - labs_proxy
+    env_file:
+      - ./web/.env.local
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.web.rule=Host(`${WEB_HOST}`)"
+        - "traefik.http.routers.web.entrypoints=websecure"
+        - "traefik.http.routers.web.tls=true"
+        - "traefik.http.services.web.loadbalancer.server.port=3000"
 
 networks:
   labs_proxy:
