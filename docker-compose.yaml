@@ -95,6 +95,19 @@ services:
       - "traefik.http.routers.labs-service.entrypoints=web"
       - "traefik.http.services.labs-service.loadbalancer.server.port=3000"
 
+  labs-worker:
+    build:
+      context: ./labs-worker
+      dockerfile: Dockerfile
+
+    env_file:
+      - ./labs-worker/.env.local
+
+    command: [ "./app" ]
+    depends_on:
+      - mongo
+      - nats
+
   web:
     build:
       context: ./web
