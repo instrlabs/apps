@@ -42,7 +42,6 @@ func NewConfig() *Config {
 
 	// NATS configuration
 	natsURL := getEnv("NATS_URL", "nats://localhost:4222")
-	natsSubject := getEnv("NATS_SUBJECT", "pdf-to-jpg")
 
 	return &Config{
 		Environment: env,
@@ -57,8 +56,7 @@ func NewConfig() *Config {
 		S3Bucket:    s3Bucket,
 		S3UseSSL:    s3UseSSL,
 
-		NatsURL:     natsURL,
-		NatsSubject: natsSubject,
+		NatsURL: natsURL,
 	}
 }
 

@@ -81,7 +81,7 @@ func (c *PDFJobController) ConvertToJPG(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err = c.natsService.PublishJobID(ctx.Context(), job.ID.Hex())
+	err = c.natsService.PublishJobID("PDF_OPERATION", job.ID.Hex())
 	if err != nil {
 		log.Printf("Failed to publish job ID: %v", err)
 		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), models.JobStatusFailed, err.Error())
@@ -144,7 +144,7 @@ func (c *PDFJobController) CompressPDF(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err = c.natsService.PublishJobID(ctx.Context(), job.ID.Hex())
+	err = c.natsService.PublishJobID("PDF_OPERATION", job.ID.Hex())
 	if err != nil {
 		log.Printf("Failed to publish job ID: %v", err)
 		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), models.JobStatusFailed, err.Error())
@@ -242,7 +242,7 @@ func (c *PDFJobController) MergePDFs(ctx *fiber.Ctx) error {
 		}
 	}
 
-	err = c.natsService.PublishJobID(ctx.Context(), job.ID.Hex())
+	err = c.natsService.PublishJobID("PDF_OPERATION", job.ID.Hex())
 	if err != nil {
 		log.Printf("Failed to publish job ID: %v", err)
 		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), models.JobStatusFailed, err.Error())
@@ -312,7 +312,7 @@ func (c *PDFJobController) SplitPDF(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err = c.natsService.PublishJobID(ctx.Context(), job.ID.Hex())
+	err = c.natsService.PublishJobID("PDF_OPERATION", job.ID.Hex())
 	if err != nil {
 		log.Printf("Failed to publish job ID: %v", err)
 		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), models.JobStatusFailed, err.Error())

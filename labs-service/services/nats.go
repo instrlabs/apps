@@ -1,7 +1,6 @@
 package services
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -48,7 +47,7 @@ func (n *NatsService) Close() {
 }
 
 // PublishJobID publishes a job ID to NATS
-func (n *NatsService) PublishJobID(ctx context.Context, jobID string) error {
+func (n *NatsService) PublishJobID(subject string, jobID string) error {
 	// Create the message
 	msg := JobMessage{
 		JobID: jobID,
@@ -61,7 +60,7 @@ func (n *NatsService) PublishJobID(ctx context.Context, jobID string) error {
 	}
 
 	// Publish the message
-	err = n.conn.Publish(n.cfg.NatsSubject, msgBytes)
+	err = n.conn.Publish(subject, msgBytes)
 	if err != nil {
 		return fmt.Errorf("failed to publish job message: %w", err)
 	}
