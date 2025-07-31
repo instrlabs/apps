@@ -31,6 +31,17 @@ services:
     volumes:
       - ./mongo/data:/data/db
 
+  nats:
+    image: nats:2.10.12-alpine
+    command: ["-js", "-m", "8222"]  # Enable JetStream and monitoring
+    volumes:
+      - ./nats/data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nats-monitoring.rule=Host(`${NATS_MONITORING_HOST}`)"
+      - "traefik.http.routers.nats-monitoring.entrypoints=web"
+      - "traefik.http.services.nats-monitoring.loadbalancer.server.port=8222"
+
   auth-service:
     build:
       context: ./auth-service
