@@ -74,6 +74,21 @@ services:
       - "traefik.http.routers.gateway-service.entrypoints=web"
       - "traefik.http.services.gateway-service.loadbalancer.server.port=3000"
 
+  labs-service:
+    build:
+      context: ./labs-service
+      dockerfile: Dockerfile
+
+    env_file:
+      - ./labs-service/.env.local
+
+    command: [ "./app" ]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.labs-service.rule=Host(`${LABS_SERVICE_HOST}`)"
+      - "traefik.http.routers.labs-service.entrypoints=web"
+      - "traefik.http.services.labs-service.loadbalancer.server.port=3000"
+
   web:
     build:
       context: ./web
