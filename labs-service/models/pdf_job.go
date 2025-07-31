@@ -19,7 +19,6 @@ type PDFJob struct {
 	ID             primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	OriginalName   string             `json:"original_name" bson:"original_name"`
 	FileSize       int64              `json:"file_size" bson:"file_size"`
-	PageCount      int                `json:"page_count" bson:"page_count"`
 	S3Path         string             `json:"s3_path" bson:"s3_path"`
 	Operation      PDFOperation       `json:"operation" bson:"operation"`
 	JobID          string             `json:"job_id" bson:"job_id"`
