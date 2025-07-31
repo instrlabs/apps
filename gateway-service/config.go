@@ -40,6 +40,12 @@ func LoadConfig() Config {
 		log.Warn("AUTH_SERVICE_URL not set, using default: ", authServiceURL)
 	}
 
+	labsServiceURL := os.Getenv("LABS_SERVICE_URL")
+	if labsServiceURL == "" {
+		labsServiceURL = "http://labs-service.localhost"
+		log.Warn("AUTH_SERVICE_URL not set, using default: ", labsServiceURL)
+	}
+
 	return Config{
 		Port: port,
 		Services: []ServiceConfig{
@@ -47,6 +53,11 @@ func LoadConfig() Config {
 				Name:   "auth-service",
 				URL:    authServiceURL,
 				Prefix: "/auth",
+			},
+			{
+				Name:   "labs-service",
+				URL:    labsServiceURL,
+				Prefix: "/labs",
 			},
 		},
 	}
