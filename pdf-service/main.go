@@ -9,6 +9,8 @@ import (
 	"log"
 
 	"pdf-service/constants"
+	"pdf-service/handlers"
+	"pdf-service/repositories"
 	"pdf-service/services"
 )
 
@@ -53,7 +55,17 @@ func main() {
 		})
 	})
 
-	_ = s3Service
+	pdfJobRepo := repositories.NewPDFJobRepository(mongo.Database)
+	pdfJobHandler := handlers.NewPDFJobHandler(pdfJobRepo, s3Service, natsService)
+	pdfJobProcessor := handlers.NewPDFJobProcessor(pdfJobRepo, s3Service)
+
+	err = natsService.SubscribeToPDFJobs(pdfJobProcessor.ProcessJob)
+	if err != nil {
+		log.Fatalf("Failed to subscribe to PDF jobs: %v", err)
+	}
+
+	app.Get("/jobs", pdfJobHandler.GetJobs)
+	app.Post("/jobs", pdfJobHandler.CreateJob)
 
 	log.Fatal(app.Listen(cfg.Port))
 }

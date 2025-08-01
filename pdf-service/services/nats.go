@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,20 +10,18 @@ import (
 	"github.com/nats-io/nats.go"
 
 	"pdf-service/constants"
+	"pdf-service/models"
 )
 
-// NatsService handles interactions with NATS
 type NatsService struct {
 	conn *nats.Conn
 	cfg  *constants.Config
 }
 
-// JobMessage represents a message sent to NATS
 type JobMessage struct {
 	JobID string `json:"job_id"`
 }
 
-// NewNatsService creates a new NatsService
 func NewNatsService(cfg *constants.Config) (*NatsService, error) {
 	// Connect to NATS
 	conn, err := nats.Connect(cfg.NatsURL, nats.Timeout(10*time.Second))
@@ -38,7 +37,6 @@ func NewNatsService(cfg *constants.Config) (*NatsService, error) {
 	}, nil
 }
 
-// Close closes the NATS connection
 func (n *NatsService) Close() {
 	if n.conn != nil {
 		n.conn.Close()
@@ -46,24 +44,66 @@ func (n *NatsService) Close() {
 	}
 }
 
-// PublishJobID publishes a job ID to NATS
 func (n *NatsService) PublishJobID(subject string, jobID string) error {
-	// Create the message
 	msg := JobMessage{
 		JobID: jobID,
 	}
 
-	// Convert to JSON
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("failed to marshal job message: %w", err)
 	}
 
-	// Publish the message
 	err = n.conn.Publish(subject, msgBytes)
 	if err != nil {
 		return fmt.Errorf("failed to publish job message: %w", err)
 	}
 
+	return nil
+}
+
+func (n *NatsService) PublishPDFJob(job interface{}) error {
+	msgBytes, err := json.Marshal(job)
+	if err != nil {
+		return fmt.Errorf("failed to marshal PDF job: %w", err)
+	}
+
+	err = n.conn.Publish(models.PDFJobSubject, msgBytes)
+	if err != nil {
+		return fmt.Errorf("failed to publish PDF job: %w", err)
+	}
+
+	log.Printf("Published PDF job to NATS subject: %s", models.PDFJobSubject)
+	return nil
+}
+
+type PDFJobHandler func(ctx context.Context, job *models.PDFJob) error
+
+func (n *NatsService) SubscribeToPDFJobs(handler PDFJobHandler) error {
+	_, err := n.conn.Subscribe(models.PDFJobSubject, func(msg *nats.Msg) {
+		log.Printf("Received PDF job message from subject: %s", models.PDFJobSubject)
+
+		var job models.PDFJob
+		err := json.Unmarshal(msg.Data, &job)
+		if err != nil {
+			log.Printf("Error unmarshaling PDF job: %v", err)
+			return
+		}
+
+		ctx := context.Background()
+		err = handler(ctx, &job)
+		if err != nil {
+			log.Printf("Error processing PDF job: %v", err)
+			return
+		}
+
+		log.Printf("Successfully processed PDF job: %s", job.JobID)
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to subscribe to PDF jobs: %w", err)
+	}
+
+	log.Printf("Subscribed to NATS subject: %s", models.PDFJobSubject)
 	return nil
 }
