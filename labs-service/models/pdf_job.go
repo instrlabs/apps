@@ -8,7 +8,7 @@ import (
 
 type PDFOperation string
 
-const PDFJobSubject = "job.jobs"
+const PDFJobSubject = "pdf.jobs"
 
 const (
 	PDFOperationConvertToJPG PDFOperation = "CONVERT_TO_JPG"
