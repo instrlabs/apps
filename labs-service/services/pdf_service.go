@@ -46,16 +46,20 @@ func (s *PDFService) CreateJob(ctx *fiber.Ctx, req PDFCreateJobRequest) (*PDFCre
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+	if resp.StatusCode != http.StatusOK &&
+		resp.StatusCode != http.StatusAccepted &&
+		resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var response PDFCreateJobResponse
+	var response struct {
+		Data PDFCreateJobResponse `json:"data"`
+	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
-	return &response, nil
+	return &response.Data, nil
 }
 
 func NewPDFService(cfg *constants.Config) *PDFService {

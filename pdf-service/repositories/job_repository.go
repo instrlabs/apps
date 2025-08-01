@@ -50,7 +50,7 @@ func (r *JobRepository) FindByID(ctx context.Context, id string) (*models.Job, e
 	return &job, nil
 }
 
-func (r *JobRepository) UpdateStatus(ctx context.Context, id string, status models.JobStatus, errorMsg string, s3path ...string) (*models.Job, error) {
+func (r *JobRepository) UpdateStatus(ctx context.Context, id string, status models.JobStatus, errorMsg string) (*models.Job, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
@@ -65,10 +65,6 @@ func (r *JobRepository) UpdateStatus(ctx context.Context, id string, status mode
 
 	if errorMsg != "" {
 		update["$set"].(bson.M)["error"] = errorMsg
-	}
-
-	if len(s3path) > 0 && s3path[0] != "" {
-		update["$set"].(bson.M)["s3path"] = s3path[0]
 	}
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)

@@ -67,7 +67,7 @@ func (c *PDFJobHandler) CompressPDF(ctx *fiber.Ctx) error {
 	pdfJob, err := c.pdfService.CreateJob(ctx, services.PDFCreateJobRequest{
 		JobID:     job.ID.Hex(),
 		Operation: models.JobTypePDFCompress,
-		Filename:  job.OriginalFilename,
+		Filename:  job.ID.Hex() + ".pdf",
 		FileSize:  file.Size,
 		S3Path:    s3Path,
 	})

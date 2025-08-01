@@ -9,19 +9,13 @@ import (
 type JobStatus string
 
 const (
-	JobStatusPending   JobStatus = "PENDING"
-	JobStatusCompleted JobStatus = "COMPLETED"
-	JobStatusFailed    JobStatus = "FAILED"
+	JobStatusPending    JobStatus = "PENDING"
+	JobStatusProcessing JobStatus = "PROCESSING"
+	JobStatusCompleted  JobStatus = "COMPLETED"
+	JobStatusFailed     JobStatus = "FAILED"
 )
 
 type JobType string
-
-const (
-	JobTypePDFToJPG    JobType = "PDF/TO_JPG"
-	JobTypePDFCompress JobType = "PDF/COMPRESS"
-	JobTypePDFMerge    JobType = "PDF/MERGE"
-	JobTypePDFSplit    JobType = "PDF/SPLIT"
-)
 
 type Job struct {
 	ID               primitive.ObjectID `json:"id" bson:"_id,omitempty"`
@@ -53,14 +47,4 @@ func (j *Job) ToResponse() JobResponse {
 		CreatedAt:        j.CreatedAt,
 		UpdatedAt:        j.UpdatedAt,
 	}
-}
-
-type CreateJobRequest struct {
-	Filename string `json:"filename"`
-}
-
-type JobStatusResponse struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
-	Error  string `json:"error,omitempty"`
 }

@@ -12,20 +12,17 @@ import (
 )
 
 type PDFJobHandler struct {
-	jobRepo     *repositories.JobRepository
 	pdfJobRepo  *repositories.PDFJobRepository
 	s3Service   *services.S3Service
 	natsService *services.NatsService
 }
 
 func NewPDFJobHandler(
-	jobRepo *repositories.JobRepository,
 	pdfJobRepo *repositories.PDFJobRepository,
 	s3Service *services.S3Service,
 	natsService *services.NatsService,
 ) *PDFJobHandler {
 	return &PDFJobHandler{
-		jobRepo:     jobRepo,
 		pdfJobRepo:  pdfJobRepo,
 		s3Service:   s3Service,
 		natsService: natsService,
@@ -95,19 +92,6 @@ func (h *PDFJobHandler) CreateJob(c *fiber.Ctx) error {
 		})
 	}
 
-	requestJob, err := h.jobRepo.FindByID(c.Context(), request.JobID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to retrieve job details",
-		})
-	}
-
-	if requestJob == nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Job not found",
-		})
-	}
-
 	pdfOperation := models.PDFOperation(request.Operation)
 	if pdfOperation != models.PDFOperationConvertToJPG &&
 		pdfOperation != models.PDFOperationCompress &&
@@ -128,7 +112,7 @@ func (h *PDFJobHandler) CreateJob(c *fiber.Ctx) error {
 		UpdatedAt: time.Now(),
 	}
 
-	err = h.pdfJobRepo.Create(context.Background(), job)
+	err := h.pdfJobRepo.Create(context.Background(), job)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create job",

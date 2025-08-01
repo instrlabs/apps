@@ -9,15 +9,18 @@ import (
 )
 
 type PDFJobProcessor struct {
-	pdfJobRepo repositories.PDFJobRepositoryInterface
+	jobRepo    *repositories.JobRepository
+	pdfJobRepo *repositories.PDFJobRepository
 	s3Service  *services.S3Service
 }
 
 func NewPDFJobProcessor(
-	pdfJobRepo repositories.PDFJobRepositoryInterface,
+	jobRepo *repositories.JobRepository,
+	pdfJobRepo *repositories.PDFJobRepository,
 	s3Service *services.S3Service,
 ) *PDFJobProcessor {
 	return &PDFJobProcessor{
+		jobRepo:    jobRepo,
 		pdfJobRepo: pdfJobRepo,
 		s3Service:  s3Service,
 	}
@@ -25,6 +28,12 @@ func NewPDFJobProcessor(
 
 func (p *PDFJobProcessor) ProcessJob(ctx context.Context, job *models.PDFJob) error {
 	log.Printf("Processing PDF job: %s, operation: %s", job.JobID, job.Operation)
+
+	_, err := p.jobRepo.UpdateStatus(ctx, job.JobID, models.JobStatusProcessing, "")
+	if err != nil {
+		log.Printf("Error updating job status: %v", err)
+		return err
+	}
 
 	switch job.Operation {
 	case models.PDFOperationConvertToJPG:
@@ -43,12 +52,11 @@ func (p *PDFJobProcessor) ProcessJob(ctx context.Context, job *models.PDFJob) er
 		log.Printf("Unknown operation: %s", job.Operation)
 	}
 
-	update := &models.UpdatePDFJobRequest{
-		Status:         "completed",
+	updatePDFJob := &models.UpdatePDFJobRequest{
 		OutputFilePath: job.S3Path + ".processed",
 	}
 
-	err := p.pdfJobRepo.Update(ctx, job.ID.Hex(), update)
+	err = p.pdfJobRepo.Update(ctx, job.ID.Hex(), updatePDFJob)
 	if err != nil {
 		log.Printf("Error updating job: %v", err)
 		return err
