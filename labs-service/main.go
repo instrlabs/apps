@@ -9,7 +9,7 @@ import (
 	"log"
 
 	"labs-service/constants"
-	"labs-service/controllers"
+	"labs-service/handlers"
 	"labs-service/repositories"
 	"labs-service/services"
 )
@@ -24,7 +24,6 @@ func main() {
 	defer mongo.Close()
 
 	jobRepo := repositories.NewJobRepository(mongo)
-	pdfJobRepo := repositories.NewPDFJobRepository(mongo)
 
 	s3Service, err := services.NewS3Service(cfg)
 	if err != nil {
@@ -37,7 +36,7 @@ func main() {
 	}
 	defer natsService.Close()
 
-	pdfJobController := controllers.NewPDFJobController(jobRepo, pdfJobRepo, s3Service, natsService, cfg)
+	pdfJobController := handlers.NewPDFJobController(jobRepo, s3Service, natsService, cfg)
 
 	app := fiber.New()
 	app.Use(cors.New())
@@ -61,12 +60,7 @@ func main() {
 	})
 
 	// PDF
-	app.Post("/pdf/to-jpg", pdfJobController.ConvertToJPG)
 	app.Post("/pdf/compress", pdfJobController.CompressPDF)
-	app.Post("/pdf/merge", pdfJobController.MergePDFs)
-	app.Post("/pdf/split", pdfJobController.SplitPDF)
-	app.Get("/pdf", pdfJobController.GetPDFJobs)
-	app.Patch("/pdf/:id", pdfJobController.UpdatePDFJobs)
 
 	log.Fatal(app.Listen(cfg.Port))
 }
