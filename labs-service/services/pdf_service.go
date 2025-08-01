@@ -16,9 +16,11 @@ type PDFService struct {
 }
 
 type PDFCreateJobRequest struct {
-	JobID     string `json:"job_id"`
-	Operation string `json:"operation"`
-	S3Path    string `json:"s3_path,omitempty"`
+	JobID     string         `json:"job_id"`
+	Operation models.JobType `json:"operation"`
+	Filename  string         `json:"filename"`
+	FileSize  int64          `json:"file_size"`
+	S3Path    string         `json:"s3_path"`
 }
 
 type PDFCreateJobResponse struct {
@@ -32,12 +34,8 @@ type PDFCreateJobResponse struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
-func (s *PDFService) CreateJob(ctx *fiber.Ctx, jobID string, jobType models.JobType, s3Path string) (*PDFCreateJobResponse, error) {
-	jsonData, err := json.Marshal(interface{}(PDFCreateJobRequest{
-		JobID:     jobID,
-		Operation: string(jobType),
-		S3Path:    s3Path,
-	}))
+func (s *PDFService) CreateJob(ctx *fiber.Ctx, req PDFCreateJobRequest) (*PDFCreateJobResponse, error) {
+	jsonData, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}

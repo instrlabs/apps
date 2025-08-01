@@ -55,8 +55,9 @@ func main() {
 		})
 	})
 
+	jobRepo := repositories.NewJobRepository(mongo.Database)
 	pdfJobRepo := repositories.NewPDFJobRepository(mongo.Database)
-	pdfJobHandler := handlers.NewPDFJobHandler(pdfJobRepo, s3Service, natsService)
+	pdfJobHandler := handlers.NewPDFJobHandler(jobRepo, pdfJobRepo, s3Service, natsService)
 	pdfJobProcessor := handlers.NewPDFJobProcessor(pdfJobRepo, s3Service)
 
 	err = natsService.SubscribeToPDFJobs(pdfJobProcessor.ProcessJob)

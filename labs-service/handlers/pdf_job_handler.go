@@ -64,7 +64,13 @@ func (c *PDFJobHandler) CompressPDF(ctx *fiber.Ctx) error {
 		})
 	}
 
-	pdfJob, err := c.pdfService.CreateJob(ctx, job.ID.Hex(), models.JobTypePDFCompress, s3Path)
+	pdfJob, err := c.pdfService.CreateJob(ctx, services.PDFCreateJobRequest{
+		JobID:     job.ID.Hex(),
+		Operation: models.JobTypePDFCompress,
+		Filename:  job.OriginalFilename,
+		FileSize:  file.Size,
+		S3Path:    s3Path,
+	})
 	if err != nil {
 		log.Printf("Failed to create PDF job: %v", err)
 		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), models.JobStatusFailed, err.Error())

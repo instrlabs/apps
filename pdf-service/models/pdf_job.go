@@ -11,15 +11,15 @@ type PDFOperation string
 const PDFJobSubject = "pdf.jobs"
 
 const (
-	PDFOperationConvertToJPG PDFOperation = "CONVERT_TO_JPG"
-	PDFOperationCompress     PDFOperation = "COMPRESS"
-	PDFOperationMerge        PDFOperation = "MERGE"
-	PDFOperationSplit        PDFOperation = "SPLIT"
+	PDFOperationConvertToJPG PDFOperation = "PDF/CONVERT_TO_JPG"
+	PDFOperationCompress     PDFOperation = "PDF/COMPRESS"
+	PDFOperationMerge        PDFOperation = "PDF/MERGE"
+	PDFOperationSplit        PDFOperation = "PDF/SPLIT"
 )
 
 type PDFJob struct {
 	ID             primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	OriginalName   string             `json:"original_name" bson:"original_name"`
+	Filename       string             `json:"filename" bson:"filename"`
 	FileSize       int64              `json:"file_size" bson:"file_size"`
 	S3Path         string             `json:"s3_path" bson:"s3_path"`
 	Operation      PDFOperation       `json:"operation" bson:"operation"`

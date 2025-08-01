@@ -9,21 +9,23 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 )
 
 type PDFJobHandler struct {
-	pdfJobRepo  repositories.PDFJobRepositoryInterface
+	jobRepo     *repositories.JobRepository
+	pdfJobRepo  *repositories.PDFJobRepository
 	s3Service   *services.S3Service
 	natsService *services.NatsService
 }
 
 func NewPDFJobHandler(
-	pdfJobRepo repositories.PDFJobRepositoryInterface,
+	jobRepo *repositories.JobRepository,
+	pdfJobRepo *repositories.PDFJobRepository,
 	s3Service *services.S3Service,
 	natsService *services.NatsService,
 ) *PDFJobHandler {
 	return &PDFJobHandler{
+		jobRepo:     jobRepo,
 		pdfJobRepo:  pdfJobRepo,
 		s3Service:   s3Service,
 		natsService: natsService,
@@ -61,55 +63,69 @@ func (h *PDFJobHandler) GetJobs(c *fiber.Ctx) error {
 }
 
 func (h *PDFJobHandler) CreateJob(c *fiber.Ctx) error {
-	form, err := c.MultipartForm()
-	if err != nil {
+	var request struct {
+		JobID     string `json:"job_id"`
+		Operation string `json:"operation"`
+		Filename  string `json:"filename"`
+		FileSize  int64  `json:"file_size"`
+		S3Path    string `json:"s3_path"`
+	}
+
+	if err := c.BodyParser(&request); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Expected multipart form",
+			"error": "Invalid request body",
 		})
 	}
 
-	operation := c.FormValue("operation")
-	if operation == "" {
+	if request.JobID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "JobID is required",
+		})
+	}
+
+	if request.Operation == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Operation is required",
 		})
 	}
 
-	pdfOperation := models.PDFOperation(operation)
-	switch pdfOperation {
-	case models.PDFOperationConvertToJPG, models.PDFOperationCompress, models.PDFOperationMerge, models.PDFOperationSplit:
-	default:
+	if request.S3Path == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "S3Path is required",
+		})
+	}
+
+	requestJob, err := h.jobRepo.FindByID(c.Context(), request.JobID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve job details",
+		})
+	}
+
+	if requestJob == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Job not found",
+		})
+	}
+
+	pdfOperation := models.PDFOperation(request.Operation)
+	if pdfOperation != models.PDFOperationConvertToJPG &&
+		pdfOperation != models.PDFOperationCompress &&
+		pdfOperation != models.PDFOperationMerge &&
+		pdfOperation != models.PDFOperationSplit {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid operation",
 		})
 	}
 
-	files := form.File["file"]
-	if len(files) == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "File is required",
-		})
-	}
-
-	file := files[0]
-
-	jobID := uuid.New().String()
-
-	s3Path, err := h.s3Service.UploadPDF(c.Context(), file, jobID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to upload file",
-		})
-	}
-
 	job := &models.PDFJob{
-		OriginalName: file.Filename,
-		FileSize:     file.Size,
-		S3Path:       s3Path,
-		Operation:    pdfOperation,
-		JobID:        jobID,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		Filename:  request.Filename,
+		FileSize:  request.FileSize,
+		S3Path:    request.S3Path,
+		Operation: pdfOperation,
+		JobID:     request.JobID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	err = h.pdfJobRepo.Create(context.Background(), job)
@@ -121,9 +137,9 @@ func (h *PDFJobHandler) CreateJob(c *fiber.Ctx) error {
 
 	err = h.natsService.PublishPDFJob(job)
 	if err != nil {
-		// Log error but don't fail the request
-		// In a production environment, you might want to implement a retry mechanism
-		// or mark the job as failed in the database
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to publish job to NATS",
+		})
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
