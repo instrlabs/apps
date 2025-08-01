@@ -8,8 +8,10 @@ import (
 type Config struct {
 	Environment string
 	Port        string
-	MongoURI    string
-	MongoDB     string
+
+	// Mongo configuration
+	MongoURI string
+	MongoDB  string
 
 	// S3 configuration
 	S3Endpoint  string
@@ -31,7 +33,9 @@ type Config struct {
 // or defaults if not provided
 func NewConfig() *Config {
 	env := getEnv("ENVIRONMENT", "development")
-	port := getEnv("PORT", ":8080")
+	port := getEnv("PORT", ":3000")
+
+	// Mongo configuration
 	mongoURI := getEnv("MONGO_URI", "mongodb://localhost:27017")
 	mongoDB := getEnv("MONGO_DB", "labs_service")
 
@@ -52,8 +56,9 @@ func NewConfig() *Config {
 	return &Config{
 		Environment: env,
 		Port:        port,
-		MongoURI:    mongoURI,
-		MongoDB:     mongoDB,
+
+		MongoURI: mongoURI,
+		MongoDB:  mongoDB,
 
 		S3Endpoint:  s3Endpoint,
 		S3Region:    s3Region,
@@ -68,8 +73,6 @@ func NewConfig() *Config {
 	}
 }
 
-// getEnv retrieves the value of the environment variable named by the key
-// If the variable is not present, returns the fallback value
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
@@ -77,8 +80,6 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-// getEnvBool retrieves the boolean value of the environment variable named by the key
-// If the variable is not present or not a valid boolean, returns the fallback value
 func getEnvBool(key string, fallback bool) bool {
 	if value, exists := os.LookupEnv(key); exists {
 		if value == "true" || value == "1" || value == "yes" {
