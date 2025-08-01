@@ -23,12 +23,8 @@ func NewPDFJobProcessor(
 	}
 }
 
-// ProcessJob processes a PDF job
 func (p *PDFJobProcessor) ProcessJob(ctx context.Context, job *models.PDFJob) error {
 	log.Printf("Processing PDF job: %s, operation: %s", job.JobID, job.Operation)
-
-	// TODO: Implement actual PDF processing logic based on the operation
-	// For now, we'll just log the job details
 
 	switch job.Operation {
 	case models.PDFOperationConvertToJPG:

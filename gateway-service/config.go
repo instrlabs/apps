@@ -43,7 +43,13 @@ func LoadConfig() Config {
 	labsServiceURL := os.Getenv("LABS_SERVICE_URL")
 	if labsServiceURL == "" {
 		labsServiceURL = "http://labs-service.localhost"
-		log.Warn("AUTH_SERVICE_URL not set, using default: ", labsServiceURL)
+		log.Warn("LABS_SERVICE_URL not set, using default: ", labsServiceURL)
+	}
+
+	pdfServiceURL := os.Getenv("PDF_SERVICE_URL")
+	if pdfServiceURL == "" {
+		pdfServiceURL = "http://pdf-service.localhost"
+		log.Warn("PDF_SERVICE_URL not set, using default: ", pdfServiceURL)
 	}
 
 	return Config{
@@ -58,6 +64,11 @@ func LoadConfig() Config {
 				Name:   "labs-service",
 				URL:    labsServiceURL,
 				Prefix: "/labs",
+			},
+			{
+				Name:   "pdf-service",
+				URL:    pdfServiceURL,
+				Prefix: "/pdf",
 			},
 		},
 	}
