@@ -36,7 +36,9 @@ func main() {
 	}
 	defer natsService.Close()
 
-	pdfJobController := handlers.NewPDFJobController(jobRepo, s3Service, natsService, cfg)
+	pdfService := services.NewPDFService(cfg)
+
+	pdfJobController := handlers.NewPDFJobHandler(jobRepo, pdfService, s3Service, natsService, cfg)
 
 	app := fiber.New()
 	app.Use(cors.New())

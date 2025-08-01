@@ -18,10 +18,10 @@ const (
 type JobType string
 
 const (
-	JobTypePDFToJPG    JobType = "PDF/TO_JPG"
-	JobTypePDFCompress JobType = "PDF/COMPRESS"
-	JobTypePDFMerge    JobType = "PDF/MERGE"
-	JobTypePDFSplit    JobType = "PDF/SPLIT"
+	JobTypePDFTConvertToJPG JobType = "PDF/CONVERT_TO_JPG"
+	JobTypePDFCompress      JobType = "PDF/COMPRESS"
+	JobTypePDFMerge         JobType = "PDF/MERGE"
+	JobTypePDFSplit         JobType = "PDF/SPLIT"
 
 	JobTypeIMGCompress JobType = "IMG/COMPRESS"
 	JobTypeIMGResize   JobType = "IMG/RESIZE"
