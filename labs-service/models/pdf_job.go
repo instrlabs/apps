@@ -8,11 +8,13 @@ import (
 
 type PDFOperation string
 
+const PDFJobSubject = "job.jobs"
+
 const (
-	PDFOperationToJPG    PDFOperation = "TO_JPG"
-	PDFOperationCompress PDFOperation = "COMPRESS"
-	PDFOperationMerge    PDFOperation = "MERGE"
-	PDFOperationSplit    PDFOperation = "SPLIT"
+	PDFOperationConvertToJPG PDFOperation = "CONVERT_TO_JPG"
+	PDFOperationCompress     PDFOperation = "COMPRESS"
+	PDFOperationMerge        PDFOperation = "MERGE"
+	PDFOperationSplit        PDFOperation = "SPLIT"
 )
 
 type PDFJob struct {
@@ -29,4 +31,6 @@ type PDFJob struct {
 
 type UpdatePDFJobRequest struct {
 	OutputFilePath string `json:"output_file_path,omitempty"`
+	Status         string `json:"status,omitempty"`
+	Error          string `json:"error,omitempty"`
 }

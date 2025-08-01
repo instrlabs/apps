@@ -68,7 +68,7 @@ func (c *PDFJobController) ConvertToJPG(ctx *fiber.Ctx) error {
 		OriginalName: file.Filename,
 		FileSize:     file.Size,
 		S3Path:       s3Path,
-		Operation:    models.PDFOperationToJPG,
+		Operation:    models.PDFOperationConvertToJPG,
 		JobID:        job.ID.Hex(),
 	}
 
@@ -81,7 +81,7 @@ func (c *PDFJobController) ConvertToJPG(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err = c.natsService.PublishJobID("PDF_OPERATION", job.ID.Hex())
+	err = c.natsService.PublishJobID(models.PDFJobSubject, job.ID.Hex())
 	if err != nil {
 		log.Printf("Failed to publish job ID: %v", err)
 		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), models.JobStatusFailed, err.Error())
@@ -144,7 +144,7 @@ func (c *PDFJobController) CompressPDF(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err = c.natsService.PublishJobID("PDF_OPERATION", job.ID.Hex())
+	err = c.natsService.PublishJobID(models.PDFJobSubject, job.ID.Hex())
 	if err != nil {
 		log.Printf("Failed to publish job ID: %v", err)
 		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), models.JobStatusFailed, err.Error())
@@ -242,7 +242,7 @@ func (c *PDFJobController) MergePDFs(ctx *fiber.Ctx) error {
 		}
 	}
 
-	err = c.natsService.PublishJobID("PDF_OPERATION", job.ID.Hex())
+	err = c.natsService.PublishJobID(models.PDFJobSubject, job.ID.Hex())
 	if err != nil {
 		log.Printf("Failed to publish job ID: %v", err)
 		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), models.JobStatusFailed, err.Error())
@@ -312,7 +312,7 @@ func (c *PDFJobController) SplitPDF(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err = c.natsService.PublishJobID("PDF_OPERATION", job.ID.Hex())
+	err = c.natsService.PublishJobID(models.PDFJobSubject, job.ID.Hex())
 	if err != nil {
 		log.Printf("Failed to publish job ID: %v", err)
 		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), models.JobStatusFailed, err.Error())
@@ -338,5 +338,72 @@ func (c *PDFJobController) GetPDFJobs(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"jobs": pdfJobs,
+	})
+}
+
+func (c *PDFJobController) UpdatePDFJobs(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+	if id == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "ID is required",
+		})
+	}
+
+	var updateRequest models.UpdatePDFJobRequest
+	if err := ctx.BodyParser(&updateRequest); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	// Find the PDF job
+	pdfJob, err := c.pdfJobRepo.FindByID(ctx.Context(), id)
+	if err != nil {
+		log.Printf("Failed to find PDF job: %v", err)
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "PDF job not found",
+		})
+	}
+
+	// Update the PDF job
+	updatePDFJob := &models.UpdatePDFJobRequest{
+		OutputFilePath: updateRequest.OutputFilePath,
+	}
+
+	updatedPDFJob, err := c.pdfJobRepo.Update(ctx.Context(), id, updatePDFJob)
+	if err != nil {
+		log.Printf("Failed to update PDF job: %v", err)
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update PDF job",
+		})
+	}
+
+	// Update the job status if provided
+	if updateRequest.Status != "" {
+		var jobStatus models.JobStatus
+		switch updateRequest.Status {
+		case string(models.JobStatusPending):
+			jobStatus = models.JobStatusPending
+		case string(models.JobStatusCompleted):
+			jobStatus = models.JobStatusCompleted
+		case string(models.JobStatusFailed):
+			jobStatus = models.JobStatusFailed
+		default:
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid job status",
+			})
+		}
+
+		_, err = c.jobRepo.UpdateStatus(ctx.Context(), pdfJob.JobID, jobStatus, updateRequest.Error)
+		if err != nil {
+			log.Printf("Failed to update job status: %v", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to update job status",
+			})
+		}
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"job": updatedPDFJob,
 	})
 }

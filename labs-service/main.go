@@ -66,6 +66,7 @@ func main() {
 	app.Post("/pdf/merge", pdfJobController.MergePDFs)
 	app.Post("/pdf/split", pdfJobController.SplitPDF)
 	app.Get("/pdf", pdfJobController.GetPDFJobs)
+	app.Patch("/pdf/:id", pdfJobController.UpdatePDFJobs)
 
 	log.Fatal(app.Listen(cfg.Port))
 }
