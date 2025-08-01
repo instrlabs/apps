@@ -1,138 +1,299 @@
 package services
 
-// #cgo CFLAGS: -I/usr/local/include
-// #cgo LDFLAGS: -L/usr/local/lib -lmupdf -lmupdf-third
-// #include <mupdf/fitz.h>
+// #cgo CFLAGS: -I/go/src/labs-worker/libraries/mupdf/include
+// #cgo LDFLAGS: -L/go/src/labs-worker/libraries/mupdf/build/release -lmupdf -lmupdf-third -lm
+// #cgo LDFLAGS: -lfreetype -ljbig2dec -ljpeg -lz -lopenjp2
 // #include <stdlib.h>
 // #include <string.h>
-//
-// // Helper function to render a PDF page to a JPEG file
-// int render_page_to_jpeg(const char *pdf_path, const char *jpg_path, int page_num, float zoom, int rotate) {
-//     fz_context *ctx = NULL;
-//     fz_document *doc = NULL;
-//     fz_pixmap *pix = NULL;
-//     fz_matrix ctm;
-//     fz_page *page = NULL;
-//     fz_rect bounds;
-//     fz_device *dev = NULL;
-//     FILE *f = NULL;
-//     int ret = -1;
-//
-//     // Create a context
-//     ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
-//     if (!ctx) {
-//         return -1;
-//     }
-//
-//     // Register document handlers
-//     fz_try(ctx) {
-//         fz_register_document_handlers(ctx);
-//
-//         // Open the PDF
-//         doc = fz_open_document(ctx, pdf_path);
-//         if (!doc) {
-//             fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open document");
-//         }
-//
-//         // Load the page
-//         page = fz_load_page(ctx, doc, page_num);
-//
-//         // Get the page bounds
-//         bounds = fz_bound_page(ctx, page);
-//
-//         // Set up transformation matrix (scale and rotation)
-//         ctm = fz_scale(zoom, zoom);
-//         ctm = fz_pre_rotate(ctm, rotate);
-//
-//         // Create a pixmap to hold the rendered page
-//         pix = fz_new_pixmap_from_page_contents(ctx, page, ctm, fz_device_rgb(ctx), 0);
-//
-//         // Save the pixmap as JPEG
-//         f = fopen(jpg_path, "wb");
-//         if (!f) {
-//             fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open output file");
-//         }
-//
-//         fz_write_pixmap_as_jpeg(ctx, f, pix, 90);
-//         fclose(f);
-//         f = NULL;
-//
-//         ret = 0; // Success
-//     }
-//     fz_catch(ctx) {
-//         ret = -1;
-//     }
-//
-//     // Clean up
-//     if (f) fclose(f);
-//     if (pix) fz_drop_pixmap(ctx, pix);
-//     if (page) fz_drop_page(ctx, page);
-//     if (doc) fz_drop_document(ctx, doc);
-//     if (ctx) fz_drop_context(ctx);
-//
-//     return ret;
-// }
+// #include "mupdf/fitz.h"
+// #include "mupdf/pdf.h"
 import "C"
 import (
+	"errors"
 	"fmt"
-	"log"
 	"os"
+	"path/filepath"
 	"unsafe"
 )
 
-// MuPDFService handles PDF operations using MuPDF
 type MuPDFService struct {
 }
 
-// NewMuPDFService creates a new MuPDFService
 func NewMuPDFService() *MuPDFService {
 	return &MuPDFService{}
 }
 
-// Close closes the MuPDFService
 func (m *MuPDFService) Close() {
 	// MuPDF context is created and destroyed for each operation,
 	// so no global cleanup is needed
 }
 
-// ConvertPDFToJPG converts a PDF file to a JPG file using MuPDF
+// ConvertPDFToJPG converts a PDF file to JPG images
+// It returns the path to the output JPG file or an error
 func (m *MuPDFService) ConvertPDFToJPG(pdfPath string) (string, error) {
-	// Create a temporary file to store the JPG
-	tempFile, err := os.CreateTemp("", "jpg-*.jpg")
-	if err != nil {
-		return "", fmt.Errorf("failed to create temporary file: %w", err)
+	// Convert Go string to C string
+	cPdfPath := C.CString(pdfPath)
+	defer C.free(unsafe.Pointer(cPdfPath))
+
+	// Create a context
+	ctx := C.fz_new_context(nil, nil, C.FZ_STORE_UNLIMITED)
+	if ctx == nil {
+		return "", errors.New("failed to create context")
 	}
-	defer tempFile.Close()
+	defer C.fz_drop_context(ctx)
 
-	// Convert PDF to JPG using MuPDF
-	// For simplicity, we're only converting the first page
-	// In a real application, you might want to handle multi-page PDFs differently
-	pdfPathC := C.CString(pdfPath)
-	jpgPathC := C.CString(tempFile.Name())
-	defer C.free(unsafe.Pointer(pdfPathC))
-	defer C.free(unsafe.Pointer(jpgPathC))
+	// Register document handlers
+	C.fz_register_document_handlers(ctx)
 
-	// Render the first page (page 0) with zoom=2.0 (200% scale) and no rotation
-	result := C.render_page_to_jpeg(pdfPathC, jpgPathC, 0, 2.0, 0)
-	if result != 0 {
-		return "", fmt.Errorf("failed to convert PDF to JPG using MuPDF")
+	// Create an error context
+	var err C.fz_error_context
+	C.fz_try(ctx, &err)
+
+	// Open the document
+	doc := C.fz_open_document(ctx, cPdfPath)
+	if doc == nil {
+		return "", errors.New("failed to open document")
+	}
+	defer C.fz_drop_document(ctx, doc)
+
+	// Get the number of pages
+	pageCount := C.fz_count_pages(ctx, doc)
+	if pageCount == 0 {
+		return "", errors.New("document has no pages")
 	}
 
-	log.Printf("Converted PDF to JPG using MuPDF: %s -> %s", pdfPath, tempFile.Name())
-	return tempFile.Name(), nil
+	// Create output directory
+	outputDir := filepath.Join(os.TempDir(), filepath.Base(pdfPath)+"_jpg")
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create output directory: %v", err)
+	}
+
+	// Process the first page only for now
+	// In a real implementation, you might want to process all pages
+	pageNum := C.int(0)
+	page := C.fz_load_page(ctx, doc, pageNum)
+	if page == nil {
+		return "", errors.New("failed to load page")
+	}
+	defer C.fz_drop_page(ctx, page)
+
+	// Get the bounds of the page
+	bounds := C.fz_bound_page(ctx, page)
+
+	// Create a pixmap with the bounds
+	pixmap := C.fz_new_pixmap_with_bbox(ctx, C.fz_device_rgb(ctx), &bounds, nil, 1)
+	if pixmap == nil {
+		return "", errors.New("failed to create pixmap")
+	}
+	defer C.fz_drop_pixmap(ctx, pixmap)
+
+	// Clear the pixmap with white
+	C.fz_clear_pixmap_with_value(ctx, pixmap, 0xff)
+
+	// Create a device for drawing
+	dev := C.fz_new_draw_device(ctx, C.fz_identity, pixmap)
+	if dev == nil {
+		return "", errors.New("failed to create draw device")
+	}
+	defer C.fz_drop_device(ctx, dev)
+
+	// Run the page
+	C.fz_run_page(ctx, page, dev, C.fz_identity, nil)
+
+	// Output path for the JPG
+	outputPath := filepath.Join(outputDir, "page_1.jpg")
+	cOutputPath := C.CString(outputPath)
+	defer C.free(unsafe.Pointer(cOutputPath))
+
+	// Save the pixmap as a JPG
+	C.fz_save_pixmap_as_jpeg(ctx, pixmap, cOutputPath, 90)
+
+	return outputPath, nil
 }
 
-// ConvertPDFToJPGMultiPage converts all pages of a PDF file to JPG files
-func (m *MuPDFService) ConvertPDFToJPGMultiPage(pdfPath string) ([]string, error) {
-	// This is a placeholder for a more advanced implementation
-	// In a real application, you would iterate through all pages of the PDF
-	// and convert each one to a separate JPG file
+// Compress compresses a PDF file
+// It returns the path to the compressed PDF file or an error
+func (m *MuPDFService) Compress(pdfPath string) (string, error) {
+	// Convert Go string to C string
+	cPdfPath := C.CString(pdfPath)
+	defer C.free(unsafe.Pointer(cPdfPath))
 
-	// For now, we'll just convert the first page as an example
-	jpgPath, err := m.ConvertPDFToJPG(pdfPath)
-	if err != nil {
-		return nil, err
+	// Create a context
+	ctx := C.fz_new_context(nil, nil, C.FZ_STORE_UNLIMITED)
+	if ctx == nil {
+		return "", errors.New("failed to create context")
+	}
+	defer C.fz_drop_context(ctx)
+
+	// Register document handlers
+	C.fz_register_document_handlers(ctx)
+
+	// Create an error context
+	var err C.fz_error_context
+	C.fz_try(ctx, &err)
+
+	// Open the document
+	doc := C.pdf_open_document(ctx, cPdfPath)
+	if doc == nil {
+		return "", errors.New("failed to open document")
+	}
+	defer C.pdf_drop_document(ctx, doc)
+
+	// Output path for the compressed PDF
+	outputPath := filepath.Join(os.TempDir(), "compressed_"+filepath.Base(pdfPath))
+	cOutputPath := C.CString(outputPath)
+	defer C.free(unsafe.Pointer(cOutputPath))
+
+	// Create options for saving
+	opts := C.pdf_write_options{}
+	opts.do_compress = 1
+	opts.do_compress_images = 1
+	opts.do_garbage = 1
+
+	// Save the document with compression
+	C.pdf_save_document(ctx, doc, cOutputPath, &opts)
+
+	return outputPath, nil
+}
+
+// Merge merges multiple PDF files
+// It returns the path to the merged PDF file or an error
+func (m *MuPDFService) Merge(pdfPaths []string) (string, error) {
+	if len(pdfPaths) == 0 {
+		return "", errors.New("no PDF files to merge")
 	}
 
-	return []string{jpgPath}, nil
+	// Create a context
+	ctx := C.fz_new_context(nil, nil, C.FZ_STORE_UNLIMITED)
+	if ctx == nil {
+		return "", errors.New("failed to create context")
+	}
+	defer C.fz_drop_context(ctx)
+
+	// Register document handlers
+	C.fz_register_document_handlers(ctx)
+
+	// Create an error context
+	var err C.fz_error_context
+	C.fz_try(ctx, &err)
+
+	// Create a new PDF document
+	doc := C.pdf_create_document(ctx)
+	if doc == nil {
+		return "", errors.New("failed to create document")
+	}
+	defer C.pdf_drop_document(ctx, doc)
+
+	// Process each input PDF
+	for _, pdfPath := range pdfPaths {
+		// Convert Go string to C string
+		cPdfPath := C.CString(pdfPath)
+		defer C.free(unsafe.Pointer(cPdfPath))
+
+		// Open the source document
+		srcDoc := C.pdf_open_document(ctx, cPdfPath)
+		if srcDoc == nil {
+			return "", fmt.Errorf("failed to open document: %s", pdfPath)
+		}
+		defer C.pdf_drop_document(ctx, srcDoc)
+
+		// Get the number of pages
+		pageCount := C.pdf_count_pages(ctx, srcDoc)
+
+		// Add each page to the destination document
+		for i := C.int(0); i < pageCount; i++ {
+			// Load the page
+			page := C.pdf_load_page(ctx, srcDoc, i)
+			if page == nil {
+				return "", fmt.Errorf("failed to load page %d from %s", i, pdfPath)
+			}
+			defer C.pdf_drop_page(ctx, page)
+
+			// Add the page to the destination document
+			C.pdf_insert_page(ctx, doc, -1, C.fz_page(page))
+		}
+	}
+
+	// Output path for the merged PDF
+	outputPath := filepath.Join(os.TempDir(), "merged.pdf")
+	cOutputPath := C.CString(outputPath)
+	defer C.free(unsafe.Pointer(cOutputPath))
+
+	// Save the document
+	opts := C.pdf_write_options{}
+	C.pdf_save_document(ctx, doc, cOutputPath, &opts)
+
+	return outputPath, nil
+}
+
+// Split splits a PDF file into multiple PDF files
+// It returns the directory containing the split PDF files or an error
+func (m *MuPDFService) Split(pdfPath string) (string, error) {
+	// Convert Go string to C string
+	cPdfPath := C.CString(pdfPath)
+	defer C.free(unsafe.Pointer(cPdfPath))
+
+	// Create a context
+	ctx := C.fz_new_context(nil, nil, C.FZ_STORE_UNLIMITED)
+	if ctx == nil {
+		return "", errors.New("failed to create context")
+	}
+	defer C.fz_drop_context(ctx)
+
+	// Register document handlers
+	C.fz_register_document_handlers(ctx)
+
+	// Create an error context
+	var err C.fz_error_context
+	C.fz_try(ctx, &err)
+
+	// Open the document
+	doc := C.pdf_open_document(ctx, cPdfPath)
+	if doc == nil {
+		return "", errors.New("failed to open document")
+	}
+	defer C.pdf_drop_document(ctx, doc)
+
+	// Get the number of pages
+	pageCount := C.pdf_count_pages(ctx, doc)
+	if pageCount == 0 {
+		return "", errors.New("document has no pages")
+	}
+
+	// Create output directory
+	outputDir := filepath.Join(os.TempDir(), filepath.Base(pdfPath)+"_split")
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create output directory: %v", err)
+	}
+
+	// Process each page
+	for i := C.int(0); i < pageCount; i++ {
+		// Create a new PDF document for this page
+		newDoc := C.pdf_create_document(ctx)
+		if newDoc == nil {
+			return "", fmt.Errorf("failed to create document for page %d", i)
+		}
+		defer C.pdf_drop_document(ctx, newDoc)
+
+		// Load the page
+		page := C.pdf_load_page(ctx, doc, i)
+		if page == nil {
+			return "", fmt.Errorf("failed to load page %d", i)
+		}
+		defer C.pdf_drop_page(ctx, page)
+
+		// Add the page to the new document
+		C.pdf_insert_page(ctx, newDoc, -1, C.fz_page(page))
+
+		// Output path for this page
+		outputPath := filepath.Join(outputDir, fmt.Sprintf("page_%d.pdf", i+1))
+		cOutputPath := C.CString(outputPath)
+		defer C.free(unsafe.Pointer(cOutputPath))
+
+		// Save the document
+		opts := C.pdf_write_options{}
+		C.pdf_save_document(ctx, newDoc, cOutputPath, &opts)
+	}
+
+	return outputDir, nil
 }

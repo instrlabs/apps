@@ -1,34 +1,19 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24.4-alpine AS builder
 
-# Install build dependencies
-RUN apk add --no-cache gcc musl-dev pkgconfig imagemagick-dev
+RUN apk add --no-cache gcc g++ make git musl-dev pkgconfig imagemagick-dev \
+    freetype-dev jbig2dec-dev libjpeg-turbo-dev zlib-dev openjpeg-dev
 
-# Set working directory
-WORKDIR /app
+WORKDIR /go/src/labs-worker
 
-# Copy go.mod and go.sum
-COPY go.mod go.sum* ./
-
-# Download dependencies
-RUN go mod download
-
-# Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -o app .
+# Setup MuPDF
+WORKDIR /go/src/labs-worker/libraries/mupdf
+RUN make
 
-# Create final image
-FROM alpine:3.19
+WORKDIR /go/src/labs-worker
 
-# Install runtime dependencies
-RUN apk add --no-cache imagemagick
+RUN go mod download
 
-# Set working directory
-WORKDIR /app
-
-# Copy the binary from the builder stage
-COPY --from=builder /app/app .
-
-# Run the application
-CMD ["./app"]
+# Build with CGO enabled to support MuPDF bindings
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -o app .
