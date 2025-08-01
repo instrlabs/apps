@@ -95,18 +95,20 @@ services:
       - "traefik.http.routers.labs-service.entrypoints=web"
       - "traefik.http.services.labs-service.loadbalancer.server.port=3000"
 
-  labs-worker:
+  pdf-service:
     build:
-      context: ./labs-worker
+      context: ./pdf-service
       dockerfile: Dockerfile
 
     env_file:
-      - ./labs-worker/.env.local
+      - ./pdf-service/.env.local
 
     command: [ "./app" ]
-    depends_on:
-      - mongo
-      - nats
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pdf-service.rule=Host(`${PDF_SERVICE_HOST}`)"
+      - "traefik.http.routers.pdf-service.entrypoints=web"
+      - "traefik.http.services.pdf-service.loadbalancer.server.port=3000"
 
   web:
     build:

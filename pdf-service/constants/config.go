@@ -4,9 +4,14 @@ import (
 	"os"
 )
 
+// Config holds all configuration for the application
 type Config struct {
 	Environment string
+	Port        string
+	MongoURI    string
+	MongoDB     string
 
+	// S3 configuration
 	S3Endpoint  string
 	S3Region    string
 	S3AccessKey string
@@ -14,27 +19,41 @@ type Config struct {
 	S3Bucket    string
 	S3UseSSL    bool
 
-	NatsURL               string
-	NatsSubjectPDFJobs    string
-	NatsSubjectPDFResults string
+	// NATS configuration
+	NatsURL     string
+	NatsSubject string
+
+	// PDF Service configuration
+	PDFServiceURL string
 }
 
+// NewConfig creates a new Config instance with values from environment variables
+// or defaults if not provided
 func NewConfig() *Config {
 	env := getEnv("ENVIRONMENT", "development")
+	port := getEnv("PORT", ":8080")
+	mongoURI := getEnv("MONGO_URI", "mongodb://localhost:27017")
+	mongoDB := getEnv("MONGO_DB", "labs_service")
 
+	// S3 configuration
 	s3Endpoint := getEnv("S3_ENDPOINT", "localhost:9000")
 	s3Region := getEnv("S3_REGION", "us-east-1")
 	s3AccessKey := getEnv("S3_ACCESS_KEY", "minioadmin")
 	s3SecretKey := getEnv("S3_SECRET_KEY", "minioadmin")
-	s3Bucket := getEnv("S3_BUCKET", "labs")
+	s3Bucket := getEnv("S3_BUCKET", "pdfs")
 	s3UseSSL := getEnvBool("S3_USE_SSL", false)
 
+	// NATS configuration
 	natsURL := getEnv("NATS_URL", "nats://localhost:4222")
-	natsSubjectPDFJobs := getEnv("NATS_SUBJECT_PDF_JOBS", "pdf.jobs")
-	natsSubjectPDFResults := getEnv("NATS_SUBJECT_PDF_RESULTS", "pdf.results")
+
+	// PDF Service configuration
+	pdfServiceURL := getEnv("PDF_SERVICE_URL", "http://pdf-service:3000")
 
 	return &Config{
 		Environment: env,
+		Port:        port,
+		MongoURI:    mongoURI,
+		MongoDB:     mongoDB,
 
 		S3Endpoint:  s3Endpoint,
 		S3Region:    s3Region,
@@ -43,12 +62,14 @@ func NewConfig() *Config {
 		S3Bucket:    s3Bucket,
 		S3UseSSL:    s3UseSSL,
 
-		NatsURL:               natsURL,
-		NatsSubjectPDFJobs:    natsSubjectPDFJobs,
-		NatsSubjectPDFResults: natsSubjectPDFResults,
+		NatsURL: natsURL,
+
+		PDFServiceURL: pdfServiceURL,
 	}
 }
 
+// getEnv retrieves the value of the environment variable named by the key
+// If the variable is not present, returns the fallback value
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
@@ -56,6 +77,8 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+// getEnvBool retrieves the boolean value of the environment variable named by the key
+// If the variable is not present or not a valid boolean, returns the fallback value
 func getEnvBool(key string, fallback bool) bool {
 	if value, exists := os.LookupEnv(key); exists {
 		if value == "true" || value == "1" || value == "yes" {
