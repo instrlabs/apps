@@ -60,7 +60,7 @@ func main() {
 	pdfJobHandler := handlers.NewPDFJobHandler(pdfJobRepo, s3Service, natsService)
 	pdfJobProcessor := handlers.NewPDFJobProcessor(jobRepo, pdfJobRepo, s3Service)
 
-	err = natsService.SubscribeToPDFJobs(pdfJobProcessor.ProcessJob)
+	err = natsService.SubscribeToPDFJob(pdfJobProcessor.ProcessJob)
 	if err != nil {
 		log.Fatalf("Failed to subscribe to PDF jobs: %v", err)
 	}

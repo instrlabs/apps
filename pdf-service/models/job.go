@@ -27,6 +27,11 @@ type Job struct {
 	UpdatedAt        time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
+type JobNotificationMessage struct {
+	ID     string    `json:"id"`
+	Status JobStatus `json:"status"`
+}
+
 type JobResponse struct {
 	ID               string    `json:"id"`
 	OriginalFilename string    `json:"original_filename"`

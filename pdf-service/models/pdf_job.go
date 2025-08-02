@@ -29,6 +29,10 @@ type PDFJob struct {
 	UpdatedAt      time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
+type PDFJobMessage struct {
+	ID string `json:"id"`
+}
+
 type UpdatePDFJobRequest struct {
 	OutputFilePath string `json:"output_file_path,omitempty"`
 	Status         string `json:"status,omitempty"`

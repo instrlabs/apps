@@ -9,59 +9,58 @@ import (
 )
 
 type PDFJobProcessor struct {
-	jobRepo    *repositories.JobRepository
-	pdfJobRepo *repositories.PDFJobRepository
-	s3Service  *services.S3Service
+	jobRepo     *repositories.JobRepository
+	pdfJobRepo  *repositories.PDFJobRepository
+	s3Service   *services.S3Service
+	natsService *services.NatsService
 }
 
 func NewPDFJobProcessor(
 	jobRepo *repositories.JobRepository,
 	pdfJobRepo *repositories.PDFJobRepository,
 	s3Service *services.S3Service,
+	natsService *services.NatsService,
 ) *PDFJobProcessor {
 	return &PDFJobProcessor{
-		jobRepo:    jobRepo,
-		pdfJobRepo: pdfJobRepo,
-		s3Service:  s3Service,
+		jobRepo:     jobRepo,
+		pdfJobRepo:  pdfJobRepo,
+		s3Service:   s3Service,
+		natsService: natsService,
 	}
 }
 
-func (p *PDFJobProcessor) ProcessJob(ctx context.Context, job *models.PDFJob) error {
-	log.Printf("Processing PDF job: %s, operation: %s", job.JobID, job.Operation)
+func (p *PDFJobProcessor) ProcessJob(ctx context.Context, job *models.PDFJobMessage) error {
+	log.Printf("Processing PDF job: %s", job.ID)
 
-	_, err := p.jobRepo.UpdateStatus(ctx, job.JobID, models.JobStatusProcessing, "")
+	pdfJob, err := p.pdfJobRepo.FindByID(ctx, job.ID)
 	if err != nil {
-		log.Printf("Error updating job status: %v", err)
+		log.Printf("Error finding job: %v", err)
 		return err
 	}
 
-	switch job.Operation {
+	err = p.natsService.PublishJobNotification(job.ID, models.JobStatusProcessing)
+	if err != nil {
+		log.Printf("Error publishing job notification: %v", err)
+		return err
+	}
+
+	switch pdfJob.Operation {
 	case models.PDFOperationConvertToJPG:
-		log.Printf("Converting PDF to JPG: %s", job.S3Path)
+		log.Printf("Converting PDF to JPG: %s", job.ID)
 		// TODO: Implement conversion logic
 	case models.PDFOperationCompress:
-		log.Printf("Compressing PDF: %s", job.S3Path)
+		log.Printf("Compressing PDF: %s", job.ID)
 		// TODO: Implement compression logic
 	case models.PDFOperationMerge:
-		log.Printf("Merging PDFs: %s", job.S3Path)
+		log.Printf("Merging PDFs: %s", job.ID)
 		// TODO: Implement merge logic
 	case models.PDFOperationSplit:
-		log.Printf("Splitting PDF: %s", job.S3Path)
+		log.Printf("Splitting PDF: %s", job.ID)
 		// TODO: Implement split logic
 	default:
-		log.Printf("Unknown operation: %s", job.Operation)
+		log.Printf("Unknown operation: %s", pdfJob.Operation)
 	}
 
-	updatePDFJob := &models.UpdatePDFJobRequest{
-		OutputFilePath: job.S3Path + ".processed",
-	}
-
-	err = p.pdfJobRepo.Update(ctx, job.ID.Hex(), updatePDFJob)
-	if err != nil {
-		log.Printf("Error updating job: %v", err)
-		return err
-	}
-
-	log.Printf("Job processed successfully: %s", job.JobID)
+	log.Printf("Job processed successfully: %s", job.ID)
 	return nil
 }

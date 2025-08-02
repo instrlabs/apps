@@ -119,7 +119,7 @@ func (h *PDFJobHandler) CreateJob(c *fiber.Ctx) error {
 		})
 	}
 
-	err = h.natsService.PublishPDFJob(job)
+	err = h.natsService.PublishPDFJob(job.ID.Hex())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to publish job to NATS",

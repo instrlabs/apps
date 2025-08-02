@@ -22,8 +22,9 @@ type Config struct {
 	S3UseSSL    bool
 
 	// NATS configuration
-	NatsURL     string
-	NatsSubject string
+	NatsURL                     string
+	NatsSubjectPDFJobs          string
+	NatsSubjectPDFNotifications string
 
 	// PDF Service configuration
 	PDFServiceURL string
@@ -49,6 +50,8 @@ func NewConfig() *Config {
 
 	// NATS configuration
 	natsURL := getEnv("NATS_URL", "nats://localhost:4222")
+	natsSubjectPDFJobs := getEnv("NATS_SUBJECT_PDF_JOBS", "pdf.jobs")
+	natsSubjectPDFNotifications := getEnv("NATS_SUBJECT_PDF_NOTIFICATIONS", "pdf.notifications")
 
 	// PDF Service configuration
 	pdfServiceURL := getEnv("PDF_SERVICE_URL", "http://pdf-service:3000")
@@ -67,7 +70,9 @@ func NewConfig() *Config {
 		S3Bucket:    s3Bucket,
 		S3UseSSL:    s3UseSSL,
 
-		NatsURL: natsURL,
+		NatsURL:                     natsURL,
+		NatsSubjectPDFJobs:          natsSubjectPDFJobs,
+		NatsSubjectPDFNotifications: natsSubjectPDFNotifications,
 
 		PDFServiceURL: pdfServiceURL,
 	}
