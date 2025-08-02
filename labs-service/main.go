@@ -36,10 +36,6 @@ func main() {
 	}
 	defer natsService.Close()
 
-	pdfService := services.NewPDFService(cfg)
-
-	pdfJobController := handlers.NewPDFJobHandler(jobRepo, pdfService, s3Service, natsService, cfg)
-
 	app := fiber.New()
 	app.Use(cors.New())
 	app.Use(helmet.New())
@@ -61,7 +57,15 @@ func main() {
 		})
 	})
 
-	// PDF
+	pdfService := services.NewPDFService(cfg)
+	pdfJobController := handlers.NewPDFJobHandler(jobRepo, pdfService, s3Service, natsService, cfg)
+	pdfNotificationProcessor := handlers.NewPDFNotificationProcessor(jobRepo, s3Service)
+
+	err = natsService.SubscribeToPDFNotification(pdfNotificationProcessor.ProcessJob)
+	if err != nil {
+		log.Fatalf("Failed to subscribe to jobs: %v", err)
+	}
+
 	app.Post("/pdf/compress", pdfJobController.CompressPDF)
 
 	log.Fatal(app.Listen(cfg.Port))

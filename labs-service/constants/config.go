@@ -20,16 +20,13 @@ type Config struct {
 	S3UseSSL    bool
 
 	// NATS configuration
-	NatsURL           string
-	PDFJobsSubject    string
-	PDFResultsSubject string
+	NatsURL                     string
+	NatsSubjectJobNotifications string
 
 	// PDF Service configuration
 	PDFServiceURL string
 }
 
-// NewConfig creates a new Config instance with values from environment variables
-// or defaults if not provided
 func NewConfig() *Config {
 	env := getEnv("ENVIRONMENT", "development")
 	port := getEnv("PORT", ":8080")
@@ -46,8 +43,7 @@ func NewConfig() *Config {
 
 	// NATS configuration
 	natsURL := getEnv("NATS_URL", "nats://localhost:4222")
-	pdfJobsSubject := getEnv("PDF_JOBS_SUBJECT", "pdf.jobs")
-	pdfResultsSubject := getEnv("PDF_RESULTS_SUBJECT", "pdf.results")
+	natsSubjectJobNotifications := getEnv("NATS_SUBJECT_JOB_NOTIFICATIONS", "job.notifications")
 
 	// PDF Service configuration
 	pdfServiceURL := getEnv("PDF_SERVICE_URL", "http://pdf-service:3000")
@@ -65,9 +61,8 @@ func NewConfig() *Config {
 		S3Bucket:    s3Bucket,
 		S3UseSSL:    s3UseSSL,
 
-		NatsURL:           natsURL,
-		PDFJobsSubject:    pdfJobsSubject,
-		PDFResultsSubject: pdfResultsSubject,
+		NatsURL:                     natsURL,
+		NatsSubjectJobNotifications: natsSubjectJobNotifications,
 
 		PDFServiceURL: pdfServiceURL,
 	}

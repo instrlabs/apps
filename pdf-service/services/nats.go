@@ -82,12 +82,12 @@ func (n *NatsService) PublishJobNotification(jobID string, status models.JobStat
 		return fmt.Errorf("failed to marshal job notification: %w", err)
 	}
 
-	err = n.conn.Publish(n.cfg.NatsSubjectPDFNotifications, msgBytes)
+	err = n.conn.Publish(n.cfg.NatsSubjectJobNotifications, msgBytes)
 	if err != nil {
 		return fmt.Errorf("failed to publish job notification: %w", err)
 	}
 
-	log.Printf("Published job to NATS subject: %s", n.cfg.NatsSubjectPDFNotifications)
+	log.Printf("Published job to NATS subject: %s", n.cfg.NatsSubjectJobNotifications)
 	return nil
 }
 

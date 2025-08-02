@@ -24,7 +24,7 @@ type Config struct {
 	// NATS configuration
 	NatsURL                     string
 	NatsSubjectPDFJobs          string
-	NatsSubjectPDFNotifications string
+	NatsSubjectJobNotifications string
 
 	// PDF Service configuration
 	PDFServiceURL string
@@ -51,7 +51,7 @@ func NewConfig() *Config {
 	// NATS configuration
 	natsURL := getEnv("NATS_URL", "nats://localhost:4222")
 	natsSubjectPDFJobs := getEnv("NATS_SUBJECT_PDF_JOBS", "pdf.jobs")
-	natsSubjectPDFNotifications := getEnv("NATS_SUBJECT_PDF_NOTIFICATIONS", "pdf.notifications")
+	natsSubjectJobNotifications := getEnv("NATS_SUBJECT_JOB_NOTIFICATIONS", "job.notifications")
 
 	// PDF Service configuration
 	pdfServiceURL := getEnv("PDF_SERVICE_URL", "http://pdf-service:3000")
@@ -72,7 +72,7 @@ func NewConfig() *Config {
 
 		NatsURL:                     natsURL,
 		NatsSubjectPDFJobs:          natsSubjectPDFJobs,
-		NatsSubjectPDFNotifications: natsSubjectPDFNotifications,
+		NatsSubjectJobNotifications: natsSubjectJobNotifications,
 
 		PDFServiceURL: pdfServiceURL,
 	}

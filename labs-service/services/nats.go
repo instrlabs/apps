@@ -1,8 +1,10 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"labs-service/models"
 	"log"
 	"time"
 
@@ -11,20 +13,16 @@ import (
 	"labs-service/constants"
 )
 
-// NatsService handles interactions with NATS
 type NatsService struct {
 	conn *nats.Conn
 	cfg  *constants.Config
 }
 
-// JobMessage represents a message sent to NATS
 type JobMessage struct {
 	JobID string `json:"job_id"`
 }
 
-// NewNatsService creates a new NatsService
 func NewNatsService(cfg *constants.Config) (*NatsService, error) {
-	// Connect to NATS
 	conn, err := nats.Connect(cfg.NatsURL, nats.Timeout(10*time.Second))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to NATS: %w", err)
@@ -38,7 +36,6 @@ func NewNatsService(cfg *constants.Config) (*NatsService, error) {
 	}, nil
 }
 
-// Close closes the NATS connection
 func (n *NatsService) Close() {
 	if n.conn != nil {
 		n.conn.Close()
@@ -46,24 +43,51 @@ func (n *NatsService) Close() {
 	}
 }
 
-// PublishJobID publishes a job ID to NATS
 func (n *NatsService) PublishJobID(subject string, jobID string) error {
-	// Create the message
 	msg := JobMessage{
 		JobID: jobID,
 	}
 
-	// Convert to JSON
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("failed to marshal job message: %w", err)
 	}
 
-	// Publish the message
 	err = n.conn.Publish(subject, msgBytes)
 	if err != nil {
 		return fmt.Errorf("failed to publish job message: %w", err)
 	}
 
+	return nil
+}
+
+type PDFNotificationHandler func(ctx context.Context, job *models.JobNotificationMessage) error
+
+func (n *NatsService) SubscribeToPDFNotification(handler PDFNotificationHandler) error {
+	_, err := n.conn.Subscribe(n.cfg.NatsSubjectJobNotifications, func(msg *nats.Msg) {
+		log.Printf("Received job message from subject: %s", n.cfg.NatsSubjectJobNotifications)
+
+		var job models.JobNotificationMessage
+		err := json.Unmarshal(msg.Data, &job)
+		if err != nil {
+			log.Printf("Error unmarshaling job: %v", err)
+			return
+		}
+
+		ctx := context.Background()
+		err = handler(ctx, &job)
+		if err != nil {
+			log.Printf("Error processing job: %v", err)
+			return
+		}
+
+		log.Printf("Successfully processed job: %s", job.ID)
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to subscribe to jobs: %w", err)
+	}
+
+	log.Printf("Subscribed to NATS subject: %s", n.cfg.NatsSubjectJobNotifications)
 	return nil
 }
