@@ -79,15 +79,6 @@ func (c *PDFJobHandler) CompressPDF(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err = c.natsService.PublishJobID(c.cfg.PDFJobsSubject, pdfJob.ID)
-	if err != nil {
-		log.Printf("Failed to publish job ID: %v", err)
-		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), models.JobStatusFailed, err.Error())
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to publish job ID",
-		})
-	}
-
 	return ctx.Status(fiber.StatusAccepted).JSON(fiber.Map{
 		"job_id":     job.ID.Hex(),
 		"pdf_job_id": pdfJob.ID,

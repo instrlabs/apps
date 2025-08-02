@@ -43,24 +43,6 @@ func (n *NatsService) Close() {
 	}
 }
 
-func (n *NatsService) PublishJobID(subject string, jobID string) error {
-	msg := JobMessage{
-		JobID: jobID,
-	}
-
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		return fmt.Errorf("failed to marshal job message: %w", err)
-	}
-
-	err = n.conn.Publish(subject, msgBytes)
-	if err != nil {
-		return fmt.Errorf("failed to publish job message: %w", err)
-	}
-
-	return nil
-}
-
 type PDFNotificationHandler func(ctx context.Context, job *models.JobNotificationMessage) error
 
 func (n *NatsService) SubscribeToPDFNotification(handler PDFNotificationHandler) error {

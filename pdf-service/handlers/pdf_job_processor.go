@@ -38,7 +38,7 @@ func (p *PDFJobProcessor) ProcessJob(ctx context.Context, job *models.PDFJobMess
 		return err
 	}
 
-	err = p.natsService.PublishJobNotification(job.ID, models.JobStatusProcessing)
+	err = p.natsService.PublishJobNotification(pdfJob.JobID, models.JobStatusProcessing)
 	if err != nil {
 		log.Printf("Error publishing job notification: %v", err)
 		return err
