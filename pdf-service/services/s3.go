@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"mime/multipart"
+	"os"
 	"path/filepath"
 
 	"github.com/minio/minio-go/v7"
@@ -74,6 +75,50 @@ func (s *S3Service) UploadPDF(ctx context.Context, fileHeader *multipart.FileHea
 		minio.PutObjectOptions{ContentType: "application/pdf"})
 	if err != nil {
 		return "", fmt.Errorf("failed to upload file: %w", err)
+	}
+
+	return objectName, nil
+}
+
+// DownloadPDF downloads a PDF file from S3 to a local temporary file
+func (s *S3Service) DownloadPDF(ctx context.Context, s3Path string) (string, error) {
+	// Create a temporary file to store the downloaded PDF
+	tempFile, err := os.CreateTemp("", "pdf-*.pdf")
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp file: %w", err)
+	}
+	defer tempFile.Close()
+
+	tempFilePath := tempFile.Name()
+
+	// Download the file from S3
+	err = s.client.FGetObject(ctx, s.cfg.S3Bucket, s3Path, tempFilePath, minio.GetObjectOptions{})
+	if err != nil {
+		// Clean up the temp file if download fails
+		os.Remove(tempFilePath)
+		return "", fmt.Errorf("failed to download file from S3: %w", err)
+	}
+
+	return tempFilePath, nil
+}
+
+// UploadProcessedFile uploads a processed file back to S3
+func (s *S3Service) UploadProcessedFile(ctx context.Context, filePath, objectName string, contentType string) (string, error) {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to get file info: %w", err)
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	_, err = s.client.PutObject(ctx, s.cfg.S3Bucket, objectName, file, fileInfo.Size(),
+		minio.PutObjectOptions{ContentType: contentType})
+	if err != nil {
+		return "", fmt.Errorf("failed to upload processed file: %w", err)
 	}
 
 	return objectName, nil

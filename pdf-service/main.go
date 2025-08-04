@@ -65,6 +65,7 @@ func main() {
 		log.Fatalf("Failed to subscribe to PDF jobs: %v", err)
 	}
 
+	app.Get("/jobs/:id", pdfJobHandler.GetFile)
 	app.Get("/jobs", pdfJobHandler.GetJobs)
 	app.Post("/jobs", pdfJobHandler.CreateJob)
 

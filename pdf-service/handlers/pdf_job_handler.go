@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"pdf-service/models"
 	"pdf-service/repositories"
 	"pdf-service/services"
@@ -129,4 +131,45 @@ func (h *PDFJobHandler) CreateJob(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"data": job,
 	})
+}
+
+func (h *PDFJobHandler) GetFile(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "ID is required",
+		})
+	}
+
+	job, err := h.pdfJobRepo.FindByID(c.Context(), id)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "PDF job not found",
+		})
+	}
+
+	// Determine which file to serve (original or processed)
+	s3Path := job.S3Path
+	if job.OutputFilePath != "" {
+		s3Path = job.OutputFilePath
+	}
+
+	// Download the file from S3
+	tempFilePath, err := h.s3Service.DownloadPDF(c.Context(), s3Path)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve file from storage",
+		})
+	}
+	defer os.Remove(tempFilePath) // Clean up the temp file after serving
+
+	// No need to determine content type as c.Download handles it automatically
+
+	// Set the filename for the download
+	filename := job.Filename
+	if filepath.Ext(s3Path) != filepath.Ext(filename) {
+		filename = filepath.Base(s3Path)
+	}
+
+	return c.Download(tempFilePath, filename)
 }
