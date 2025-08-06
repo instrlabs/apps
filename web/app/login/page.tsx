@@ -22,7 +22,11 @@ export default function LoginPage() {
 
     try {
       const data = await loginUser(email, password);
-      if (data.token) localStorage.setItem("authToken", data.token);
+      if (data.token) {
+        localStorage.setItem("authToken", data.token);
+        
+        document.cookie = `authToken=${data.token}; path=/; max-age=86400; samesite=lax`;
+      }
       router.push(ROUTES.HOME);
     } catch (err) {
       showNotification(
