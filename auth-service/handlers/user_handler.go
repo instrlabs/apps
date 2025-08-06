@@ -54,7 +54,7 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "User registered successfully",
-		"user": fiber.Map{
+		"data": fiber.Map{
 			"email": user.Email,
 		},
 	})
@@ -92,9 +92,11 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":       "Login successful",
-		"access_token":  tokens["access_token"],
-		"refresh_token": tokens["refresh_token"],
+		"message": "Login successful",
+		"data": fiber.Map{
+			"access_token":  tokens["access_token"],
+			"refresh_token": tokens["refresh_token"],
+		},
 	})
 }
 
@@ -123,9 +125,11 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":       "Token refreshed successfully",
-		"access_token":  tokens["access_token"],
-		"refresh_token": tokens["refresh_token"],
+		"message": "Token refreshed successfully",
+		"data": fiber.Map{
+			"access_token":  tokens["access_token"],
+			"refresh_token": tokens["refresh_token"],
+		},
 	})
 }
 
@@ -225,9 +229,11 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":       "Google login successful",
-		"access_token":  tokens["access_token"],
-		"refresh_token": tokens["refresh_token"],
+		"message": "Google login successful",
+		"data": fiber.Map{
+			"access_token":  tokens["access_token"],
+			"refresh_token": tokens["refresh_token"],
+		},
 	})
 }
 
@@ -257,6 +263,8 @@ func (h *UserHandler) VerifyToken(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Token verified successfully",
-		"user":    user,
+		"data": fiber.Map{
+			"user": user,
+		},
 	})
 }
