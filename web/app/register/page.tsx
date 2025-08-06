@@ -20,19 +20,16 @@ export default function RegisterPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      const data = await registerUser(email, password);
+    const { data, error } = await registerUser(email, password);
+    
+    if (error) {
+      showNotification(error, "error", 5000);
+    } else if (data) {
       showNotification(data.message, "success", 2000);
       setTimeout(() => router.replace(ROUTES.LOGIN), 2500);
-    } catch (err) {
-      const message = err instanceof Error
-        ? err.message
-        : "An error occurred during registration";
-
-      showNotification(message, "error", 5000);
-    } finally {
-      setIsLoading(false);
     }
+    
+    setIsLoading(false);
   };
 
   return (

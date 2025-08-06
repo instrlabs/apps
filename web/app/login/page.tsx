@@ -20,23 +20,17 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      const data = await loginUser(email, password);
-      if (data.token) {
-        localStorage.setItem("authToken", data.token);
-        
-        document.cookie = `authToken=${data.token}; path=/; max-age=86400; samesite=lax`;
-      }
+    const { data, error } = await loginUser(email, password);
+    
+    if (error) {
+      showNotification(error, "error", 5000);
+    } else if (data && data.token) {
+      localStorage.setItem("authToken", data.token);
+      document.cookie = `authToken=${data.token}; path=/; max-age=86400; samesite=lax`;
       router.push(ROUTES.HOME);
-    } catch (err) {
-      showNotification(
-        err instanceof Error ? err.message : "An error occurred during login",
-        "error",
-        5000
-      );
-    } finally {
-      setIsLoading(false);
     }
+    
+    setIsLoading(false);
   };
 
   return (

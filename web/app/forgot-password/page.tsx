@@ -19,23 +19,20 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      await requestPasswordReset(email);
+    const { data, error } = await requestPasswordReset(email);
+    
+    if (error) {
+      showNotification(error, "error", 5000);
+    } else {
       setIsSubmitted(true);
       showNotification(
         "Password reset instructions have been sent to your email",
         "success",
         5000
       );
-    } catch (err) {
-      showNotification(
-        err instanceof Error ? err.message : "An error occurred during password reset request",
-        "error",
-        5000
-      );
-    } finally {
-      setIsLoading(false);
     }
+    
+    setIsLoading(false);
   };
 
   if (isSubmitted) {

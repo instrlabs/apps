@@ -48,23 +48,20 @@ export default function ResetPasswordPage() {
 
     setIsLoading(true);
 
-    try {
-      await resetPassword(token, password);
+    const { data, error } = await resetPassword(token, password);
+    
+    if (error) {
+      showNotification(error, "error", 5000);
+    } else {
       setIsSubmitted(true);
       showNotification(
         "Your password has been reset successfully",
         "success",
         5000
       );
-    } catch (err) {
-      showNotification(
-        err instanceof Error ? err.message : "An error occurred during password reset",
-        "error",
-        5000
-      );
-    } finally {
-      setIsLoading(false);
     }
+    
+    setIsLoading(false);
   };
 
   if (tokenError) {
