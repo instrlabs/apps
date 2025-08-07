@@ -76,16 +76,16 @@ This document provides instructions for setting up and managing the staging envi
 
 3. Check the status of the services:
    ```bash
-   docker-compose -f docker-compose.staging.yaml ps
+   docker compose -f docker-compose.staging.yaml ps
    ```
 
 4. View logs:
    ```bash
    # All services
-   docker-compose -f docker-compose.staging.yaml logs -f
+   docker compose -f docker-compose.staging.yaml logs -f
    
    # Specific service
-   docker-compose -f docker-compose.staging.yaml logs -f service-name
+   docker compose -f docker-compose.staging.yaml logs -f service-name
    ```
 
 ## SSL Certificates
@@ -93,7 +93,7 @@ This document provides instructions for setting up and managing the staging envi
 The Traefik service will automatically obtain and renew SSL certificates from Let's Encrypt. To check the status:
 
 ```bash
-docker-compose -f docker-compose.staging.yaml exec traefik cat /letsencrypt/acme.json
+docker compose -f docker-compose.staging.yaml exec traefik cat /letsencrypt/acme.json
 ```
 
 ## Maintenance
@@ -116,12 +116,12 @@ To update the services:
 
 1. Backup MongoDB data:
    ```bash
-   docker-compose -f docker-compose.staging.yaml exec mongo mongodump --out=/data/db/backup
+   docker compose -f docker-compose.staging.yaml exec mongo mongodump --out=/data/db/backup
    ```
 
 2. Copy the backup to a safe location:
    ```bash
-   docker cp $(docker-compose -f docker-compose.staging.yaml ps -q mongo):/data/db/backup ./backup
+   docker cp $(docker compose -f docker-compose.staging.yaml ps -q mongo):/data/db/backup ./backup
    ```
 
 ### Monitoring
@@ -133,26 +133,26 @@ Access the Prometheus dashboard at `https://prometheus.staging.yourdomain.com` u
 ### Check Container Logs
 
 ```bash
-docker-compose -f docker-compose.staging.yaml logs -f service-name
+docker compose -f docker-compose.staging.yaml logs -f service-name
 ```
 
 ### Restart a Service
 
 ```bash
-docker-compose -f docker-compose.staging.yaml restart service-name
+docker compose -f docker-compose.staging.yaml restart service-name
 ```
 
 ### Rebuild a Service
 
 ```bash
-docker-compose -f docker-compose.staging.yaml build service-name
-docker-compose -f docker-compose.staging.yaml up -d service-name
+docker compose -f docker-compose.staging.yaml build service-name
+docker compose -f docker-compose.staging.yaml up -d service-name
 ```
 
 ### Check Traefik Logs for SSL Issues
 
 ```bash
-docker-compose -f docker-compose.staging.yaml logs -f traefik
+docker compose -f docker-compose.staging.yaml logs -f traefik
 ```
 
 ## Security Considerations

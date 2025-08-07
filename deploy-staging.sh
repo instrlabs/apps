@@ -54,8 +54,8 @@ fi
 
 # Build and start the services
 echo -e "${YELLOW}Building and starting services...${NC}"
-docker-compose -f docker-compose.staging.yaml build
-docker-compose -f docker-compose.staging.yaml up -d
+docker compose -f docker-compose.staging.yaml build
+docker compose -f docker-compose.staging.yaml up -d
 
 echo -e "${GREEN}Deployment completed successfully!${NC}"
-echo -e "${YELLOW}Please check the logs with: docker-compose -f docker-compose.staging.yaml logs -f${NC}"
+echo -e "${YELLOW}Please check the logs with: docker compose -f docker-compose.staging.yaml logs -f${NC}"
