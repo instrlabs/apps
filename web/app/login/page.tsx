@@ -2,78 +2,90 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-
 import { loginUser } from "@/services/auth";
 import GoogleSignInButton from "@/components/google-signin";
 import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
+import FormInput from "@/components/form-input";
 import { ROUTES } from "@/constants/routes";
+import {
+  containerStyles,
+  headingStyles,
+  formContainerStyles,
+  NOTIFICATION_DURATION
+} from "@/components/ui-styles";
 
 export default function LoginPage() {
   const router = useRouter();
   const { showNotification } = useNotification();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { data, error } = await loginUser(email, password);
-    
+    const { data, error } = await loginUser(formData.email, formData.password);
+
     if (error) {
-      showNotification(error, "error", 5000);
-    } else if (data && data.token) {
-      localStorage.setItem("authToken", data.token);
-      document.cookie = `authToken=${data.token}; path=/; max-age=86400; samesite=lax`;
+      showNotification(error, "error", NOTIFICATION_DURATION);
+      return;
+    }
+
+    if (data?.data.access_token) {
+      localStorage.setItem("authToken", data.data.access_token);
+      document.cookie = `authToken=${data.data.access_token}; path=/; max-age=86400; samesite=lax`;
       router.push(ROUTES.HOME);
     }
-    
+
     setIsLoading(false);
   };
 
   return (
-    <div className="h-screen w-full flex flex-col justify-center items-center p-10">
-      <h2 className="text-2xl font-semibold mb-6">Log in to your account</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm">
+    <div className={containerStyles}>
+      <h2 className={headingStyles}>Log in to your account</h2>
+      <form onSubmit={handleSubmit} className={formContainerStyles}>
+        <FormInput
+          id="email"
+          type="email"
+          label="Email"
+          value={formData.email}
+          onChange={handleInputChange}
+          placeholder="Enter your email address"
+        />
+        
         <div className="space-y-1">
-          <label htmlFor="email" className="text-sm font-medium">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            placeholder="Enter your email address"
-            className="px-2 py-2.5 rounded w-full outline-none text-sm border border-gray-300"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="password" className="text-sm font-medium">
-            Password
-          </label>
-          <input
+          <FormInput
             id="password"
             type="password"
+            label="Password"
+            value={formData.password}
+            onChange={handleInputChange}
             placeholder="Enter your password"
-            className="px-2 py-2.5 rounded w-full outline-none text-sm border border-gray-300"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
           />
           <div className="text-right">
-            <a className="text-sm text-blue-600 hover:underline" href={ROUTES.FORGOT_PASSWORD}>
+            <a 
+              className="text-sm text-blue-600 hover:underline" 
+              href={ROUTES.FORGOT_PASSWORD}
+            >
               Forgot password?
             </a>
           </div>
         </div>
+
         <Button type="submit" isLoading={isLoading} loadingText="Signing in...">
           Sign in
         </Button>
       </form>
+
       <div className="flex flex-col gap-5 w-sm">
         <GoogleSignInButton />
         <div className="text-sm text-center">

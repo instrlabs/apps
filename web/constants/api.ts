@@ -13,4 +13,6 @@ export const AUTH_ENDPOINTS = {
   GOOGLE_CALLBACK: `${API_BASE_URL}/auth/google/callback`,
   FORGOT_PASSWORD: `${API_BASE_URL}/auth/forgot-password`,
   RESET_PASSWORD: `${API_BASE_URL}/auth/reset-password`,
+  REFRESH_TOKEN: `${API_BASE_URL}/auth/refresh-token`,
+  VERIFY_TOKEN: `${API_BASE_URL}/auth/verify-token`,
 };

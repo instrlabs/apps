@@ -7,63 +7,72 @@ import { registerUser } from "@/services/auth";
 import GoogleSignInButton from "@/components/google-signin";
 import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
+import FormInput from "@/components/form-input";
 import { ROUTES } from "@/constants/routes";
+import {
+  containerStyles,
+  headingStyles,
+  formContainerStyles,
+  NOTIFICATION_DURATION
+} from "@/components/ui-styles";
+
+const ERROR_NOTIFICATION_DURATION = NOTIFICATION_DURATION;
+const SUCCESS_NOTIFICATION_DURATION = 2000;
+const REDIRECT_DELAY = 2500;
 
 export default function RegisterPage() {
   const router = useRouter();
   const { showNotification } = useNotification();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { data, error } = await registerUser(email, password);
-    
+    const { data, error } = await registerUser(formData.email, formData.password);
+
     if (error) {
-      showNotification(error, "error", 5000);
-    } else if (data) {
-      showNotification(data.message, "success", 2000);
-      setTimeout(() => router.replace(ROUTES.LOGIN), 2500);
+      showNotification(error, "error", ERROR_NOTIFICATION_DURATION);
+      return;
     }
-    
+
+    if (data) {
+      showNotification(data.message, "success", SUCCESS_NOTIFICATION_DURATION);
+      setTimeout(() => router.replace(ROUTES.LOGIN), REDIRECT_DELAY);
+    }
+
     setIsLoading(false);
-  };
+  }
 
   return (
-    <div className="h-screen w-full flex flex-col justify-center items-center p-10">
-      <h2 className="text-2xl font-semibold mb-6">Create your account</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm">
-        <div className="space-y-1">
-          <label htmlFor="email" className="text-sm font-medium">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            placeholder="Enter your email address"
-            className="px-2 py-2.5 rounded w-full outline-none text-sm border border-gray-300"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="password" className="text-sm font-medium">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            placeholder="Create a password"
-            className="px-2 py-2.5 rounded w-full outline-none text-sm border border-gray-300"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-          />
-        </div>
+    <div className={containerStyles}>
+      <h2 className={headingStyles}>Create your account</h2>
+      <form onSubmit={handleSubmit} className={formContainerStyles}>
+        <FormInput
+          id="email"
+          type="email"
+          label="Email"
+          value={formData.email}
+          onChange={handleInputChange}
+          placeholder="Enter your email address"
+        />
+        <FormInput
+          id="password"
+          type="password"
+          label="Password"
+          value={formData.password}
+          onChange={handleInputChange}
+          placeholder="Create a password"
+        />
         <Button type="submit" isLoading={isLoading} loadingText="Signing up...">
           Sign up
         </Button>

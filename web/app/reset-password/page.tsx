@@ -6,6 +6,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { resetPassword } from "@/services/auth";
 import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
+import {
+  containerStyles,
+  headingStyles,
+  paragraphStyles,
+  formContainerStyles,
+  inputGroupStyles,
+  inputStyles,
+  labelStyles,
+  NOTIFICATION_DURATION
+} from "@/components/ui-styles";
+
+// Constants
+const MIN_PASSWORD_LENGTH = 8;
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -20,13 +33,13 @@ export default function ResetPasswordPage() {
   const [tokenError, setTokenError] = useState(false);
 
   useEffect(() => {
-    const tokenParam = searchParams?.get("token");
+    const tokenParam = searchParams.get("token");
     if (!tokenParam) {
       setTokenError(true);
       showNotification(
         "Invalid or missing reset token. Please request a new password reset.",
         "error",
-        5000
+        NOTIFICATION_DURATION
       );
     } else {
       setToken(tokenParam);
@@ -37,41 +50,47 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      showNotification("Passwords do not match", "error", 5000);
+      showNotification("Passwords do not match", "error", NOTIFICATION_DURATION);
       return;
     }
 
-    if (password.length < 8) {
-      showNotification("Password must be at least 8 characters long", "error", 5000);
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      showNotification(
+        `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`, 
+        "error", 
+        NOTIFICATION_DURATION
+      );
       return;
     }
 
     setIsLoading(true);
 
     const { data, error } = await resetPassword(token, password);
-    
+
     if (error) {
-      showNotification(error, "error", 5000);
-    } else {
-      setIsSubmitted(true);
-      showNotification(
-        "Your password has been reset successfully",
-        "success",
-        5000
-      );
+      showNotification(error, "error", NOTIFICATION_DURATION);
     }
-    
+
+    if (data) {
+      setIsSubmitted(true);
+      showNotification(data?.message, "success", NOTIFICATION_DURATION);
+    }
+
     setIsLoading(false);
   };
 
+  // Handle input changes
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value);
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value);
+  
   if (tokenError) {
     return (
-      <div className="h-screen w-full flex flex-col justify-center items-center p-10">
-        <h2 className="text-2xl font-semibold mb-6">Invalid Reset Link</h2>
-        <p className="text-center mb-6 max-w-sm">
+      <div className={containerStyles}>
+        <h2 className={headingStyles}>Invalid Reset Link</h2>
+        <p className={paragraphStyles}>
           The password reset link is invalid or has expired. Please request a new password reset.
         </p>
-        <div className="flex flex-col gap-5 w-full max-w-sm">
+        <div className={formContainerStyles}>
           <Button onClick={() => router.push("/forgot-password")}>
             Request New Reset Link
           </Button>
@@ -82,12 +101,12 @@ export default function ResetPasswordPage() {
 
   if (isSubmitted) {
     return (
-      <div className="h-screen w-full flex flex-col justify-center items-center p-10">
-        <h2 className="text-2xl font-semibold mb-6">Password Reset Complete</h2>
-        <p className="text-center mb-6 max-w-sm">
+      <div className={containerStyles}>
+        <h2 className={headingStyles}>Password Reset Complete</h2>
+        <p className={paragraphStyles}>
           Your password has been reset successfully. You can now log in with your new password.
         </p>
-        <div className="flex flex-col gap-5 w-full max-w-sm">
+        <div className={formContainerStyles}>
           <Button onClick={() => router.push("/login")}>
             Go to Login
           </Button>
@@ -97,40 +116,40 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col justify-center items-center p-10">
-      <h2 className="text-2xl font-semibold mb-6">Create New Password</h2>
-      <p className="text-center mb-6 max-w-sm">
-        Enter your new password below. Password must be at least 8 characters long.
+    <div className={containerStyles}>
+      <h2 className={headingStyles}>Create New Password</h2>
+      <p className={paragraphStyles}>
+        Enter your new password below. Password must be at least {MIN_PASSWORD_LENGTH} characters long.
       </p>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm">
-        <div className="space-y-1">
-          <label htmlFor="password" className="text-sm font-medium">
+      <form onSubmit={handleSubmit} className={formContainerStyles}>
+        <div className={inputGroupStyles}>
+          <label htmlFor="password" className={labelStyles}>
             New Password
           </label>
           <input
             id="password"
             type="password"
             placeholder="Enter your new password"
-            className="px-2 py-2.5 rounded w-full outline-none text-sm border border-gray-300"
+            className={inputStyles}
             value={password}
-            onChange={e => setPassword(e.target.value)}
+            onChange={handlePasswordChange}
             required
-            minLength={8}
+            minLength={MIN_PASSWORD_LENGTH}
           />
         </div>
-        <div className="space-y-1">
-          <label htmlFor="confirmPassword" className="text-sm font-medium">
+        <div className={inputGroupStyles}>
+          <label htmlFor="confirmPassword" className={labelStyles}>
             Confirm Password
           </label>
           <input
             id="confirmPassword"
             type="password"
             placeholder="Confirm your new password"
-            className="px-2 py-2.5 rounded w-full outline-none text-sm border border-gray-300"
+            className={inputStyles}
             value={confirmPassword}
-            onChange={e => setConfirmPassword(e.target.value)}
+            onChange={handleConfirmPasswordChange}
             required
-            minLength={8}
+            minLength={MIN_PASSWORD_LENGTH}
           />
         </div>
         <Button type="submit" isLoading={isLoading} loadingText="Resetting...">

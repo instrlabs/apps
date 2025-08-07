@@ -17,21 +17,20 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setIsLoading(true);
 
     const { data, error } = await requestPasswordReset(email);
     
     if (error) {
       showNotification(error, "error", 5000);
-    } else {
-      setIsSubmitted(true);
-      showNotification(
-        "Password reset instructions have been sent to your email",
-        "success",
-        5000
-      );
     }
-    
+
+    if (data) {
+      setIsSubmitted(true);
+      showNotification(data?.message, "success", 5000);
+    }
+
     setIsLoading(false);
   };
 

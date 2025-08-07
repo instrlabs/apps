@@ -17,7 +17,7 @@ export async function fetchWithErrorHandling(url: string, options: RequestInit) 
       throw new Error(data.message || "Request failed");
     }
 
-    return { data, error: null };
+    return { data: data, error: null };
   } catch (err) {
     return { 
       data: null, 
