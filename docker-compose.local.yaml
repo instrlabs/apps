@@ -1,6 +1,10 @@
 services:
   traefik:
     image: traefik:v3.5
+    restart: unless-stopped
+    depends_on:
+      - gateway-service
+      - web
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -21,6 +25,7 @@ services:
 
   mongo:
     image: mongo:8.0.12
+    restart: unless-stopped
 
     networks:
       - default
@@ -34,13 +39,14 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
 
     volumes:
-      - ./mongo/data:/data/db
+      - mongo_data:/data/db
 
   nats:
     image: nats:2.10.12-alpine
+    restart: unless-stopped
     command: ["-js", "-m", "8222"]  # Enable JetStream and monitoring
     volumes:
-      - ./nats/data:/data
+      - nats_data:/data
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nats-monitoring.rule=Host(`${NATS_MONITORING_HOST}`)"
@@ -51,6 +57,10 @@ services:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - nats
     env_file:
       - ./auth-service/.env.local
     command: [ "./app" ]
@@ -64,6 +74,10 @@ services:
     build:
       context: ./pdf-service
       dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - nats
     env_file:
       - ./pdf-service/.env.local
     command: [ "./app" ]
@@ -77,6 +91,10 @@ services:
     build:
       context: ./labs-service
       dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - nats
     env_file:
       - ./labs-service/.env.local
     command: [ "./app" ]
@@ -90,6 +108,10 @@ services:
     build:
       context: ./gateway-service
       dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - nats
     env_file:
       - ./gateway-service/.env.local
     command: [ "./app" ]
@@ -103,6 +125,9 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    depends_on:
+      - gateway-service
 
     env_file:
       - ./web/.env.local
@@ -128,3 +153,7 @@ services:
       - "traefik.http.routers.web.rule=Host(`${WEB_HOST}`)"
       - "traefik.http.routers.web.entrypoints=web"
       - "traefik.http.services.web.loadbalancer.server.port=3000"
+
+volumes:
+  mongo_data:
+  nats_data:
