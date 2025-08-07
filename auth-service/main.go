@@ -32,7 +32,7 @@ func main() {
 	docs.SwaggerInfo.Title = "Auth Service API"
 	docs.SwaggerInfo.Description = "Authentication service API documentation"
 	docs.SwaggerInfo.Version = "1.0"
-	docs.SwaggerInfo.BasePath = "/"
+	docs.SwaggerInfo.BasePath = "/auth"
 	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 
 	cfg := constants.NewConfig()

@@ -27,9 +27,10 @@ export default function GoogleCallbackPage() {
       }
 
       if (data?.data.access_token) {
+        console.log(data?.data.access_token);
         localStorage.setItem("authToken", data?.data.access_token);
         document.cookie = `authToken=${data.data.access_token}; path=/; max-age=86400; samesite=lax`;
-        router.push(ROUTES.HOME);
+        // router.push(ROUTES.HOME);
       }
     }
 
