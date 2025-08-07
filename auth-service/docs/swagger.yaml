@@ -68,39 +68,23 @@ paths:
       tags:
       - auth
   /google/callback:
-    post:
-      consumes:
-      - application/json
-      description: Process the OAuth code from Google and return authentication tokens
+    get:
+      description: Process the OAuth code from Google, set HTTP-only cookies with tokens, and redirect to frontend
       parameters:
       - description: OAuth authorization code
-        in: body
-        name: request
+        in: query
+        name: code
         required: true
-        schema:
-          properties:
-            code:
-              type: string
-          type: object
+        type: string
       produces:
       - application/json
       responses:
-        "200":
-          description: Google login successful
+        "302":
+          description: Redirect to frontend with tokens set as HTTP-only cookies
           schema:
-            properties:
-              data:
-                properties:
-                  access_token:
-                    type: string
-                  refresh_token:
-                    type: string
-                type: object
-              message:
-                type: string
-            type: object
+            type: string
         "400":
-          description: Invalid request body or validation error
+          description: Invalid or missing code parameter
           schema:
             properties:
               message:

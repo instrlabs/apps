@@ -104,11 +104,8 @@
             }
         },
         "/google/callback": {
-            "post": {
-                "description": "Process the OAuth code from Google and return authentication tokens",
-                "consumes": [
-                    "application/json"
-                ],
+            "get": {
+                "description": "Process the OAuth code from Google, set HTTP-only cookies with tokens, and redirect to frontend",
                 "produces": [
                     "application/json"
                 ],
@@ -118,45 +115,22 @@
                 "summary": "Handle Google OAuth callback",
                 "parameters": [
                     {
+                        "type": "string",
                         "description": "OAuth authorization code",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "code": {
-                                    "type": "string"
-                                }
-                            }
-                        }
+                        "name": "code",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "Google login successful",
+                    "302": {
+                        "description": "Redirect to frontend with tokens set as HTTP-only cookies",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "data": {
-                                    "type": "object",
-                                    "properties": {
-                                        "access_token": {
-                                            "type": "string"
-                                        },
-                                        "refresh_token": {
-                                            "type": "string"
-                                        }
-                                    }
-                                },
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
+                            "type": "string"
                         }
                     },
                     "400": {
-                        "description": "Invalid request body or validation error",
+                        "description": "Invalid or missing code parameter",
                         "schema": {
                             "type": "object",
                             "properties": {

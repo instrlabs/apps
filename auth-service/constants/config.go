@@ -25,6 +25,7 @@ type Config struct {
 	GoogleClientSecret    string
 	GoogleRedirectPath    string
 	FEResetPassword       string
+	FEOAuthRedirect       string
 }
 
 func NewConfig() *Config {
@@ -56,5 +57,6 @@ func NewConfig() *Config {
 		GoogleClientSecret:    os.Getenv("GOOGLE_CLIENT_SECRET"),
 		GoogleRedirectPath:    os.Getenv("GOOGLE_REDIRECT_PATH"),
 		FEResetPassword:       os.Getenv("FE_RESET_PASSWORD"),
+		FEOAuthRedirect:       os.Getenv("FE_OAUTH_REDIRECT"),
 	}
 }

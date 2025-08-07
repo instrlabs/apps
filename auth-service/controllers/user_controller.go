@@ -7,13 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"io/ioutil"
 	"log"
 	"net/smtp"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 
 	"github.com/arthadede/auth-service/constants"
 	"github.com/arthadede/auth-service/models"
@@ -321,4 +322,19 @@ func (c *UserController) VerifyToken(tokenString string) (*models.User, error) {
 	}
 
 	return user, nil
+}
+
+// GetEnvironment returns the current environment (production, development, etc.)
+func (c *UserController) GetEnvironment() string {
+	return c.config.Environment
+}
+
+// GetTokenExpiryHours returns the configured token expiry in hours
+func (c *UserController) GetTokenExpiryHours() int {
+	return c.config.TokenExpiryHours
+}
+
+// GetOAuthRedirectURL returns the frontend URL to redirect to after OAuth
+func (c *UserController) GetOAuthRedirectURL() string {
+	return c.config.FEOAuthRedirect
 }

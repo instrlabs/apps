@@ -83,7 +83,7 @@ func main() {
 
 	// Google OAuth routes
 	app.Get("/google", userHandler.GoogleLogin)
-	app.Post("/google/callback", userHandler.GoogleCallback)
+	app.Get("/google/callback", userHandler.GoogleCallback)
 
 	log.Fatal(app.Listen(cfg.Port))
 }

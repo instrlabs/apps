@@ -268,46 +268,58 @@ func (h *UserHandler) GoogleLogin(c *fiber.Ctx) error {
 
 // GoogleCallback godoc
 // @Summary Handle Google OAuth callback
-// @Description Process the OAuth code from Google and return authentication tokens
+// @Description Process the OAuth code from Google, set HTTP-only cookies with tokens, and redirect to frontend
 // @Tags auth
-// @Accept json
 // @Produce json
-// @Param request body object{code=string} true "OAuth authorization code"
-// @Success 200 {object} object{message=string,data=object{access_token=string,refresh_token=string}} "Google login successful"
-// @Failure 400 {object} object{message=string} "Invalid request body or validation error"
+// @Param code query string true "OAuth authorization code"
+// @Success 302 {string} string "Redirect to frontend with tokens set as HTTP-only cookies"
+// @Failure 400 {object} object{message=string} "Invalid or missing code parameter"
 // @Failure 500 {object} object{message=string} "Internal server error"
-// @Router /google/callback [post]
+// @Router /google/callback [get]
 func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
-	var input struct {
-		Code string `json:"code" validate:"required"`
-	}
-
-	if err := c.BodyParser(&input); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrInvalidRequestBody,
-		})
-	}
-
-	if input.Code == "" {
+	code := c.Query("code")
+	if code == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrInvalidToken,
 		})
 	}
 
-	tokens, err := h.userController.HandleGoogleCallback(input.Code)
+	tokens, err := h.userController.HandleGoogleCallback(code)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": constants.ErrInternalServer,
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "Google login successful",
-		"data": fiber.Map{
-			"access_token":  tokens["access_token"],
-			"refresh_token": tokens["refresh_token"],
-		},
+	// Set access token as HTTP-only cookie
+	c.Cookie(&fiber.Cookie{
+		Name:     "access_token",
+		Value:    tokens["access_token"],
+		HTTPOnly: true,
+		Secure:   h.userController.GetEnvironment() == "production",
+		Path:     "/",
+		// Expires in 1 hour (or based on your token expiry configuration)
+		MaxAge: h.userController.GetTokenExpiryHours() * 3600,
 	})
+
+	// Set refresh token as HTTP-only cookie
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    tokens["refresh_token"],
+		HTTPOnly: true,
+		Secure:   h.userController.GetEnvironment() == "production",
+		Path:     "/",
+		// Refresh tokens typically have longer expiry
+		MaxAge: 30 * 24 * 3600, // 30 days
+	})
+
+	// Redirect to frontend
+	redirectURL := h.userController.GetOAuthRedirectURL()
+	if redirectURL == "" {
+		redirectURL = "/"
+	}
+
+	return c.Redirect(redirectURL)
 }
 
 // VerifyToken godoc
