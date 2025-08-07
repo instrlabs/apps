@@ -38,5 +38,4 @@ Thumbs.db
 
 # Environment variables
 .env
-.env.staging
 .env.production
