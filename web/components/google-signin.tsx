@@ -7,12 +7,13 @@ import { useEffect, useState } from "react";
 
 const GoogleSignInButton = () => {
   const [mounted, setMounted] = useState(false);
+  const [callbackUrl, setCallbackUrl] = useState('');
   
   useEffect(() => {
     setMounted(true);
+    // Get the absolute URL for the frontend callback route
+    setCallbackUrl(`${window.location.origin}${ROUTES.GOOGLE_CALLBACK}`);
   }, []);
-  // Get the absolute URL for the frontend callback route
-  const callbackUrl = `${window.location.origin}${ROUTES.GOOGLE_CALLBACK}`;
   
   // Only render the Google Sign-In button after the component has mounted
   // to avoid window is not defined errors

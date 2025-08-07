@@ -6,6 +6,7 @@ import { NotificationProvider, Notification } from "@/components/notification";
 
 const robotoSans = Roboto({
   variable: "--font-roboto",
+  subsets: ['latin']
 });
 
 export const metadata: Metadata = {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { resetPassword } from "@/services/auth";
@@ -20,7 +20,20 @@ import {
 // Constants
 const MIN_PASSWORD_LENGTH = 8;
 
-export default function ResetPasswordPage() {
+// Loading fallback component
+function LoadingFallback() {
+  return (
+    <div className="h-screen w-full flex flex-col justify-center items-center p-10">
+      <div className="text-center">
+        <h2 className="text-2xl font-semibold mb-4">Loading...</h2>
+        <div className="w-8 h-8 border-4 border-t-black border-r-gray-200 border-b-gray-200 border-l-gray-200 rounded-full animate-spin mx-auto"></div>
+      </div>
+    </div>
+  );
+}
+
+// Component that uses useSearchParams
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showNotification } = useNotification();
@@ -157,5 +170,14 @@ export default function ResetPasswordPage() {
         </Button>
       </form>
     </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

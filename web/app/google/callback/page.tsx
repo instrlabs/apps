@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { handleGoogleCallback } from "@/services/auth";
 import ROUTES from "@/constants/routes";
 
-export default function GoogleCallbackPage() {
+// Component that uses useSearchParams
+function GoogleCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -27,8 +28,7 @@ export default function GoogleCallbackPage() {
       }
 
       if (data?.data.access_token) {
-        console.log(data?.data.access_token);
-        localStorage.setItem("authToken", data?.data.access_token);
+        localStorage.setItem("authToken", data.data.access_token);
         document.cookie = `authToken=${data.data.access_token}; path=/; max-age=86400; samesite=lax`;
         // router.push(ROUTES.HOME);
       }
@@ -58,5 +58,26 @@ export default function GoogleCallbackPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Loading fallback component
+function LoadingFallback() {
+  return (
+    <div className="h-screen w-full flex flex-col justify-center items-center p-10">
+      <div className="text-center">
+        <h2 className="text-2xl font-semibold mb-4">Loading...</h2>
+        <div className="w-8 h-8 border-4 border-t-black border-r-gray-200 border-b-gray-200 border-l-gray-200 rounded-full animate-spin mx-auto"></div>
+      </div>
+    </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <GoogleCallbackContent />
+    </Suspense>
   );
 }
