@@ -1,30 +1,53 @@
 services:
   traefik:
     image: traefik:v3.5
-    restart: always
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+    networks:
+      - proxy
+
     command:
-      - "--api.insecure=false"  # Disable insecure API in production
-      - "--providers.docker=true"
+      - # EntryPoints
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
       - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencryptresolver.acme.httpchallenge=true"
-      - "--certificatesresolvers.letsencryptresolver.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.letsencryptresolver.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.letsencryptresolver.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.websecure.http.tls=true"
+
+      # Attach the static configuration tls.yaml file that contains the tls configuration settings
+      - "--providers.file.filename=/dynamic/tls.yaml"
+      -
+      # Providers
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=proxy"
+
+      # API & Dashboard
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+
+      # Observability
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      - "--metrics.prometheus=true"
 
     ports:
       - "80:80"
       - "443:443"
 
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./traefik/letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/certs:ro
+      - ./dynamic:/dynamic:ro
 
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dashboard.rule=Host(`${DASHBOARD_HOST}`)"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
-      - "traefik.http.routers.dashboard.tls.certresolver=letsencryptresolver"
+      - "traefik.http.routers.dashboard.tls=true"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.middlewares=dashboard-auth"
       - "traefik.http.middlewares.dashboard-auth.basicauth.users=${DASHBOARD_AUTH}"
@@ -32,29 +55,38 @@ services:
 
   mongo:
     image: mongo:8.0.12
-    restart: always
+    restart: unless-stopped
+
     networks:
-      - default
-    expose:
-      - "27017"  # Only expose to internal network, not to host
+      - proxy
+
+    ports:
+      - "27017:27017"
+
     environment:
       MONGO_INITDB_DATABASE: ${MONGO_DB}
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+
     volumes:
-      - mongo_data:/data/db  # Use named volume for persistence
+      - mongo_data:/data/db
 
   nats:
     image: nats:2.10.12-alpine
-    restart: always
+    restart: unless-stopped
     command: ["-js", "-m", "8222"]
+
+    networks:
+      - proxy
+
     volumes:
-      - nats_data:/data  # Use named volume for persistence
+      - nats_data:/data
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nats-monitoring.rule=Host(`${NATS_MONITORING_HOST}`)"
       - "traefik.http.routers.nats-monitoring.entrypoints=websecure"
-      - "traefik.http.routers.nats-monitoring.tls.certresolver=letsencryptresolver"
+      - "traefik.http.routers.nats-monitoring.tls=true"
       - "traefik.http.routers.nats-monitoring.middlewares=nats-auth"
       - "traefik.http.middlewares.nats-auth.basicauth.users=${NATS_MONITORING_AUTH}"
       - "traefik.http.services.nats-monitoring.loadbalancer.server.port=8222"
@@ -63,60 +95,72 @@ services:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
-    restart: always
-    env_file:
-      - ./auth-service/.env.staging
+    restart: unless-stopped
+    env_file: ./auth-service/.env.staging
     command: [ "./app" ]
+
+    networks:
+      - proxy
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth-service.rule=Host(`${AUTH_SERVICE_HOST}`)"
+      - "traefik.http.routers.auth-service.tls=true"
       - "traefik.http.routers.auth-service.entrypoints=websecure"
-      - "traefik.http.routers.auth-service.tls.certresolver=letsencryptresolver"
       - "traefik.http.services.auth-service.loadbalancer.server.port=3000"
 
   pdf-service:
     build:
       context: ./pdf-service
       dockerfile: Dockerfile
-    restart: always
-    env_file:
-      - ./pdf-service/.env.staging
+    restart: unless-stopped
+    env_file: ./pdf-service/.env.staging
     command: [ "./app" ]
+
+    networks:
+      - proxy
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pdf-service.rule=Host(`${PDF_SERVICE_HOST}`)"
+      - "traefik.http.routers.pdf-service.tls=true"
       - "traefik.http.routers.pdf-service.entrypoints=websecure"
-      - "traefik.http.routers.pdf-service.tls.certresolver=letsencryptresolver"
       - "traefik.http.services.pdf-service.loadbalancer.server.port=3000"
 
   labs-service:
     build:
       context: ./labs-service
       dockerfile: Dockerfile
-    restart: always
-    env_file:
-      - ./labs-service/.env.staging
+    restart: unless-stopped
+    env_file: ./labs-service/.env.staging
     command: [ "./app" ]
+
+    networks:
+      - proxy
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.labs-service.rule=Host(`${LABS_SERVICE_HOST}`)"
+      - "traefik.http.routers.labs-service.tls=true"
       - "traefik.http.routers.labs-service.entrypoints=websecure"
-      - "traefik.http.routers.labs-service.tls.certresolver=letsencryptresolver"
       - "traefik.http.services.labs-service.loadbalancer.server.port=3000"
 
   gateway-service:
     build:
       context: ./gateway-service
       dockerfile: Dockerfile
-    restart: always
-    env_file:
-      - ./gateway-service/.env.staging
+    restart: unless-stopped
+    env_file: ./gateway-service/.env.staging
     command: [ "./app" ]
+
+    networks:
+      - proxy
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.gateway-service.rule=Host(`${GATEWAY_SERVICE_HOST}`)"
+      - "traefik.http.routers.gateway-service.tls=true"
       - "traefik.http.routers.gateway-service.entrypoints=websecure"
-      - "traefik.http.routers.gateway-service.tls.certresolver=letsencryptresolver"
       - "traefik.http.services.gateway-service.loadbalancer.server.port=3000"
 
   web:
@@ -125,30 +169,36 @@ services:
       dockerfile: Dockerfile  # Use production Dockerfile, not Dockerfile.dev
       args:
         - NODE_ENV=production
-    restart: always
-    env_file:
-      - ./web/.env.staging
+    restart: unless-stopped
+    env_file: ./web/.env.staging
+
     networks:
-      - default
+      - proxy
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.web.rule=Host(`${WEB_HOST}`)"
+      - "traefik.http.routers.web.tls=true"
       - "traefik.http.routers.web.entrypoints=websecure"
-      - "traefik.http.routers.web.tls.certresolver=letsencryptresolver"
       - "traefik.http.services.web.loadbalancer.server.port=3000"
 
   prometheus:
     image: prom/prometheus:v2.50.1
-    restart: always
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
+    restart: unless-stopped
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
+
+    networks:
+      - proxy
+
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.prometheus.rule=Host(`${PROMETHEUS_HOST}`)"
@@ -157,6 +207,10 @@ services:
       - "traefik.http.routers.prometheus.middlewares=prometheus-auth"
       - "traefik.http.middlewares.prometheus-auth.basicauth.users=${PROMETHEUS_AUTH}"
       - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+
+networks:
+  proxy:
+    name: proxy
 
 volumes:
   mongo_data:
