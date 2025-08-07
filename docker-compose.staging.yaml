@@ -104,16 +104,6 @@ services:
       - "traefik.http.routers.labs-service.tls.certresolver=letsencryptresolver"
       - "traefik.http.services.labs-service.loadbalancer.server.port=3000"
 
-  labs-worker:
-    build:
-      context: ./labs-worker
-      dockerfile: Dockerfile
-    restart: always
-    env_file:
-      - ./labs-worker/.env.staging
-    command: [ "./app" ]
-    # No traefik labels as this is a background worker
-
   gateway-service:
     build:
       context: ./gateway-service
