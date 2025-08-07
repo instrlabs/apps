@@ -9,7 +9,7 @@ services:
       - proxy
 
     command:
-      - # EntryPoints
+      # EntryPoints
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
