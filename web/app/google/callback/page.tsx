@@ -3,43 +3,39 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { handleGoogleCallback } from "@/services/auth";
+import ROUTES from "@/constants/routes";
 
 export default function GoogleCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
-  // useEffect(() => {
-  //   async function processCallback() {
-  //     try {
-  //       // Get the authorization code from the URL query parameters
-  //       const code = searchParams.get("code");
-  //
-  //       if (!code) {
-  //         throw new Error("No authorization code received from Google");
-  //       }
-  //
-  //       // Process the callback with the authorization code
-  //       const data = await handleGoogleCallback(code);
-  //
-  //       // Store the authentication token
-  //       if (data.access_token) {
-  //         localStorage.setItem("authToken", data.access_token);
-  //
-  //         router.push("/apps");
-  //       } else {
-  //         throw new Error("No authentication token received");
-  //       }
-  //     } catch (err) {
-  //       console.error("Google authentication error:", err);
-  //       setError(err instanceof Error ? err.message : "An error occurred during Google authentication");
-  //     }
-  //   }
-  //
-  //   processCallback();
-  // }, [router, searchParams]);
+  useEffect(() => {
+    async function processCallback() {
+      const code = searchParams.get("code");
 
-  // Show a loading state or error message
+      if (!code) {
+        setError("No authorization code received from Google");
+        return;
+      }
+
+      const { data, error } = await handleGoogleCallback(code);
+
+      if (error) {
+        setError(error);
+        return;
+      }
+
+      if (data?.data.access_token) {
+        localStorage.setItem("authToken", data?.data.access_token);
+        document.cookie = `authToken=${data.data.access_token}; path=/; max-age=86400; samesite=lax`;
+        router.push(ROUTES.HOME);
+      }
+    }
+
+    processCallback().then();
+  }, [router, searchParams]);
+
   return (
     <div className="h-screen w-full flex flex-col justify-center items-center p-10">
       {error ? (
