@@ -4,7 +4,7 @@
  */
 
 // Base URL for all API requests
-export const API_BASE_URL = "http://gateway-service.localhost";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://gateway-service.localhost";
 
 // Auth API endpoints
 export const AUTH_ENDPOINTS = {

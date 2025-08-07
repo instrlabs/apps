@@ -1,32 +1,25 @@
 "use client";
 
 import Script from "next/script";
-import ROUTES from "@/constants/routes";
-import { AUTH_ENDPOINTS } from "@/constants/api";
 import { useEffect, useState } from "react";
 
 const GoogleSignInButton = () => {
   const [mounted, setMounted] = useState(false);
-  const [callbackUrl, setCallbackUrl] = useState('');
-  
+
   useEffect(() => {
     setMounted(true);
-    // Get the absolute URL for the frontend callback route
-    setCallbackUrl(`${window.location.origin}${ROUTES.GOOGLE_CALLBACK}`);
   }, []);
   
-  // Only render the Google Sign-In button after the component has mounted
-  // to avoid window is not defined errors
   return (
     <>
       {mounted && (
         <>
           <div
             id="g_id_onload"
-            data-client_id="773835138675-q3ge7t0s64enkmoeqt0rfqidnm41eg6s.apps.googleusercontent.com"
+            data-client_id={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
             data-context="signin"
             data-ux_mode="redirect"
-            data-login_uri={`${AUTH_ENDPOINTS.GOOGLE}?redirect_uri=${encodeURIComponent(callbackUrl)}`}
+            data-login_uri={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}
             data-auto_prompt="false"
           ></div>
           <div

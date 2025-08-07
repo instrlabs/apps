@@ -115,6 +115,13 @@ services:
     env_file:
       - ./gateway-service/.env.local
     command: [ "./app" ]
+
+    networks:
+      - default
+
+    ports:
+      - "3000:3000"
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.gateway-service.rule=Host(`${GATEWAY_SERVICE_HOST}`)"
