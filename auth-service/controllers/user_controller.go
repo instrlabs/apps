@@ -28,7 +28,7 @@ type UserController struct {
 }
 
 func NewUserController(userRepo *repositories.UserRepository, config *constants.Config) *UserController {
-	redirectUrl := "https://" + config.Hostname + config.Port + config.GoogleRedirectPath
+	redirectUrl := "https://" + config.Hostname + config.GoogleRedirectPath
 
 	oauthConfig := &oauth2.Config{
 		ClientID:     config.GoogleClientID,
