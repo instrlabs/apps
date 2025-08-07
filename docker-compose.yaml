@@ -1,7 +1,6 @@
 services:
   traefik:
     image: traefik:v3.5
-
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -52,13 +51,9 @@ services:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
-
-
     env_file:
       - ./auth-service/.env.local
-
     command: [ "./app" ]
-
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth-service.rule=Host(`${AUTH_SERVICE_HOST}`)"
@@ -69,10 +64,8 @@ services:
     build:
       context: ./pdf-service
       dockerfile: Dockerfile
-
     env_file:
       - ./pdf-service/.env.local
-
     command: [ "./app" ]
     labels:
       - "traefik.enable=true"
@@ -84,10 +77,8 @@ services:
     build:
       context: ./labs-service
       dockerfile: Dockerfile
-
     env_file:
       - ./labs-service/.env.local
-
     command: [ "./app" ]
     labels:
       - "traefik.enable=true"
@@ -99,16 +90,8 @@ services:
     build:
       context: ./gateway-service
       dockerfile: Dockerfile
-
     env_file:
       - ./gateway-service/.env.local
-
-    networks:
-      - default
-
-    ports:
-      - "3000:3000"
-
     command: [ "./app" ]
     labels:
       - "traefik.enable=true"
