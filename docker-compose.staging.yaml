@@ -96,7 +96,8 @@ services:
       context: ./auth-service
       dockerfile: Dockerfile
     restart: unless-stopped
-    env_file: ./auth-service/.env.staging
+    env_file:
+      - ./auth-service/.env.staging
     command: [ "./app" ]
 
     networks:
@@ -114,7 +115,8 @@ services:
       context: ./pdf-service
       dockerfile: Dockerfile
     restart: unless-stopped
-    env_file: ./pdf-service/.env.staging
+    env_file:
+      - ./pdf-service/.env.staging
     command: [ "./app" ]
 
     networks:
@@ -132,7 +134,8 @@ services:
       context: ./labs-service
       dockerfile: Dockerfile
     restart: unless-stopped
-    env_file: ./labs-service/.env.staging
+    env_file:
+      - ./labs-service/.env.staging
     command: [ "./app" ]
 
     networks:
@@ -150,7 +153,8 @@ services:
       context: ./gateway-service
       dockerfile: Dockerfile
     restart: unless-stopped
-    env_file: ./gateway-service/.env.staging
+    env_file:
+      - ./gateway-service/.env.staging
     command: [ "./app" ]
 
     networks:
@@ -170,7 +174,8 @@ services:
       args:
         - NODE_ENV=production
     restart: unless-stopped
-    env_file: ./web/.env.staging
+    env_file:
+      - ./web/.env.staging
 
     networks:
       - proxy
