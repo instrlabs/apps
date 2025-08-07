@@ -65,20 +65,20 @@ services:
       - "traefik.http.routers.auth-service.entrypoints=web"
       - "traefik.http.services.auth-service.loadbalancer.server.port=3000"
 
-  gateway-service:
+  pdf-service:
     build:
-      context: ./gateway-service
+      context: ./pdf-service
       dockerfile: Dockerfile
 
     env_file:
-      - ./gateway-service/.env.local
+      - ./pdf-service/.env.local
 
     command: [ "./app" ]
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gateway-service.rule=Host(`${GATEWAY_SERVICE_HOST}`)"
-      - "traefik.http.routers.gateway-service.entrypoints=web"
-      - "traefik.http.services.gateway-service.loadbalancer.server.port=3000"
+      - "traefik.http.routers.pdf-service.rule=Host(`${PDF_SERVICE_HOST}`)"
+      - "traefik.http.routers.pdf-service.entrypoints=web"
+      - "traefik.http.services.pdf-service.loadbalancer.server.port=3000"
 
   labs-service:
     build:
@@ -95,27 +95,40 @@ services:
       - "traefik.http.routers.labs-service.entrypoints=web"
       - "traefik.http.services.labs-service.loadbalancer.server.port=3000"
 
-  pdf-service:
+  gateway-service:
     build:
-      context: ./pdf-service
+      context: ./gateway-service
       dockerfile: Dockerfile
 
     env_file:
-      - ./pdf-service/.env.local
+      - ./gateway-service/.env.local
+
+    networks:
+      - default
+
+    ports:
+      - "3000:3000"
 
     command: [ "./app" ]
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.pdf-service.rule=Host(`${PDF_SERVICE_HOST}`)"
-      - "traefik.http.routers.pdf-service.entrypoints=web"
-      - "traefik.http.services.pdf-service.loadbalancer.server.port=3000"
+      - "traefik.http.routers.gateway-service.rule=Host(`${GATEWAY_SERVICE_HOST}`)"
+      - "traefik.http.routers.gateway-service.entrypoints=web"
+      - "traefik.http.services.gateway-service.loadbalancer.server.port=3000"
 
   web:
     build:
       context: ./web
       dockerfile: Dockerfile.dev
+
     env_file:
       - ./web/.env.local
+
+    networks:
+      - default
+
+    ports:
+      - "8000:3000"
     
     develop:
       watch:

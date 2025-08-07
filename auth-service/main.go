@@ -1,9 +1,22 @@
+// @title Auth Service API
+// @version 1.0
+// @description Authentication service API documentation
+// @termsOfService http://swagger.io/terms/
+// @contact.name API Support
+// @contact.email support@example.com
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @host localhost:3000
+// @BasePath /auth
 package main
 
 import (
+	"log"
+
 	"github.com/arthadede/auth-service/constants"
 	"github.com/arthadede/auth-service/controllers"
 	"github.com/arthadede/auth-service/database"
+	"github.com/arthadede/auth-service/docs"
 	"github.com/arthadede/auth-service/handlers"
 	"github.com/arthadede/auth-service/repositories"
 	"github.com/gofiber/fiber/v2"
@@ -11,10 +24,17 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"log"
+	"github.com/gofiber/swagger"
 )
 
 func main() {
+	// Swagger documentation setup
+	docs.SwaggerInfo.Title = "Auth Service API"
+	docs.SwaggerInfo.Description = "Authentication service API documentation"
+	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.BasePath = "/"
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
+
 	cfg := constants.NewConfig()
 
 	mongo := database.NewMongoDB(cfg)
@@ -38,6 +58,13 @@ func main() {
 		Format:     "[${time}] ${status} | ${latency} | ${ip} | ${method} ${path}${query} | ${ua} | ${locals:UserID}\n",
 		TimeFormat: "2006-01-02 15:04:05",
 		TimeZone:   "UTC",
+	}))
+
+	// Swagger documentation route
+	app.Get("/swagger/*", swagger.New(swagger.Config{
+		Title:        "Auth Service API",
+		DeepLinking:  false,
+		DocExpansion: "list",
 	}))
 
 	app.Get("/health", func(c *fiber.Ctx) error {

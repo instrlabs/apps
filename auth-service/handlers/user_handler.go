@@ -16,6 +16,18 @@ func NewUserHandler(userController *controllers.UserController) *UserHandler {
 	}
 }
 
+// Register godoc
+// @Summary Register a new user
+// @Description Register a new user with email and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body object{email=string,password=string} true "User registration details"
+// @Success 201 {object} object{message=string,data=object{email=string}} "User registered successfully"
+// @Failure 400 {object} object{message=string} "Invalid request body or validation error"
+// @Failure 409 {object} object{message=string} "Email already exists"
+// @Failure 500 {object} object{message=string} "Internal server error"
+// @Router /register [post]
 func (h *UserHandler) Register(c *fiber.Ctx) error {
 	var input struct {
 		Email    string `json:"email" validate:"required,email"`
@@ -60,6 +72,17 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	})
 }
 
+// Login godoc
+// @Summary Login user
+// @Description Authenticate a user with email and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body object{email=string,password=string} true "User login credentials"
+// @Success 200 {object} object{message=string,data=object{access_token=string,refresh_token=string}} "Login successful"
+// @Failure 400 {object} object{message=string} "Invalid request body or validation error"
+// @Failure 401 {object} object{message=string} "Invalid credentials"
+// @Router /login [post]
 func (h *UserHandler) Login(c *fiber.Ctx) error {
 	var input struct {
 		Email    string `json:"email" validate:"required,email"`
@@ -100,6 +123,17 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	})
 }
 
+// RefreshToken godoc
+// @Summary Refresh access token
+// @Description Get a new access token using a refresh token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body object{refresh_token=string} true "Refresh token"
+// @Success 200 {object} object{message=string,data=object{access_token=string,refresh_token=string}} "Token refreshed successfully"
+// @Failure 400 {object} object{message=string} "Invalid request body or validation error"
+// @Failure 401 {object} object{message=string} "Invalid token"
+// @Router /refresh [post]
 func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	var input struct {
 		RefreshToken string `json:"refresh_token" validate:"required"`
@@ -133,6 +167,17 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	})
 }
 
+// ForgotPassword godoc
+// @Summary Request password reset
+// @Description Request a password reset link for a registered email
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body object{email=string} true "User email"
+// @Success 200 {object} object{message=string} "Password reset link sent if email exists"
+// @Failure 400 {object} object{message=string} "Invalid request body or validation error"
+// @Failure 500 {object} object{message=string} "Internal server error"
+// @Router /forgot-password [post]
 func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
 	var input struct {
 		Email string `json:"email" validate:"required,email"`
@@ -162,6 +207,16 @@ func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
 	})
 }
 
+// ResetPassword godoc
+// @Summary Reset user password
+// @Description Reset a user's password using a reset token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body object{token=string,new_password=string} true "Reset token and new password"
+// @Success 200 {object} object{message=string} "Password has been reset successfully"
+// @Failure 400 {object} object{message=string} "Invalid request body, token, or password validation error"
+// @Router /reset-password [post]
 func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 	var input struct {
 		Token       string `json:"token" validate:"required"`
@@ -198,12 +253,30 @@ func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 	})
 }
 
+// GoogleLogin godoc
+// @Summary Initiate Google OAuth login
+// @Description Redirect user to Google OAuth consent screen
+// @Tags auth
+// @Produce json
+// @Success 302 {string} string "Redirect to Google OAuth consent screen"
+// @Router /google [get]
 func (h *UserHandler) GoogleLogin(c *fiber.Ctx) error {
 	url := h.userController.GetGoogleAuthURL()
 
 	return c.Redirect(url)
 }
 
+// GoogleCallback godoc
+// @Summary Handle Google OAuth callback
+// @Description Process the OAuth code from Google and return authentication tokens
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body object{code=string} true "OAuth authorization code"
+// @Success 200 {object} object{message=string,data=object{access_token=string,refresh_token=string}} "Google login successful"
+// @Failure 400 {object} object{message=string} "Invalid request body or validation error"
+// @Failure 500 {object} object{message=string} "Internal server error"
+// @Router /google/callback [post]
 func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	var input struct {
 		Code string `json:"code" validate:"required"`
@@ -237,6 +310,17 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	})
 }
 
+// VerifyToken godoc
+// @Summary Verify authentication token
+// @Description Verify the validity of an authentication token and return user information
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body object{token=string} true "Authentication token"
+// @Success 200 {object} object{message=string,data=object{user=object}} "Token verified successfully"
+// @Failure 400 {object} object{message=string} "Invalid request body or validation error"
+// @Failure 401 {object} object{message=string} "Invalid token"
+// @Router /verify-token [post]
 func (h *UserHandler) VerifyToken(c *fiber.Ctx) error {
 	var input struct {
 		Token string `json:"token" validate:"required"`
