@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"log"
+
 	"github.com/arthadede/auth-service/constants"
 	"github.com/arthadede/auth-service/controllers"
 	"github.com/gofiber/fiber/v2"
@@ -8,11 +10,13 @@ import (
 
 type UserHandler struct {
 	userController *controllers.UserController
+	logger         *log.Logger
 }
 
 func NewUserHandler(userController *controllers.UserController) *UserHandler {
 	return &UserHandler{
 		userController: userController,
+		logger:         log.New(log.Writer(), "[UserHandler] ", log.LstdFlags|log.Lshortfile),
 	}
 }
 
@@ -29,41 +33,50 @@ func NewUserHandler(userController *controllers.UserController) *UserHandler {
 // @Failure 500 {object} object{message=string} "Internal server error"
 // @Router /register [post]
 func (h *UserHandler) Register(c *fiber.Ctx) error {
+	h.logger.Println("Register: Processing registration request")
+
 	var input struct {
 		Email    string `json:"email" validate:"required,email"`
 		Password string `json:"password" validate:"required,min=6"`
 	}
 
 	if err := c.BodyParser(&input); err != nil {
+		h.logger.Printf("Register: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrInvalidRequestBody,
 		})
 	}
 
 	if input.Email == "" {
+		h.logger.Println("Register: Email is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrEmailRequired,
 		})
 	}
 
 	if input.Password == "" || len(input.Password) < 6 {
+		h.logger.Println("Register: Password is required and must be at least 6 characters")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrPasswordRequired,
 		})
 	}
 
+	h.logger.Printf("Register: Attempting to register user with email: %s", input.Email)
 	user, err := h.userController.RegisterUser(input.Email, input.Password)
 	if err != nil {
 		if err.Error() == "user with this email already exists" {
+			h.logger.Printf("Register: Email already exists: %s", input.Email)
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 				"message": constants.ErrEmailAlreadyExists,
 			})
 		}
+		h.logger.Printf("Register: Internal server error: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": constants.ErrInternalServer,
 		})
 	}
 
+	h.logger.Printf("Register: User registered successfully: %s", user.Email)
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "User registered successfully",
 		"data": fiber.Map{
@@ -84,36 +97,44 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 // @Failure 401 {object} object{message=string} "Invalid credentials"
 // @Router /login [post]
 func (h *UserHandler) Login(c *fiber.Ctx) error {
+	h.logger.Println("Login: Processing login request")
+
 	var input struct {
 		Email    string `json:"email" validate:"required,email"`
 		Password string `json:"password" validate:"required"`
 	}
 
 	if err := c.BodyParser(&input); err != nil {
+		h.logger.Printf("Login: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrInvalidRequestBody,
 		})
 	}
 
 	if input.Email == "" {
+		h.logger.Println("Login: Email is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrEmailRequired,
 		})
 	}
 
 	if input.Password == "" {
+		h.logger.Println("Login: Password is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrPasswordRequired,
 		})
 	}
 
+	h.logger.Printf("Login: Attempting to login user with email: %s", input.Email)
 	tokens, err := h.userController.LoginUser(input.Email, input.Password)
 	if err != nil {
+		h.logger.Printf("Login: Invalid credentials for email: %s, error: %v", input.Email, err)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": constants.ErrInvalidCredentials,
 		})
 	}
 
+	h.logger.Printf("Login: User logged in successfully: %s", input.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Login successful",
 		"data": fiber.Map{
@@ -135,29 +156,36 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 // @Failure 401 {object} object{message=string} "Invalid token"
 // @Router /refresh [post]
 func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
+	h.logger.Println("RefreshToken: Processing token refresh request")
+
 	var input struct {
 		RefreshToken string `json:"refresh_token" validate:"required"`
 	}
 
 	if err := c.BodyParser(&input); err != nil {
+		h.logger.Printf("RefreshToken: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrInvalidRequestBody,
 		})
 	}
 
 	if input.RefreshToken == "" {
+		h.logger.Println("RefreshToken: Refresh token is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrRefreshTokenRequired,
 		})
 	}
 
+	h.logger.Println("RefreshToken: Attempting to refresh token")
 	tokens, err := h.userController.RefreshToken(input.RefreshToken)
 	if err != nil {
+		h.logger.Printf("RefreshToken: Invalid token error: %v", err)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": constants.ErrInvalidToken,
 		})
 	}
 
+	h.logger.Println("RefreshToken: Token refreshed successfully")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Token refreshed successfully",
 		"data": fiber.Map{
@@ -179,29 +207,36 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 // @Failure 500 {object} object{message=string} "Internal server error"
 // @Router /forgot-password [post]
 func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
+	h.logger.Println("ForgotPassword: Processing forgot password request")
+
 	var input struct {
 		Email string `json:"email" validate:"required,email"`
 	}
 
 	if err := c.BodyParser(&input); err != nil {
+		h.logger.Printf("ForgotPassword: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrInvalidRequestBody,
 		})
 	}
 
 	if input.Email == "" {
+		h.logger.Println("ForgotPassword: Email is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrEmailRequired,
 		})
 	}
 
+	h.logger.Printf("ForgotPassword: Requesting password reset for email: %s", input.Email)
 	err := h.userController.RequestPasswordReset(input.Email)
 	if err != nil {
+		h.logger.Printf("ForgotPassword: Error requesting password reset: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": constants.ErrInternalServer,
 		})
 	}
 
+	h.logger.Printf("ForgotPassword: Password reset requested for email: %s", input.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "If your email is registered, you will receive a password reset link",
 	})
@@ -218,36 +253,44 @@ func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
 // @Failure 400 {object} object{message=string} "Invalid request body, token, or password validation error"
 // @Router /reset-password [post]
 func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
+	h.logger.Println("ResetPassword: Processing password reset request")
+
 	var input struct {
 		Token       string `json:"token" validate:"required"`
 		NewPassword string `json:"new_password" validate:"required,min=6"`
 	}
 
 	if err := c.BodyParser(&input); err != nil {
+		h.logger.Printf("ResetPassword: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrInvalidRequestBody,
 		})
 	}
 
 	if input.Token == "" {
+		h.logger.Println("ResetPassword: Token is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrInvalidToken,
 		})
 	}
 
 	if input.NewPassword == "" || len(input.NewPassword) < 6 {
+		h.logger.Println("ResetPassword: New password is required and must be at least 6 characters")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrPasswordRequired,
 		})
 	}
 
+	h.logger.Println("ResetPassword: Attempting to reset password with token")
 	err := h.userController.ResetPassword(input.Token, input.NewPassword)
 	if err != nil {
+		h.logger.Printf("ResetPassword: Invalid token error: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrInvalidToken,
 		})
 	}
 
+	h.logger.Println("ResetPassword: Password has been reset successfully")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Password has been reset successfully",
 	})
@@ -261,7 +304,10 @@ func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 // @Success 302 {string} string "Redirect to Google OAuth consent screen"
 // @Router /google [get]
 func (h *UserHandler) GoogleLogin(c *fiber.Ctx) error {
+	h.logger.Println("GoogleLogin: Initiating Google OAuth login")
+
 	url := h.userController.GetGoogleAuthURL()
+	h.logger.Printf("GoogleLogin: Redirecting to Google OAuth URL: %s", url)
 
 	return c.Redirect(url)
 }
@@ -277,20 +323,26 @@ func (h *UserHandler) GoogleLogin(c *fiber.Ctx) error {
 // @Failure 500 {object} object{message=string} "Internal server error"
 // @Router /google/callback [get]
 func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
+	h.logger.Println("GoogleCallback: Processing Google OAuth callback")
+
 	code := c.Query("code")
 	if code == "" {
+		h.logger.Println("GoogleCallback: Missing authorization code")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrInvalidToken,
 		})
 	}
 
+	h.logger.Println("GoogleCallback: Handling Google callback with authorization code")
 	tokens, err := h.userController.HandleGoogleCallback(code)
 	if err != nil {
+		h.logger.Printf("GoogleCallback: Error handling callback: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": constants.ErrInternalServer,
 		})
 	}
 
+	h.logger.Println("GoogleCallback: Setting access token cookie")
 	// Set access token as HTTP-only cookie
 	c.Cookie(&fiber.Cookie{
 		Name:     "access_token",
@@ -302,6 +354,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		MaxAge: h.userController.GetTokenExpiryHours() * 3600,
 	})
 
+	h.logger.Println("GoogleCallback: Setting refresh token cookie")
 	// Set refresh token as HTTP-only cookie
 	c.Cookie(&fiber.Cookie{
 		Name:     "refresh_token",
@@ -319,6 +372,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		redirectURL = "/"
 	}
 
+	h.logger.Printf("GoogleCallback: Redirecting to frontend: %s", redirectURL)
 	return c.Redirect(redirectURL)
 }
 
@@ -334,29 +388,36 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 // @Failure 401 {object} object{message=string} "Invalid token"
 // @Router /verify-token [post]
 func (h *UserHandler) VerifyToken(c *fiber.Ctx) error {
+	h.logger.Println("VerifyToken: Processing token verification request")
+
 	var input struct {
 		Token string `json:"token" validate:"required"`
 	}
 
 	if err := c.BodyParser(&input); err != nil {
+		h.logger.Printf("VerifyToken: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrInvalidRequestBody,
 		})
 	}
 
 	if input.Token == "" {
+		h.logger.Println("VerifyToken: Token is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Token is required",
 		})
 	}
 
+	h.logger.Println("VerifyToken: Attempting to verify token")
 	user, err := h.userController.VerifyToken(input.Token)
 	if err != nil {
+		h.logger.Printf("VerifyToken: Invalid token error: %v", err)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "Invalid token",
 		})
 	}
 
+	h.logger.Printf("VerifyToken: Token verified successfully for user: %s", user.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Token verified successfully",
 		"data": fiber.Map{
