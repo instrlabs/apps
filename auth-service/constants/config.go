@@ -10,7 +10,6 @@ import (
 type Config struct {
 	Environment           string
 	Port                  string
-	Hostname              string
 	MongoURI              string
 	MongoDB               string
 	JWTSecret             string
@@ -23,7 +22,7 @@ type Config struct {
 	ResetTokenExpiryHours int
 	GoogleClientID        string
 	GoogleClientSecret    string
-	GoogleRedirectPath    string
+	GoogleRedirectUrl     string
 	FEResetPassword       string
 	FEOAuthRedirect       string
 }
@@ -42,7 +41,6 @@ func NewConfig() *Config {
 	return &Config{
 		Environment:           os.Getenv("ENVIRONMENT"),
 		Port:                  os.Getenv("PORT"),
-		Hostname:              os.Getenv("HOSTNAME"),
 		MongoURI:              os.Getenv("MONGO_URI"),
 		MongoDB:               os.Getenv("MONGO_DB"),
 		JWTSecret:             os.Getenv("JWT_SECRET"),
@@ -55,7 +53,7 @@ func NewConfig() *Config {
 		ResetTokenExpiryHours: resetTokenExpiryHours,
 		GoogleClientID:        os.Getenv("GOOGLE_CLIENT_ID"),
 		GoogleClientSecret:    os.Getenv("GOOGLE_CLIENT_SECRET"),
-		GoogleRedirectPath:    os.Getenv("GOOGLE_REDIRECT_PATH"),
+		GoogleRedirectUrl:     os.Getenv("GOOGLE_REDIRECT_URL"),
 		FEResetPassword:       os.Getenv("FE_RESET_PASSWORD"),
 		FEOAuthRedirect:       os.Getenv("FE_OAUTH_REDIRECT"),
 	}

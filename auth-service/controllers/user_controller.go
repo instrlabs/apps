@@ -29,12 +29,10 @@ type UserController struct {
 }
 
 func NewUserController(userRepo *repositories.UserRepository, config *constants.Config) *UserController {
-	redirectUrl := "https://" + config.Hostname + config.GoogleRedirectPath
-
 	oauthConfig := &oauth2.Config{
 		ClientID:     config.GoogleClientID,
 		ClientSecret: config.GoogleClientSecret,
-		RedirectURL:  redirectUrl,
+		RedirectURL:  config.GoogleRedirectUrl,
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			"https://www.googleapis.com/auth/userinfo.profile",
