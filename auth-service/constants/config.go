@@ -25,6 +25,8 @@ type Config struct {
 	GoogleRedirectUrl     string
 	FEResetPassword       string
 	FEOAuthRedirect       string
+	CORSAllowedOrigins    string
+	CookieDomain          string
 }
 
 func NewConfig() *Config {
@@ -37,6 +39,16 @@ func NewConfig() *Config {
 	resetTokenExpiryHours := 24
 	resetExpiryStr := os.Getenv("RESET_TOKEN_EXPIRY_HOURS")
 	resetTokenExpiryHours, _ = strconv.Atoi(resetExpiryStr)
+
+	corsOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if corsOrigins == "" {
+		corsOrigins = "http://web.localhost" // Default value if not set
+	}
+
+	cookieDomain := os.Getenv("COOKIE_DOMAIN")
+	if cookieDomain == "" {
+		cookieDomain = ".localhost" // Default value if not set
+	}
 
 	return &Config{
 		Environment:           os.Getenv("ENVIRONMENT"),
@@ -56,5 +68,7 @@ func NewConfig() *Config {
 		GoogleRedirectUrl:     os.Getenv("GOOGLE_REDIRECT_URL"),
 		FEResetPassword:       os.Getenv("FE_RESET_PASSWORD"),
 		FEOAuthRedirect:       os.Getenv("FE_OAUTH_REDIRECT"),
+		CORSAllowedOrigins:    corsOrigins,
+		CookieDomain:          cookieDomain,
 	}
 }

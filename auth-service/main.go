@@ -47,7 +47,12 @@ func main() {
 	userHandler := handlers.NewUserHandler(userController)
 
 	app := fiber.New()
-	app.Use(cors.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     cfg.CORSAllowedOrigins,
+		AllowCredentials: true,
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
+	}))
 	app.Use(helmet.New())
 
 	if cfg.Environment == "production" {

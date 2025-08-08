@@ -336,3 +336,8 @@ func (c *UserController) GetTokenExpiryHours() int {
 func (c *UserController) GetOAuthRedirectURL() string {
 	return c.config.FEOAuthRedirect
 }
+
+// GetCookieDomain returns the cookie domain from configuration
+func (c *UserController) GetCookieDomain() string {
+	return c.config.CookieDomain
+}
