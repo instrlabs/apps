@@ -31,20 +31,12 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setIsLoading(true);
 
     const { data, error } = await loginUser(formData.email, formData.password);
-
-    if (error) {
-      showNotification(error, "error", NOTIFICATION_DURATION);
-      return;
-    }
-
-    if (data?.data.access_token) {
-      localStorage.setItem("authToken", data.data.access_token);
-      document.cookie = `authToken=${data.data.access_token}; path=/; max-age=86400; samesite=lax`;
-      router.push(ROUTES.HOME);
-    }
+    if (error) showNotification(error, "error", NOTIFICATION_DURATION);
+    if (data) router.push(ROUTES.HOME);
 
     setIsLoading(false);
   };
