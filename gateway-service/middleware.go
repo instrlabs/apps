@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -26,8 +27,9 @@ func SetupMiddleware(app *fiber.App) {
 	})
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
-		AllowHeaders: "Content-Type, Authorization",
+		AllowOrigins:     os.Getenv("CORS_ALLOWED_ORIGINS"),
+		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
+		AllowHeaders:     "Content-Type, Authorization",
+		AllowCredentials: true,
 	}))
 }

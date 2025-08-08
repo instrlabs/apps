@@ -1,9 +1,10 @@
 package main
 
 import (
+	"os"
+
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 type ServiceConfig struct {
@@ -36,19 +37,19 @@ func LoadConfig() Config {
 
 	authServiceURL := os.Getenv("AUTH_SERVICE_URL")
 	if authServiceURL == "" {
-		authServiceURL = "http://auth-service.localhost"
+		authServiceURL = "http://auth.localhost"
 		log.Warn("AUTH_SERVICE_URL not set, using default: ", authServiceURL)
 	}
 
 	labsServiceURL := os.Getenv("LABS_SERVICE_URL")
 	if labsServiceURL == "" {
-		labsServiceURL = "http://labs-service.localhost"
+		labsServiceURL = "http://labs.localhost"
 		log.Warn("LABS_SERVICE_URL not set, using default: ", labsServiceURL)
 	}
 
 	pdfServiceURL := os.Getenv("PDF_SERVICE_URL")
 	if pdfServiceURL == "" {
-		pdfServiceURL = "http://pdf-service.localhost"
+		pdfServiceURL = "http://pdf.localhost"
 		log.Warn("PDF_SERVICE_URL not set, using default: ", pdfServiceURL)
 	}
 

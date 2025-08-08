@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/url"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/proxy"
@@ -65,19 +66,29 @@ func SetupGatewayRoutes(app *fiber.App, config Config) {
 		}
 
 		prefix := service.Prefix
+
 		app.All(prefix+"/*", func(c *fiber.Ctx) error {
 			forwardPath := c.Path()[len(prefix):]
+			queryString := string(c.Request().URI().QueryString())
+			cookieHeader := c.Get("Cookie")
+
 			log.WithFields(log.Fields{
 				"service":      service.Name,
 				"method":       c.Method(),
 				"path":         forwardPath,
+				"query":        queryString,
+				"cookies":      cookieHeader,
 				"forwarded_to": targetURL.String(),
 			}).Info("Forwarding request")
 
 			c.Request().Header.Set("X-Gateway", "true")
 
 			url := targetURL.String() + forwardPath
-			if err := proxy.Do(c, url); err != nil {
+			if queryString != "" {
+				url += "?" + queryString
+			}
+
+			if err := proxy.DoTimeout(c, url, 30*time.Second); err != nil {
 				log.WithFields(log.Fields{
 					"service": service.Name,
 					"method":  c.Method(),
