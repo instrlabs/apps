@@ -87,12 +87,12 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 
 // Login godoc
 // @Summary Login user
-// @Description Authenticate a user with email and password
+// @Description Authenticate a user with email and password and set HTTP-only cookies for tokens
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param request body object{email=string,password=string} true "User login credentials"
-// @Success 200 {object} object{message=string,data=object{access_token=string,refresh_token=string}} "Login successful"
+// @Success 200 {object} object{message=string} "Login successful with tokens set as HTTP-only cookies"
 // @Failure 400 {object} object{message=string} "Invalid request body or validation error"
 // @Failure 401 {object} object{message=string} "Invalid credentials"
 // @Router /login [post]
@@ -134,50 +134,57 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
+	h.logger.Println("Login: Setting access token cookie")
+	// Set access token as HTTP-only cookie
+	c.Cookie(&fiber.Cookie{
+		Name:     "access_token",
+		Value:    tokens["access_token"],
+		HTTPOnly: true,
+		Secure:   h.userController.GetEnvironment() == "production",
+		Path:     "/",
+		MaxAge:   h.userController.GetTokenExpiryHours() * 3600,
+	})
+
+	h.logger.Println("Login: Setting refresh token cookie")
+	// Set refresh token as HTTP-only cookie
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    tokens["refresh_token"],
+		HTTPOnly: true,
+		Secure:   h.userController.GetEnvironment() == "production",
+		Path:     "/",
+		MaxAge:   30 * 24 * 3600, // 30 days
+	})
+
 	h.logger.Printf("Login: User logged in successfully: %s", input.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Login successful",
-		"data": fiber.Map{
-			"access_token":  tokens["access_token"],
-			"refresh_token": tokens["refresh_token"],
-		},
 	})
 }
 
 // RefreshToken godoc
 // @Summary Refresh access token
-// @Description Get a new access token using a refresh token
+// @Description Get a new access token using the refresh token from HTTP-only cookie
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body object{refresh_token=string} true "Refresh token"
-// @Success 200 {object} object{message=string,data=object{access_token=string,refresh_token=string}} "Token refreshed successfully"
-// @Failure 400 {object} object{message=string} "Invalid request body or validation error"
+// @Success 200 {object} object{message=string} "Token refreshed successfully with new tokens set as HTTP-only cookies"
+// @Failure 400 {object} object{message=string} "Missing refresh token cookie"
 // @Failure 401 {object} object{message=string} "Invalid token"
 // @Router /refresh [post]
 func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	h.logger.Println("RefreshToken: Processing token refresh request")
 
-	var input struct {
-		RefreshToken string `json:"refresh_token" validate:"required"`
-	}
-
-	if err := c.BodyParser(&input); err != nil {
-		h.logger.Printf("RefreshToken: Invalid request body: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrInvalidRequestBody,
-		})
-	}
-
-	if input.RefreshToken == "" {
-		h.logger.Println("RefreshToken: Refresh token is required")
+	refreshToken := c.Cookies("refresh_token")
+	if refreshToken == "" {
+		h.logger.Println("RefreshToken: Refresh token cookie is missing")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrRefreshTokenRequired,
 		})
 	}
 
 	h.logger.Println("RefreshToken: Attempting to refresh token")
-	tokens, err := h.userController.RefreshToken(input.RefreshToken)
+	tokens, err := h.userController.RefreshToken(refreshToken)
 	if err != nil {
 		h.logger.Printf("RefreshToken: Invalid token error: %v", err)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -185,13 +192,29 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
+	h.logger.Println("RefreshToken: Setting new access token cookie")
+	c.Cookie(&fiber.Cookie{
+		Name:     "access_token",
+		Value:    tokens["access_token"],
+		HTTPOnly: true,
+		Secure:   h.userController.GetEnvironment() == "production",
+		Path:     "/",
+		MaxAge:   h.userController.GetTokenExpiryHours() * 3600,
+	})
+
+	h.logger.Println("RefreshToken: Setting new refresh token cookie")
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    tokens["refresh_token"],
+		HTTPOnly: true,
+		Secure:   h.userController.GetEnvironment() == "production",
+		Path:     "/",
+		MaxAge:   30 * 24 * 3600, // 30 days
+	})
+
 	h.logger.Println("RefreshToken: Token refreshed successfully")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Token refreshed successfully",
-		"data": fiber.Map{
-			"access_token":  tokens["access_token"],
-			"refresh_token": tokens["refresh_token"],
-		},
 	})
 }
 
@@ -378,38 +401,26 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 
 // VerifyToken godoc
 // @Summary Verify authentication token
-// @Description Verify the validity of an authentication token and return user information
+// @Description Verify the validity of the access token from HTTP-only cookie and return user information
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body object{token=string} true "Authentication token"
 // @Success 200 {object} object{message=string,data=object{user=object}} "Token verified successfully"
-// @Failure 400 {object} object{message=string} "Invalid request body or validation error"
-// @Failure 401 {object} object{message=string} "Invalid token"
+// @Failure 401 {object} object{message=string} "Missing or invalid access token cookie"
 // @Router /verify-token [post]
 func (h *UserHandler) VerifyToken(c *fiber.Ctx) error {
 	h.logger.Println("VerifyToken: Processing token verification request")
 
-	var input struct {
-		Token string `json:"token" validate:"required"`
-	}
-
-	if err := c.BodyParser(&input); err != nil {
-		h.logger.Printf("VerifyToken: Invalid request body: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrInvalidRequestBody,
-		})
-	}
-
-	if input.Token == "" {
-		h.logger.Println("VerifyToken: Token is required")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Token is required",
+	accessToken := c.Cookies("access_token")
+	if accessToken == "" {
+		h.logger.Println("VerifyToken: Access token cookie is missing")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Access token is required",
 		})
 	}
 
 	h.logger.Println("VerifyToken: Attempting to verify token")
-	user, err := h.userController.VerifyToken(input.Token)
+	user, err := h.userController.VerifyToken(accessToken)
 	if err != nil {
 		h.logger.Printf("VerifyToken: Invalid token error: %v", err)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
