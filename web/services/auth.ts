@@ -41,6 +41,7 @@ export async function registerUser(email: string, password: string): Promise<Wra
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
+    credentials: "include"
   });
 }
 
@@ -49,14 +50,15 @@ export async function loginUser(email: string, password: string): Promise<Wrappe
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
+    credentials: "include"
   });
 }
 
-export async function refreshToken(refreshToken: string): Promise<WrapperResponse<RefreshTokenResponse>> {
+export async function refreshToken(): Promise<WrapperResponse<RefreshTokenResponse>> {
   return fetchWithErrorHandling(AUTH_ENDPOINTS.REFRESH_TOKEN, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: refreshToken }),
+    credentials: "include"
   });
 }
 
@@ -65,6 +67,7 @@ export async function requestPasswordReset(email: string): Promise<WrapperRespon
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
+    credentials: "include"
   });
 }
 
@@ -73,6 +76,7 @@ export async function resetPassword(new_password: string): Promise<WrapperRespon
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ new_password }),
+    credentials: "include"
   });
 }
 
