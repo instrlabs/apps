@@ -82,9 +82,7 @@ function ResetPasswordContent() {
 
     if (error) {
       showNotification(error, "error", NOTIFICATION_DURATION);
-    }
-
-    if (data) {
+    } else if (data) {
       setIsSubmitted(true);
       showNotification(data?.message, "success", NOTIFICATION_DURATION);
     }

@@ -79,6 +79,8 @@ func main() {
 		})
 	})
 
+	app.Use(AuthMiddleware())
+
 	app.Post("/register", userHandler.Register)
 	app.Post("/login", userHandler.Login)
 	app.Post("/refresh", userHandler.RefreshToken)

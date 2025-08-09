@@ -71,11 +71,11 @@ export async function requestPasswordReset(email: string): Promise<WrapperRespon
   });
 }
 
-export async function resetPassword(new_password: string): Promise<WrapperResponse<ResetPasswordResponse>> {
+export async function resetPassword(token: string, new_password: string): Promise<WrapperResponse<ResetPasswordResponse>> {
   return fetchWithErrorHandling(AUTH_ENDPOINTS.RESET_PASSWORD, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ new_password }),
+    body: JSON.stringify({ token, new_password }),
     credentials: "include"
   });
 }

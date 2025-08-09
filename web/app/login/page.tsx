@@ -35,8 +35,9 @@ export default function LoginPage() {
     setIsLoading(true);
 
     const { data, error } = await loginUser(formData.email, formData.password);
+
     if (error) showNotification(error, "error", NOTIFICATION_DURATION);
-    if (data) router.push(ROUTES.HOME);
+    else if (data) router.push(ROUTES.HOME);
 
     setIsLoading(false);
   };

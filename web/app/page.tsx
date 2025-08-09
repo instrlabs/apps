@@ -17,13 +17,13 @@ export default function Home() {
       const { data, error } = await verifyToken();
 
       if (error) showNotification(error, "error", NOTIFICATION_DURATION);
-      if (data) setUser(data.data.user);
+      else if (data) setUser(data.data.user);
 
       setIsLoading(false);
     };
 
     checkAuth().then();
-  }, [showNotification]);
+  }, []);
 
   return (
       <div className="container mx-auto p-4">

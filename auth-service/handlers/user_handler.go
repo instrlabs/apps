@@ -129,13 +129,12 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	tokens, err := h.userController.LoginUser(input.Email, input.Password)
 	if err != nil {
 		h.logger.Printf("Login: Invalid credentials for email: %s, error: %v", input.Email, err)
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrInvalidCredentials,
 		})
 	}
 
 	h.logger.Println("Login: Setting access token cookie")
-	// Set access token as HTTP-only cookie
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.userController.GetCookieDomain(),
 		Name:     "access_token",
@@ -148,7 +147,6 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	})
 
 	h.logger.Println("Login: Setting refresh token cookie")
-	// Set refresh token as HTTP-only cookie
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.userController.GetCookieDomain(),
 		Name:     "refresh_token",
@@ -191,7 +189,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	tokens, err := h.userController.RefreshToken(refreshToken)
 	if err != nil {
 		h.logger.Printf("RefreshToken: Invalid token error: %v", err)
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": constants.ErrInvalidToken,
 		})
 	}
@@ -408,19 +406,22 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 
 // VerifyToken godoc
 // @Summary Verify authentication token
-// @Description Verify the validity of the access token from HTTP-only cookie and return user information
+// @Description Verify the validity of the access token from context (set by middleware), X-Auth-Token header (set by gateway), or HTTP-only cookie and return user information
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Success 200 {object} object{message=string,data=object{user=object}} "Token verified successfully"
-// @Failure 401 {object} object{message=string} "Missing or invalid access token cookie"
+// @Failure 401 {object} object{message=string} "Missing or invalid access token"
 // @Router /verify-token [post]
 func (h *UserHandler) VerifyToken(c *fiber.Ctx) error {
 	h.logger.Println("VerifyToken: Processing token verification request")
 
-	accessToken := c.Cookies("access_token")
-	if accessToken == "" {
-		h.logger.Println("VerifyToken: Access token cookie is missing")
+	var accessToken string
+	if token, ok := c.Locals("token").(string); ok && token != "" {
+		h.logger.Println("VerifyToken: Using token from context")
+		accessToken = token
+	} else {
+		h.logger.Println("VerifyToken: Access token not found")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "Access token is required",
 		})
