@@ -5,12 +5,13 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/arthadede/gateway-service/internal"
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	config := LoadConfig()
+	config := internal.LoadConfig()
 
 	app := fiber.New(fiber.Config{
 		ReadTimeout:  15 * time.Second,
@@ -18,9 +19,9 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	})
 
-	SetupGatewayRoutes(app, config)
+	internal.SetupGatewayRoutes(app, config)
 
-	SetupMiddleware(app)
+	internal.SetupMiddleware(app)
 
 	go func() {
 		log.WithFields(log.Fields{
