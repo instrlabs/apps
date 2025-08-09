@@ -141,6 +141,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		Name:     "access_token",
 		Value:    tokens["access_token"],
 		HTTPOnly: true,
+		SameSite: "None",
 		Secure:   h.userController.GetEnvironment() == "production",
 		Path:     "/",
 		MaxAge:   h.userController.GetTokenExpiryHours() * 3600,
@@ -153,6 +154,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		Name:     "refresh_token",
 		Value:    tokens["refresh_token"],
 		HTTPOnly: true,
+		SameSite: "None",
 		Secure:   h.userController.GetEnvironment() == "production",
 		Path:     "/",
 		MaxAge:   30 * 24 * 3600, // 30 days
@@ -200,6 +202,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		Name:     "access_token",
 		Value:    tokens["access_token"],
 		HTTPOnly: true,
+		SameSite: "None",
 		Secure:   h.userController.GetEnvironment() == "production",
 		Path:     "/",
 		MaxAge:   h.userController.GetTokenExpiryHours() * 3600,
@@ -211,6 +214,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		Name:     "refresh_token",
 		Value:    tokens["refresh_token"],
 		HTTPOnly: true,
+		SameSite: "None",
 		Secure:   h.userController.GetEnvironment() == "production",
 		Path:     "/",
 		MaxAge:   30 * 24 * 3600, // 30 days
@@ -370,7 +374,6 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	}
 
 	h.logger.Println("GoogleCallback: Setting access token cookie")
-	// Set access token as HTTP-only cookie
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.userController.GetCookieDomain(),
 		Name:     "access_token",
@@ -379,12 +382,10 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		SameSite: "None",
 		Secure:   h.userController.GetEnvironment() == "production",
 		Path:     "/",
-		// Expires in 1 hour (or based on your token expiry configuration)
-		MaxAge: h.userController.GetTokenExpiryHours() * 3600,
+		MaxAge:   h.userController.GetTokenExpiryHours() * 3600,
 	})
 
 	h.logger.Println("GoogleCallback: Setting refresh token cookie")
-	// Set refresh token as HTTP-only cookie
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.userController.GetCookieDomain(),
 		Name:     "refresh_token",
@@ -393,11 +394,9 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		SameSite: "None",
 		Secure:   h.userController.GetEnvironment() == "production",
 		Path:     "/",
-		// Refresh tokens typically have longer expiry
-		MaxAge: 30 * 24 * 3600, // 30 days
+		MaxAge:   30 * 24 * 3600, // 30 days
 	})
 
-	// Redirect to frontend
 	redirectURL := h.userController.GetOAuthRedirectURL()
 	if redirectURL == "" {
 		redirectURL = "/"
@@ -418,12 +417,6 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 // @Router /verify-token [post]
 func (h *UserHandler) VerifyToken(c *fiber.Ctx) error {
 	h.logger.Println("VerifyToken: Processing token verification request")
-
-	// Log all cookies
-	cookies := c.GetReqHeaders()["Cookie"]
-	for _, cookie := range cookies {
-		h.logger.Printf("VerifyToken: Found cookie: %s", cookie)
-	}
 
 	accessToken := c.Cookies("access_token")
 	if accessToken == "" {
