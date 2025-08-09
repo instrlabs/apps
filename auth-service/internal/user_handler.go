@@ -1,19 +1,17 @@
-package handlers
+package internal
 
 import (
 	"log"
 
-	"github.com/arthadede/auth-service/constants"
-	"github.com/arthadede/auth-service/controllers"
 	"github.com/gofiber/fiber/v2"
 )
 
 type UserHandler struct {
-	userController *controllers.UserController
+	userController *UserController
 	logger         *log.Logger
 }
 
-func NewUserHandler(userController *controllers.UserController) *UserHandler {
+func NewUserHandler(userController *UserController) *UserHandler {
 	return &UserHandler{
 		userController: userController,
 		logger:         log.New(log.Writer(), "[UserHandler] ", log.LstdFlags|log.Lshortfile),
@@ -43,21 +41,21 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		h.logger.Printf("Register: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrInvalidRequestBody,
+			"message": ErrInvalidRequestBody,
 		})
 	}
 
 	if input.Email == "" {
 		h.logger.Println("Register: Email is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrEmailRequired,
+			"message": ErrEmailRequired,
 		})
 	}
 
 	if input.Password == "" || len(input.Password) < 6 {
 		h.logger.Println("Register: Password is required and must be at least 6 characters")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrPasswordRequired,
+			"message": ErrPasswordRequired,
 		})
 	}
 
@@ -67,12 +65,12 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		if err.Error() == "user with this email already exists" {
 			h.logger.Printf("Register: Email already exists: %s", input.Email)
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-				"message": constants.ErrEmailAlreadyExists,
+				"message": ErrEmailAlreadyExists,
 			})
 		}
 		h.logger.Printf("Register: Internal server error: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": constants.ErrInternalServer,
+			"message": ErrInternalServer,
 		})
 	}
 
@@ -107,21 +105,21 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		h.logger.Printf("Login: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrInvalidRequestBody,
+			"message": ErrInvalidRequestBody,
 		})
 	}
 
 	if input.Email == "" {
 		h.logger.Println("Login: Email is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrEmailRequired,
+			"message": ErrEmailRequired,
 		})
 	}
 
 	if input.Password == "" {
 		h.logger.Println("Login: Password is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrPasswordRequired,
+			"message": ErrPasswordRequired,
 		})
 	}
 
@@ -130,7 +128,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	if err != nil {
 		h.logger.Printf("Login: Invalid credentials for email: %s, error: %v", input.Email, err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrInvalidCredentials,
+			"message": ErrInvalidCredentials,
 		})
 	}
 
@@ -181,7 +179,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	if refreshToken == "" {
 		h.logger.Println("RefreshToken: Refresh token cookie is missing")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrRefreshTokenRequired,
+			"message": ErrRefreshTokenRequired,
 		})
 	}
 
@@ -190,7 +188,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	if err != nil {
 		h.logger.Printf("RefreshToken: Invalid token error: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrInvalidToken,
+			"message": ErrInvalidToken,
 		})
 	}
 
@@ -245,14 +243,14 @@ func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		h.logger.Printf("ForgotPassword: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrInvalidRequestBody,
+			"message": ErrInvalidRequestBody,
 		})
 	}
 
 	if input.Email == "" {
 		h.logger.Println("ForgotPassword: Email is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrEmailRequired,
+			"message": ErrEmailRequired,
 		})
 	}
 
@@ -261,7 +259,7 @@ func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
 	if err != nil {
 		h.logger.Printf("ForgotPassword: Error requesting password reset: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": constants.ErrInternalServer,
+			"message": ErrInternalServer,
 		})
 	}
 
@@ -292,21 +290,21 @@ func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		h.logger.Printf("ResetPassword: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrInvalidRequestBody,
+			"message": ErrInvalidRequestBody,
 		})
 	}
 
 	if input.Token == "" {
 		h.logger.Println("ResetPassword: Token is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrInvalidToken,
+			"message": ErrInvalidToken,
 		})
 	}
 
 	if input.NewPassword == "" || len(input.NewPassword) < 6 {
 		h.logger.Println("ResetPassword: New password is required and must be at least 6 characters")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrPasswordRequired,
+			"message": ErrPasswordRequired,
 		})
 	}
 
@@ -315,7 +313,7 @@ func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 	if err != nil {
 		h.logger.Printf("ResetPassword: Invalid token error: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrInvalidToken,
+			"message": ErrInvalidToken,
 		})
 	}
 
@@ -358,7 +356,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	if code == "" {
 		h.logger.Println("GoogleCallback: Missing authorization code")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": constants.ErrInvalidToken,
+			"message": ErrInvalidToken,
 		})
 	}
 
@@ -367,7 +365,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	if err != nil {
 		h.logger.Printf("GoogleCallback: Error handling callback: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": constants.ErrInternalServer,
+			"message": ErrInternalServer,
 		})
 	}
 

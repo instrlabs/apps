@@ -1,5 +1,4 @@
-// Package constants provides application-wide constant values
-package constants
+package internal
 
 // Error messages
 const (

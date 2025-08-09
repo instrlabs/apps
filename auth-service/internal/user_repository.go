@@ -1,25 +1,24 @@
-package repositories
+package internal
 
 import (
 	"context"
 	"errors"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 
-	"github.com/arthadede/auth-service/database"
-	"github.com/arthadede/auth-service/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // UserRepository handles database operations for users
 type UserRepository struct {
-	db         *database.MongoDB
+	db         *MongoDB
 	collection *mongo.Collection
 }
 
 // NewUserRepository creates a new UserRepository
-func NewUserRepository(db *database.MongoDB) *UserRepository {
+func NewUserRepository(db *MongoDB) *UserRepository {
 	return &UserRepository{
 		db:         db,
 		collection: db.DB.Collection("users"),
@@ -27,12 +26,12 @@ func NewUserRepository(db *database.MongoDB) *UserRepository {
 }
 
 // Create creates a new user in the database
-func (r *UserRepository) Create(user *models.User) error {
+func (r *UserRepository) Create(user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	// Check if user with the same email already exists
-	var existingUser models.User
+	var existingUser User
 	err := r.collection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&existingUser)
 	if err == nil {
 		return errors.New("user with this email already exists")
@@ -47,11 +46,11 @@ func (r *UserRepository) Create(user *models.User) error {
 }
 
 // FindByEmail finds a user by email
-func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
+func (r *UserRepository) FindByEmail(email string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var user models.User
+	var user User
 	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -64,7 +63,7 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 }
 
 // FindByID finds a user by ID
-func (r *UserRepository) FindByID(id string) (*models.User, error) {
+func (r *UserRepository) FindByID(id string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -73,7 +72,7 @@ func (r *UserRepository) FindByID(id string) (*models.User, error) {
 		return nil, errors.New("invalid user ID")
 	}
 
-	var user models.User
+	var user User
 	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -86,11 +85,11 @@ func (r *UserRepository) FindByID(id string) (*models.User, error) {
 }
 
 // FindByRefreshToken finds a user by refresh token
-func (r *UserRepository) FindByRefreshToken(refreshToken string) (*models.User, error) {
+func (r *UserRepository) FindByRefreshToken(refreshToken string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var user models.User
+	var user User
 	err := r.collection.FindOne(ctx, bson.M{"refresh_token": refreshToken}).Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -141,11 +140,11 @@ func (r *UserRepository) SetResetToken(email string, resetToken string, expiry t
 }
 
 // FindByResetToken finds a user by reset token
-func (r *UserRepository) FindByResetToken(resetToken string) (*models.User, error) {
+func (r *UserRepository) FindByResetToken(resetToken string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var user models.User
+	var user User
 	err := r.collection.FindOne(ctx, bson.M{
 		"reset_token": resetToken,
 		"reset_token_expires": bson.M{
@@ -187,11 +186,11 @@ func (r *UserRepository) UpdatePassword(userID string, hashedPassword string) er
 }
 
 // FindByGoogleID finds a user by Google ID
-func (r *UserRepository) FindByGoogleID(googleID string) (*models.User, error) {
+func (r *UserRepository) FindByGoogleID(googleID string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var user models.User
+	var user User
 	err := r.collection.FindOne(ctx, bson.M{"google_id": googleID}).Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {

@@ -1,11 +1,10 @@
-package database
+package internal
 
 import (
 	"context"
 	"log"
 	"time"
 
-	"github.com/arthadede/auth-service/constants"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -15,7 +14,7 @@ type MongoDB struct {
 	DB     *mongo.Database
 }
 
-func NewMongoDB(cfg *constants.Config) *MongoDB {
+func NewMongoDB(cfg *Config) *MongoDB {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

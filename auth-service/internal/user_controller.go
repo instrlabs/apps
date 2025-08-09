@@ -1,4 +1,4 @@
-package controllers
+package internal
 
 import (
 	"context"
@@ -16,19 +16,16 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
-	"github.com/arthadede/auth-service/constants"
-	"github.com/arthadede/auth-service/models"
-	"github.com/arthadede/auth-service/repositories"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type UserController struct {
-	userRepo    *repositories.UserRepository
-	config      *constants.Config
+	userRepo    *UserRepository
+	config      *Config
 	oauthConfig *oauth2.Config
 }
 
-func NewUserController(userRepo *repositories.UserRepository, config *constants.Config) *UserController {
+func NewUserController(userRepo *UserRepository, config *Config) *UserController {
 	oauthConfig := &oauth2.Config{
 		ClientID:     config.GoogleClientID,
 		ClientSecret: config.GoogleClientSecret,
@@ -47,8 +44,8 @@ func NewUserController(userRepo *repositories.UserRepository, config *constants.
 	}
 }
 
-func (c *UserController) RegisterUser(email, password string) (*models.User, error) {
-	user, err := models.NewUser(email, password)
+func (c *UserController) RegisterUser(email, password string) (*User, error) {
+	user, err := NewUser(email, password)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +255,7 @@ func (c *UserController) HandleGoogleCallback(code string) (map[string]string, e
 	if err != nil {
 		user, err = c.userRepo.FindByEmail(userInfo.Email)
 		if err != nil {
-			user = models.NewGoogleUser(userInfo.Email, userInfo.ID)
+			user = NewGoogleUser(userInfo.Email, userInfo.ID)
 			err = c.userRepo.Create(user)
 			if err != nil {
 				return nil, errors.New("failed to create user")
@@ -292,7 +289,7 @@ func (c *UserController) HandleGoogleCallback(code string) (map[string]string, e
 	}, nil
 }
 
-func (c *UserController) VerifyToken(tokenString string) (*models.User, error) {
+func (c *UserController) VerifyToken(tokenString string) (*User, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Validate the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

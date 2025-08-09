@@ -1,19 +1,19 @@
 # Docker commands for local environment
 docker-up-local:
-	docker-compose -f docker-compose.local.yaml up -d $(service)
+	docker compose -f docker-compose.local.yaml up -d $(service)
 
 docker-down-local:
-	docker-compose -f docker-compose.local.yaml down $(service)
+	docker compose -f docker-compose.local.yaml down $(service)
 
 docker-watch-local:
-	docker-compose -f docker-compose.local.yaml watch $(service)
+	docker compose -f docker-compose.local.yaml watch $(service)
 
 # Docker commands for staging environment
 docker-up-staging:
-	docker-compose -f docker-compose.staging.yaml up -d
+	docker compose -f docker-compose.staging.yaml up -d
 
 docker-down-staging:
-	docker-compose -f docker-compose.staging.yaml down
+	docker compose -f docker-compose.staging.yaml down
 
 clean-env-staging:
 	find . -name ".env.staging" -type f -exec sh -c 'cp {} $$(dirname {})"/.env"' \;

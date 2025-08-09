@@ -13,12 +13,9 @@ package main
 import (
 	"log"
 
-	"github.com/arthadede/auth-service/constants"
-	"github.com/arthadede/auth-service/controllers"
-	"github.com/arthadede/auth-service/database"
 	"github.com/arthadede/auth-service/docs"
-	"github.com/arthadede/auth-service/handlers"
-	"github.com/arthadede/auth-service/repositories"
+	"github.com/arthadede/auth-service/internal"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
@@ -35,16 +32,16 @@ func main() {
 	docs.SwaggerInfo.BasePath = "/auth"
 	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 
-	cfg := constants.NewConfig()
+	cfg := internal.NewConfig()
 
-	mongo := database.NewMongoDB(cfg)
+	mongo := internal.NewMongoDB(cfg)
 	defer mongo.Close()
 
-	userRepo := repositories.NewUserRepository(mongo)
+	userRepo := internal.NewUserRepository(mongo)
 
-	userController := controllers.NewUserController(userRepo, cfg)
+	userController := internal.NewUserController(userRepo, cfg)
 
-	userHandler := handlers.NewUserHandler(userController)
+	userHandler := internal.NewUserHandler(userController)
 
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{
@@ -65,7 +62,6 @@ func main() {
 		TimeZone:   "UTC",
 	}))
 
-	// Swagger documentation route
 	app.Get("/swagger/*", swagger.New(swagger.Config{
 		Title:        "Auth Service API",
 		DeepLinking:  false,
@@ -79,7 +75,7 @@ func main() {
 		})
 	})
 
-	app.Use(AuthMiddleware())
+	app.Use(internal.AuthMiddleware())
 
 	app.Post("/register", userHandler.Register)
 	app.Post("/login", userHandler.Login)
