@@ -1,4 +1,4 @@
-package handlers
+package internal
 
 import (
 	"context"
@@ -8,24 +8,20 @@ import (
 	"path/filepath"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
-
-	"pdf-service/models"
-	"pdf-service/repositories"
-	"pdf-service/services"
 )
 
 type PDFJobProcessor struct {
-	jobRepo     *repositories.JobRepository
-	pdfJobRepo  *repositories.PDFJobRepository
-	s3Service   *services.S3Service
-	natsService *services.NatsService
+	jobRepo     *JobRepository
+	pdfJobRepo  *PDFJobRepository
+	s3Service   *S3Service
+	natsService *NatsService
 }
 
 func NewPDFJobProcessor(
-	jobRepo *repositories.JobRepository,
-	pdfJobRepo *repositories.PDFJobRepository,
-	s3Service *services.S3Service,
-	natsService *services.NatsService,
+	jobRepo *JobRepository,
+	pdfJobRepo *PDFJobRepository,
+	s3Service *S3Service,
+	natsService *NatsService,
 ) *PDFJobProcessor {
 	return &PDFJobProcessor{
 		jobRepo:     jobRepo,
@@ -47,7 +43,7 @@ func (p *PDFJobProcessor) compressPDF(ctx context.Context, pdfPath string) (stri
 	return outputPath, nil
 }
 
-func (p *PDFJobProcessor) ProcessJob(ctx context.Context, job *models.PDFJobMessage) error {
+func (p *PDFJobProcessor) ProcessJob(ctx context.Context, job *PDFJobMessage) error {
 	log.Printf("Processing PDF job: %s", job.ID)
 
 	pdfJob, err := p.pdfJobRepo.FindByID(ctx, job.ID)
@@ -56,7 +52,7 @@ func (p *PDFJobProcessor) ProcessJob(ctx context.Context, job *models.PDFJobMess
 		return err
 	}
 
-	err = p.natsService.PublishJobNotification(pdfJob.JobID, models.JobStatusProcessing)
+	err = p.natsService.PublishJobNotification(pdfJob.JobID, JobStatusProcessing)
 	if err != nil {
 		return err
 	}
@@ -64,7 +60,7 @@ func (p *PDFJobProcessor) ProcessJob(ctx context.Context, job *models.PDFJobMess
 	localPDFPath, err := p.s3Service.DownloadPDF(ctx, pdfJob.S3Path)
 	if err != nil {
 		log.Printf("Error downloading PDF: %v", err)
-		p.natsService.PublishJobNotification(pdfJob.JobID, models.JobStatusFailed)
+		p.natsService.PublishJobNotification(pdfJob.JobID, JobStatusFailed)
 		return err
 	}
 	defer os.Remove(localPDFPath)
@@ -73,19 +69,19 @@ func (p *PDFJobProcessor) ProcessJob(ctx context.Context, job *models.PDFJobMess
 	var contentType string
 
 	switch pdfJob.Operation {
-	case models.PDFOperationCompress:
+	case PDFOperationCompress:
 		log.Printf("Compressing PDF: %s", job.ID)
 		outputPath, err = p.compressPDF(ctx, localPDFPath)
 		contentType = "application/pdf"
 	default:
 		log.Printf("Unknown operation: %s", pdfJob.Operation)
-		p.natsService.PublishJobNotification(pdfJob.JobID, models.JobStatusFailed)
+		p.natsService.PublishJobNotification(pdfJob.JobID, JobStatusFailed)
 		return fmt.Errorf("unknown operation: %s", pdfJob.Operation)
 	}
 
 	if err != nil {
 		log.Printf("Error processing PDF: %v", err)
-		p.natsService.PublishJobNotification(pdfJob.JobID, models.JobStatusFailed)
+		p.natsService.PublishJobNotification(pdfJob.JobID, JobStatusFailed)
 		return err
 	}
 
@@ -96,22 +92,22 @@ func (p *PDFJobProcessor) ProcessJob(ctx context.Context, job *models.PDFJobMess
 	s3OutputPath, err = p.s3Service.UploadProcessedFile(ctx, outputPath, s3OutputPath, contentType)
 	if err != nil {
 		log.Printf("Error uploading processed file: %v", err)
-		p.natsService.PublishJobNotification(pdfJob.JobID, models.JobStatusFailed)
+		p.natsService.PublishJobNotification(pdfJob.JobID, JobStatusFailed)
 		return err
 	}
 
-	updateRequest := &models.UpdatePDFJobRequest{
+	updateRequest := &UpdatePDFJobRequest{
 		OutputFilePath: s3OutputPath,
 	}
 
 	err = p.pdfJobRepo.Update(ctx, pdfJob.ID.Hex(), updateRequest)
 	if err != nil {
 		log.Printf("Error updating job: %v", err)
-		p.natsService.PublishJobNotification(pdfJob.JobID, models.JobStatusFailed)
+		p.natsService.PublishJobNotification(pdfJob.JobID, JobStatusFailed)
 		return err
 	}
 
-	err = p.natsService.PublishJobNotification(pdfJob.JobID, models.JobStatusCompleted)
+	err = p.natsService.PublishJobNotification(pdfJob.JobID, JobStatusCompleted)
 	if err != nil {
 		log.Printf("Error publishing job completion notification: %v", err)
 		return err

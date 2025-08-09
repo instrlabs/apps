@@ -1,4 +1,4 @@
-package services
+package internal
 
 import (
 	"bytes"
@@ -12,16 +12,14 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-
-	"pdf-service/constants"
 )
 
 type S3Service struct {
 	client *minio.Client
-	cfg    *constants.Config
+	cfg    *Config
 }
 
-func NewS3Service(cfg *constants.Config) (*S3Service, error) {
+func NewS3Service(cfg *Config) (*S3Service, error) {
 	client, err := minio.New(cfg.S3Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.S3AccessKey, cfg.S3SecretKey, ""),
 		Secure: cfg.S3UseSSL,

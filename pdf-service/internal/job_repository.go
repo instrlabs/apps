@@ -1,4 +1,4 @@
-package repositories
+package internal
 
 import (
 	"context"
@@ -8,8 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	"pdf-service/models"
 )
 
 type JobRepository struct {
@@ -22,7 +20,7 @@ func NewJobRepository(db *mongo.Database) *JobRepository {
 	}
 }
 
-func (r *JobRepository) Create(ctx context.Context, job *models.Job) (*models.Job, error) {
+func (r *JobRepository) Create(ctx context.Context, job *Job) (*Job, error) {
 	job.CreatedAt = time.Now()
 	job.UpdatedAt = time.Now()
 
@@ -35,13 +33,13 @@ func (r *JobRepository) Create(ctx context.Context, job *models.Job) (*models.Jo
 	return job, nil
 }
 
-func (r *JobRepository) FindByID(ctx context.Context, id string) (*models.Job, error) {
+func (r *JobRepository) FindByID(ctx context.Context, id string) (*Job, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
-	var job models.Job
+	var job Job
 	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&job)
 	if err != nil {
 		return nil, err
@@ -50,7 +48,7 @@ func (r *JobRepository) FindByID(ctx context.Context, id string) (*models.Job, e
 	return &job, nil
 }
 
-func (r *JobRepository) UpdateStatus(ctx context.Context, id string, status models.JobStatus, errorMsg string) (*models.Job, error) {
+func (r *JobRepository) UpdateStatus(ctx context.Context, id string, status JobStatus, errorMsg string) (*Job, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
@@ -68,7 +66,7 @@ func (r *JobRepository) UpdateStatus(ctx context.Context, id string, status mode
 	}
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
-	var updatedJob models.Job
+	var updatedJob Job
 	err = r.collection.FindOneAndUpdate(ctx, bson.M{"_id": objectID}, update, opts).Decode(&updatedJob)
 	if err != nil {
 		return nil, err

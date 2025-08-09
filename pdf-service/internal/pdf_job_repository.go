@@ -1,8 +1,7 @@
-package repositories
+package internal
 
 import (
 	"context"
-	"pdf-service/models"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,7 +22,7 @@ func NewPDFJobRepository(db *mongo.Database) *PDFJobRepository {
 	}
 }
 
-func (r *PDFJobRepository) Create(ctx context.Context, job *models.PDFJob) error {
+func (r *PDFJobRepository) Create(ctx context.Context, job *PDFJob) error {
 	job.CreatedAt = time.Now()
 	job.UpdatedAt = time.Now()
 
@@ -36,13 +35,13 @@ func (r *PDFJobRepository) Create(ctx context.Context, job *models.PDFJob) error
 	return nil
 }
 
-func (r *PDFJobRepository) FindByID(ctx context.Context, id string) (*models.PDFJob, error) {
+func (r *PDFJobRepository) FindByID(ctx context.Context, id string) (*PDFJob, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
-	var job models.PDFJob
+	var job PDFJob
 	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&job)
 	if err != nil {
 		return nil, err
@@ -51,7 +50,7 @@ func (r *PDFJobRepository) FindByID(ctx context.Context, id string) (*models.PDF
 	return &job, nil
 }
 
-func (r *PDFJobRepository) FindAll(ctx context.Context, limit, offset int64) ([]*models.PDFJob, error) {
+func (r *PDFJobRepository) FindAll(ctx context.Context, limit, offset int64) ([]*PDFJob, error) {
 	opts := options.Find().
 		SetLimit(limit).
 		SetSkip(offset).
@@ -63,7 +62,7 @@ func (r *PDFJobRepository) FindAll(ctx context.Context, limit, offset int64) ([]
 	}
 	defer cursor.Close(ctx)
 
-	var jobs []*models.PDFJob
+	var jobs []*PDFJob
 	if err = cursor.All(ctx, &jobs); err != nil {
 		return nil, err
 	}
@@ -71,7 +70,7 @@ func (r *PDFJobRepository) FindAll(ctx context.Context, limit, offset int64) ([]
 	return jobs, nil
 }
 
-func (r *PDFJobRepository) Update(ctx context.Context, id string, update *models.UpdatePDFJobRequest) error {
+func (r *PDFJobRepository) Update(ctx context.Context, id string, update *UpdatePDFJobRequest) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err

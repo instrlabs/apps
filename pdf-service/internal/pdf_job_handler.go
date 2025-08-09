@@ -1,12 +1,9 @@
-package handlers
+package internal
 
 import (
 	"context"
 	"os"
 	"path/filepath"
-	"pdf-service/models"
-	"pdf-service/repositories"
-	"pdf-service/services"
 	"strconv"
 	"time"
 
@@ -14,15 +11,15 @@ import (
 )
 
 type PDFJobHandler struct {
-	pdfJobRepo  *repositories.PDFJobRepository
-	s3Service   *services.S3Service
-	natsService *services.NatsService
+	pdfJobRepo  *PDFJobRepository
+	s3Service   *S3Service
+	natsService *NatsService
 }
 
 func NewPDFJobHandler(
-	pdfJobRepo *repositories.PDFJobRepository,
-	s3Service *services.S3Service,
-	natsService *services.NatsService,
+	pdfJobRepo *PDFJobRepository,
+	s3Service *S3Service,
+	natsService *NatsService,
 ) *PDFJobHandler {
 	return &PDFJobHandler{
 		pdfJobRepo:  pdfJobRepo,
@@ -94,17 +91,17 @@ func (h *PDFJobHandler) CreateJob(c *fiber.Ctx) error {
 		})
 	}
 
-	pdfOperation := models.PDFOperation(request.Operation)
-	if pdfOperation != models.PDFOperationConvertToJPG &&
-		pdfOperation != models.PDFOperationCompress &&
-		pdfOperation != models.PDFOperationMerge &&
-		pdfOperation != models.PDFOperationSplit {
+	pdfOperation := PDFOperation(request.Operation)
+	if pdfOperation != PDFOperationConvertToJPG &&
+		pdfOperation != PDFOperationCompress &&
+		pdfOperation != PDFOperationMerge &&
+		pdfOperation != PDFOperationSplit {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid operation",
 		})
 	}
 
-	job := &models.PDFJob{
+	job := &PDFJob{
 		Filename:  request.Filename,
 		FileSize:  request.FileSize,
 		S3Path:    request.S3Path,
