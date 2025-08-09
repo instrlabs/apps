@@ -1,4 +1,4 @@
-module labs-service
+module github.com/arthadede/labs-service
 
 go 1.24
 

@@ -1,28 +1,25 @@
-package services
+package internal
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"labs-service/models"
 	"log"
 	"time"
 
 	"github.com/nats-io/nats.go"
-
-	"labs-service/constants"
 )
 
 type NatsService struct {
 	conn *nats.Conn
-	cfg  *constants.Config
+	cfg  *Config
 }
 
 type JobMessage struct {
 	JobID string `json:"job_id"`
 }
 
-func NewNatsService(cfg *constants.Config) (*NatsService, error) {
+func NewNatsService(cfg *Config) (*NatsService, error) {
 	conn, err := nats.Connect(cfg.NatsURL, nats.Timeout(10*time.Second))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to NATS: %w", err)
@@ -43,13 +40,13 @@ func (n *NatsService) Close() {
 	}
 }
 
-type PDFNotificationHandler func(ctx context.Context, job *models.JobNotificationMessage) error
+type PDFNotificationHandler func(ctx context.Context, job *JobNotificationMessage) error
 
 func (n *NatsService) SubscribeToPDFNotification(handler PDFNotificationHandler) error {
 	_, err := n.conn.Subscribe(n.cfg.NatsSubjectJobNotifications, func(msg *nats.Msg) {
 		log.Printf("Received job message from subject: %s", n.cfg.NatsSubjectJobNotifications)
 
-		var job models.JobNotificationMessage
+		var job JobNotificationMessage
 		err := json.Unmarshal(msg.Data, &job)
 		if err != nil {
 			log.Printf("Error unmarshaling job: %v", err)

@@ -1,4 +1,4 @@
-package services
+package internal
 
 import (
 	"context"
@@ -9,8 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-
-	"labs-service/constants"
 )
 
 // MongoDB represents a MongoDB connection
@@ -20,7 +18,7 @@ type MongoDB struct {
 }
 
 // NewMongoService creates a new MongoDB connection
-func NewMongoService(cfg *constants.Config) (*MongoDB, error) {
+func NewMongoService(cfg *Config) (*MongoDB, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

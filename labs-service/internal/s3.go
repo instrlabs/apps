@@ -1,4 +1,4 @@
-package services
+package internal
 
 import (
 	"bytes"
@@ -11,18 +11,16 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-
-	"labs-service/constants"
 )
 
 // S3Service handles interactions with S3-compatible storage
 type S3Service struct {
 	client *minio.Client
-	cfg    *constants.Config
+	cfg    *Config
 }
 
 // NewS3Service creates a new S3Service
-func NewS3Service(cfg *constants.Config) (*S3Service, error) {
+func NewS3Service(cfg *Config) (*S3Service, error) {
 	// Initialize minio client
 	client, err := minio.New(cfg.S3Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.S3AccessKey, cfg.S3SecretKey, ""),

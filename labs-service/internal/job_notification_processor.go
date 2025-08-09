@@ -1,21 +1,18 @@
-package handlers
+package internal
 
 import (
 	"context"
-	"labs-service/models"
-	"labs-service/repositories"
-	"labs-service/services"
 	"log"
 )
 
 type JobNotificationProcessor struct {
-	jobRepo   *repositories.JobRepository
-	s3Service *services.S3Service
+	jobRepo   *JobRepository
+	s3Service *S3Service
 }
 
 func NewPDFNotificationProcessor(
-	jobRepo *repositories.JobRepository,
-	s3Service *services.S3Service,
+	jobRepo *JobRepository,
+	s3Service *S3Service,
 ) *JobNotificationProcessor {
 	return &JobNotificationProcessor{
 		jobRepo:   jobRepo,
@@ -23,7 +20,7 @@ func NewPDFNotificationProcessor(
 	}
 }
 
-func (p *JobNotificationProcessor) ProcessJob(ctx context.Context, job *models.JobNotificationMessage) error {
+func (p *JobNotificationProcessor) ProcessJob(ctx context.Context, job *JobNotificationMessage) error {
 	log.Printf("Processing job: %s, status: %s", job.ID, job.Status)
 
 	_, err := p.jobRepo.UpdateStatus(ctx, job.ID, job.Status, "")

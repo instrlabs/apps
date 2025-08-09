@@ -1,12 +1,10 @@
-package services
+package internal
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"labs-service/constants"
-	"labs-service/models"
 	"net/http"
 	"time"
 )
@@ -16,11 +14,11 @@ type PDFService struct {
 }
 
 type PDFCreateJobRequest struct {
-	JobID     string         `json:"job_id"`
-	Operation models.JobType `json:"operation"`
-	Filename  string         `json:"filename"`
-	FileSize  int64          `json:"file_size"`
-	S3Path    string         `json:"s3_path"`
+	JobID     string  `json:"job_id"`
+	Operation JobType `json:"operation"`
+	Filename  string  `json:"filename"`
+	FileSize  int64   `json:"file_size"`
+	S3Path    string  `json:"s3_path"`
 }
 
 type PDFCreateJobResponse struct {
@@ -62,7 +60,7 @@ func (s *PDFService) CreateJob(ctx *fiber.Ctx, req PDFCreateJobRequest) (*PDFCre
 	return &response.Data, nil
 }
 
-func NewPDFService(cfg *constants.Config) *PDFService {
+func NewPDFService(cfg *Config) *PDFService {
 	return &PDFService{
 		baseURL: cfg.PDFServiceURL,
 	}

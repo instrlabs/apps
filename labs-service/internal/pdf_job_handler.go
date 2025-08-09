@@ -1,28 +1,24 @@
-package handlers
+package internal
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"labs-service/constants"
-	"labs-service/models"
-	"labs-service/repositories"
-	"labs-service/services"
 	"log"
 )
 
 type PDFJobHandler struct {
-	jobRepo     *repositories.JobRepository
-	pdfService  *services.PDFService
-	s3Service   *services.S3Service
-	natsService *services.NatsService
-	cfg         *constants.Config
+	jobRepo     *JobRepository
+	pdfService  *PDFService
+	s3Service   *S3Service
+	natsService *NatsService
+	cfg         *Config
 }
 
 func NewPDFJobHandler(
-	jobRepo *repositories.JobRepository,
-	pdfService *services.PDFService,
-	s3Service *services.S3Service,
-	natsService *services.NatsService,
-	cfg *constants.Config,
+	jobRepo *JobRepository,
+	pdfService *PDFService,
+	s3Service *S3Service,
+	natsService *NatsService,
+	cfg *Config,
 ) *PDFJobHandler {
 	return &PDFJobHandler{
 		jobRepo:     jobRepo,
@@ -41,10 +37,10 @@ func (c *PDFJobHandler) CompressPDF(ctx *fiber.Ctx) error {
 		})
 	}
 
-	job := &models.Job{
+	job := &Job{
 		OriginalFilename: file.Filename,
-		JobType:          models.JobTypePDFCompress,
-		Status:           models.JobStatusPending,
+		JobType:          JobTypePDFCompress,
+		Status:           JobStatusPending,
 	}
 
 	job, err = c.jobRepo.Create(ctx.Context(), job)
@@ -58,22 +54,22 @@ func (c *PDFJobHandler) CompressPDF(ctx *fiber.Ctx) error {
 	s3Path, err := c.s3Service.UploadPDF(ctx.Context(), file, job.ID.Hex())
 	if err != nil {
 		log.Printf("Failed to upload file: %v", err)
-		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), models.JobStatusFailed, err.Error())
+		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), JobStatusFailed, err.Error())
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to upload file",
 		})
 	}
 
-	pdfJob, err := c.pdfService.CreateJob(ctx, services.PDFCreateJobRequest{
+	pdfJob, err := c.pdfService.CreateJob(ctx, PDFCreateJobRequest{
 		JobID:     job.ID.Hex(),
-		Operation: models.JobTypePDFCompress,
+		Operation: JobTypePDFCompress,
 		Filename:  job.ID.Hex() + ".pdf",
 		FileSize:  file.Size,
 		S3Path:    s3Path,
 	})
 	if err != nil {
 		log.Printf("Failed to create PDF job: %v", err)
-		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), models.JobStatusFailed, err.Error())
+		_, _ = c.jobRepo.UpdateStatus(ctx.Context(), job.ID.Hex(), JobStatusFailed, err.Error())
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create PDF job",
 		})

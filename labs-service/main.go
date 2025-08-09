@@ -8,29 +8,26 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"log"
 
-	"labs-service/constants"
-	"labs-service/handlers"
-	"labs-service/repositories"
-	"labs-service/services"
+	"github.com/arthadede/labs-service/internal"
 )
 
 func main() {
-	cfg := constants.NewConfig()
+	cfg := internal.NewConfig()
 
-	mongo, err := services.NewMongoService(cfg)
+	mongo, err := internal.NewMongoService(cfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize MongoDB service: %v", err)
 	}
 	defer mongo.Close()
 
-	jobRepo := repositories.NewJobRepository(mongo)
+	jobRepo := internal.NewJobRepository(mongo)
 
-	s3Service, err := services.NewS3Service(cfg)
+	s3Service, err := internal.NewS3Service(cfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize S3 service: %v", err)
 	}
 
-	natsService, err := services.NewNatsService(cfg)
+	natsService, err := internal.NewNatsService(cfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize NATS service: %v", err)
 	}
@@ -57,9 +54,9 @@ func main() {
 		})
 	})
 
-	pdfService := services.NewPDFService(cfg)
-	pdfJobController := handlers.NewPDFJobHandler(jobRepo, pdfService, s3Service, natsService, cfg)
-	pdfNotificationProcessor := handlers.NewPDFNotificationProcessor(jobRepo, s3Service)
+	pdfService := internal.NewPDFService(cfg)
+	pdfJobController := internal.NewPDFJobHandler(jobRepo, pdfService, s3Service, natsService, cfg)
+	pdfNotificationProcessor := internal.NewPDFNotificationProcessor(jobRepo, s3Service)
 
 	err = natsService.SubscribeToPDFNotification(pdfNotificationProcessor.ProcessJob)
 	if err != nil {
