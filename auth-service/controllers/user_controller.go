@@ -85,7 +85,12 @@ func (c *UserController) generateAccessToken(userID string) (string, error) {
 
 func (c *UserController) LoginUser(email, password string) (map[string]string, error) {
 	user, err := c.userRepo.FindByEmail(email)
+
 	if err != nil {
+		return nil, errors.New("invalid email or password")
+	}
+
+	if user.Password == "" {
 		return nil, errors.New("invalid email or password")
 	}
 
