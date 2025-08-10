@@ -180,6 +180,26 @@ services:
       - "traefik.http.routers.gateway-service.entrypoints=websecure"
       - "traefik.http.services.gateway-service.loadbalancer.server.port=3000"
 
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - nats
+    env_file:
+      - ./notification-service/.env
+    
+    networks:
+      - proxy
+    
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.notification-service.rule=Host(`${NOTIFICATION_SERVICE_HOST:-notification.labs.example.com}`)"
+      - "traefik.http.routers.notification-service.tls=true"
+      - "traefik.http.routers.notification-service.entrypoints=websecure"
+      - "traefik.http.services.notification-service.loadbalancer.server.port=3030"
+
   web:
     build:
       context: ./web
@@ -189,8 +209,13 @@ services:
     restart: unless-stopped
     depends_on:
       - gateway-service
+      - notification-service
     env_file:
       - ./web/.env
+    environment:
+      - NEXT_PUBLIC_NOTIFICATION_SERVICE_HOST=${NOTIFICATION_SERVICE_HOST:-notification.labs.example.com}
+      - NEXT_PUBLIC_NOTIFICATION_SERVICE_PORT=443
+      - NEXT_PUBLIC_NOTIFICATION_SERVICE_PATH=/ws
 
     networks:
       - proxy
