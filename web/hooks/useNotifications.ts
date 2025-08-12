@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import websocketService from '../services/websocket';
+import sseService from '../services/sse';
 
 // Type for job notification
 export interface JobNotification {
@@ -13,8 +13,8 @@ export function useNotifications() {
   const [connected, setConnected] = useState<boolean>(false);
 
   useEffect(() => {
-    // Connect to WebSocket when component mounts
-    websocketService.connect();
+    // Connect to SSE when component mounts
+    sseService.connect();
     
     // Add listener for connection status
     const handleOpen = () => {
@@ -31,21 +31,21 @@ export function useNotifications() {
     };
     
     // Register event listeners
-    websocketService.addListener('job_notification', handleNotification);
+    sseService.addListener('job_notification', handleNotification);
     
     // Add event listeners for connection status
     if (typeof window !== 'undefined') {
-      window.addEventListener('websocket:connected', handleOpen);
-      window.addEventListener('websocket:disconnected', handleClose);
+      window.addEventListener('sse:connected', handleOpen);
+      window.addEventListener('sse:disconnected', handleClose);
     }
     
     // Clean up on unmount
     return () => {
-      websocketService.removeListener('job_notification', handleNotification);
+      sseService.removeListener('job_notification', handleNotification);
       
       if (typeof window !== 'undefined') {
-        window.removeEventListener('websocket:connected', handleOpen);
-        window.removeEventListener('websocket:disconnected', handleClose);
+        window.removeEventListener('sse:connected', handleOpen);
+        window.removeEventListener('sse:disconnected', handleClose);
       }
     };
   }, []);

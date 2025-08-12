@@ -46,12 +46,35 @@ export async function registerUser(email: string, password: string): Promise<Wra
 }
 
 export async function loginUser(email: string, password: string): Promise<WrapperResponse<LoginResponse>> {
-  return await fetchWithErrorHandling(AUTH_ENDPOINTS.LOGIN, {
+  const response = await fetchWithErrorHandling(AUTH_ENDPOINTS.LOGIN, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
     credentials: "include"
   });
+  
+  // If login is successful, store the token in localStorage
+  if (response.data && !response.error) {
+    // For simplicity, we'll use the email as the token
+    // In a real application, you would get the actual token from the response
+    storeAuthToken(email);
+  }
+  
+  return response;
+}
+
+// Store the authentication token in localStorage
+export function storeAuthToken(token: string): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('auth_token', token);
+  }
+}
+
+// Clear the authentication token from localStorage
+export function clearAuthToken(): void {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('auth_token');
+  }
 }
 
 export async function refreshToken(): Promise<WrapperResponse<RefreshTokenResponse>> {
@@ -86,4 +109,17 @@ export async function verifyToken(): Promise<WrapperResponse<VerifyTokenResponse
     headers: { "Content-Type": "application/json" },
     credentials: "include"
   });
+}
+
+// Logout user and clear token
+export async function logoutUser(): Promise<void> {
+  // In a real application, you would call a logout endpoint
+  // For now, we'll just clear the token from localStorage
+  clearAuthToken();
+  
+  // Disconnect from SSE
+  if (typeof window !== 'undefined') {
+    const sseService = await import('../services/sse').then(module => module.default);
+    sseService.disconnect();
+  }
 }
