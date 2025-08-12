@@ -53,6 +53,12 @@ func LoadConfig() Config {
 		log.Warn("PDF_SERVICE_URL not set, using default: ", pdfServiceURL)
 	}
 
+	notificationServiceURL := os.Getenv("NOTIFICATION_SERVICE_URL")
+	if notificationServiceURL == "" {
+		notificationServiceURL = "http://notification.localhost"
+		log.Warn("NOTIFICATION_SERVICE_URL not set, using default: ", notificationServiceURL)
+	}
+
 	return Config{
 		Port: port,
 		Services: []ServiceConfig{
@@ -70,6 +76,11 @@ func LoadConfig() Config {
 				Name:   "pdf-service",
 				URL:    pdfServiceURL,
 				Prefix: "/pdf",
+			},
+			{
+				Name:   "notification-service",
+				URL:    notificationServiceURL,
+				Prefix: "/notification",
 			},
 		},
 	}

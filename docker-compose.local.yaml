@@ -2,9 +2,6 @@ services:
   traefik:
     image: traefik:v3.5
     restart: unless-stopped
-    depends_on:
-      - gateway-service
-      - web
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -58,9 +55,6 @@ services:
       context: ./auth-service
       dockerfile: Dockerfile
     restart: unless-stopped
-    depends_on:
-      - mongo
-      - nats
     env_file:
       - ./auth-service/.env.local
     command: [ "./app" ]
@@ -75,9 +69,6 @@ services:
       context: ./pdf-service
       dockerfile: Dockerfile
     restart: unless-stopped
-    depends_on:
-      - mongo
-      - nats
     env_file:
       - ./pdf-service/.env.local
     command: [ "./app" ]
@@ -92,9 +83,6 @@ services:
       context: ./labs-service
       dockerfile: Dockerfile
     restart: unless-stopped
-    depends_on:
-      - mongo
-      - nats
     env_file:
       - ./labs-service/.env.local
     command: [ "./app" ]
@@ -104,14 +92,24 @@ services:
       - "traefik.http.routers.labs-service.entrypoints=web"
       - "traefik.http.services.labs-service.loadbalancer.server.port=3000"
 
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./notification-service/.env.local
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.notification-service.rule=Host(`${NOTIFICATION_SERVICE_HOST}`)"
+      - "traefik.http.routers.notification-service.entrypoints=web"
+      - "traefik.http.services.notification-service.loadbalancer.server.port=3000"
+
   gateway-service:
     build:
       context: ./gateway-service
       dockerfile: Dockerfile
     restart: unless-stopped
-    depends_on:
-      - mongo
-      - nats
     env_file:
       - ./gateway-service/.env.local
     command: [ "./app" ]
@@ -128,23 +126,6 @@ services:
       - "traefik.http.routers.gateway-service.entrypoints=web"
       - "traefik.http.services.gateway-service.loadbalancer.server.port=3000"
 
-  notification-service:
-    build:
-      context: ./notification-service
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - nats
-    env_file:
-      - ./notification-service/.env.local
-    ports:
-      - "3030:3030"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.notification-service.rule=Host(`${NOTIFICATION_SERVICE_HOST:-notification.localhost}`)"
-      - "traefik.http.routers.notification-service.entrypoints=web"
-      - "traefik.http.services.notification-service.loadbalancer.server.port=3030"
-
   web:
     build:
       context: ./web
@@ -156,11 +137,6 @@ services:
 
     env_file:
       - ./web/.env.local
-
-    environment:
-      - NEXT_PUBLIC_NOTIFICATION_SERVICE_HOST=${NOTIFICATION_SERVICE_HOST:-notification.localhost}
-      - NEXT_PUBLIC_NOTIFICATION_SERVICE_PORT=80
-      - NEXT_PUBLIC_NOTIFICATION_SERVICE_PATH=/ws
 
     networks:
       - default
