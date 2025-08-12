@@ -28,6 +28,7 @@ const (
 type JobNotificationMessage struct {
 	ID     string    `json:"id"`
 	Status JobStatus `json:"status"`
+	UserID string    `json:"userId,omitempty"`
 }
 
 func NewNatsService(cfg *Config) (*NatsService, error) {
@@ -72,7 +73,8 @@ func (n *NatsService) SubscribeToJobNotifications(handler NotificationHandlerFun
 		}
 
 		log.Printf("Successfully processed notification for job: %s with status: %s",
-			notification.ID, notification.Status)
+			notification.ID,
+			notification.Status)
 	})
 
 	if err != nil {

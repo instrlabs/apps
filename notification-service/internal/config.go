@@ -10,8 +10,6 @@ type Config struct {
 
 	NatsURL                     string
 	NatsSubjectJobNotifications string
-
-	WebSocketPath string
 }
 
 func NewConfig() *Config {
@@ -21,16 +19,12 @@ func NewConfig() *Config {
 	natsURL := getEnv("NATS_URL", "nats://localhost:4222")
 	natsSubjectJobNotifications := getEnv("NATS_SUBJECT_JOB_NOTIFICATIONS", "job.notifications")
 
-	webSocketPath := getEnv("WEBSOCKET_PATH", "/ws")
-
 	return &Config{
 		Environment: env,
 		Port:        port,
 
 		NatsURL:                     natsURL,
 		NatsSubjectJobNotifications: natsSubjectJobNotifications,
-
-		WebSocketPath: webSocketPath,
 	}
 }
 

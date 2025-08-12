@@ -21,11 +21,11 @@ func main() {
 	}
 	defer natsService.Close()
 
-	wsService := internal.NewWebSocketService(cfg)
+	sseService := internal.NewSSEService(cfg)
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc(cfg.WebSocketPath, wsService.HandleWebSocket)
+	mux.HandleFunc("/jobs", sseService.HandleSSE)
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -37,10 +37,7 @@ func main() {
 		Handler: mux,
 	}
 
-	err = natsService.SubscribeToJobNotifications(func(ctx context.Context, notification *internal.JobNotificationMessage) error {
-		log.Printf("Received job notification: %+v", notification)
-		return wsService.BroadcastNotification(ctx, notification)
-	})
+	err = natsService.SubscribeToJobNotifications(sseService.BroadcastNotification)
 	if err != nil {
 		log.Fatalf("Failed to subscribe to job notifications: %v", err)
 	}
