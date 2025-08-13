@@ -12,8 +12,7 @@ import {
   containerStyles,
   headingStyles,
   formContainerStyles,
-  NOTIFICATION_DURATION
-} from "@/components/ui-styles";
+} from "@/constants/styles";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,7 +35,7 @@ export default function LoginPage() {
 
     const { data, error } = await loginUser(formData.email, formData.password);
 
-    if (error) showNotification(error, "error", NOTIFICATION_DURATION);
+    if (error) showNotification(error, "error", 5000);
     else if (data) router.push(ROUTES.HOME);
 
     setIsLoading(false);
@@ -54,7 +53,7 @@ export default function LoginPage() {
           onChange={handleInputChange}
           placeholder="Enter your email address"
         />
-        
+
         <div className="space-y-1">
           <FormInput
             id="password"
@@ -65,8 +64,8 @@ export default function LoginPage() {
             placeholder="Enter your password"
           />
           <div className="text-right">
-            <a 
-              className="text-sm text-blue-600 hover:underline" 
+            <a
+              className="text-sm text-blue-600 hover:underline"
               href={ROUTES.FORGOT_PASSWORD}
             >
               Forgot password?

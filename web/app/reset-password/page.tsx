@@ -14,8 +14,7 @@ import {
   inputGroupStyles,
   inputStyles,
   labelStyles,
-  NOTIFICATION_DURATION
-} from "@/components/ui-styles";
+} from "@/constants/styles";
 
 // Constants
 const MIN_PASSWORD_LENGTH = 8;
@@ -37,7 +36,7 @@ function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showNotification } = useNotification();
-  
+
   const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -52,7 +51,7 @@ function ResetPasswordContent() {
       showNotification(
         "Invalid or missing reset token. Please request a new password reset.",
         "error",
-        NOTIFICATION_DURATION
+        5000
       );
     } else {
       setToken(tokenParam);
@@ -61,17 +60,17 @@ function ResetPasswordContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
-      showNotification("Passwords do not match", "error", NOTIFICATION_DURATION);
+      showNotification("Passwords do not match", "error", 5000);
       return;
     }
 
     if (password.length < MIN_PASSWORD_LENGTH) {
       showNotification(
-        `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`, 
-        "error", 
-        NOTIFICATION_DURATION
+        `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`,
+        "error",
+        5000
       );
       return;
     }
@@ -81,10 +80,10 @@ function ResetPasswordContent() {
     const { data, error } = await resetPassword(token, password);
 
     if (error) {
-      showNotification(error, "error", NOTIFICATION_DURATION);
+      showNotification(error, "error", 5000);
     } else if (data) {
       setIsSubmitted(true);
-      showNotification(data?.message, "success", NOTIFICATION_DURATION);
+      showNotification(data?.message, "success", 5000);
     }
 
     setIsLoading(false);
@@ -93,7 +92,7 @@ function ResetPasswordContent() {
   // Handle input changes
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value);
   const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value);
-  
+
   if (tokenError) {
     return (
       <div className={containerStyles}>

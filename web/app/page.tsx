@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { verifyToken } from '@/services/auth';
 import { useNotification } from '@/components/notification';
-import { NOTIFICATION_DURATION } from '@/components/ui-styles';
 
 export default function Home() {
   const [user, setUser] = useState<null | { [key: string]: unknown }>(null);
@@ -16,7 +15,7 @@ export default function Home() {
 
       const { data, error } = await verifyToken();
 
-      if (error) showNotification(error, "error", NOTIFICATION_DURATION);
+      if (error) showNotification(error, "error", 5000);
       else if (data) setUser(data.data.user);
 
       setIsLoading(false);

@@ -4,7 +4,6 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import clsx from "clsx";
 import Image from "next/image";
 
-// Types
 type NotificationType = "success" | "error" | "warning" | "info";
 
 interface NotificationContextProps {
@@ -15,10 +14,8 @@ interface NotificationContextProps {
   visible: boolean;
 }
 
-// Context
 const NotificationContext = createContext<NotificationContextProps | undefined>(undefined);
 
-// Provider Component
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [visible, setVisible] = useState(false);
   const [message, setMessage] = useState("");
@@ -30,20 +27,13 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     type: NotificationType = "info",
     duration: number = 3000
   ) => {
-    // Clear any existing timeout
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
+    if (timeoutId) clearTimeout(timeoutId);
 
-    // Set notifications data
     setMessage(message);
     setType(type);
     setVisible(true);
 
-    // Auto-hide after duration
-    const id = setTimeout(() => {
-      hideNotification();
-    }, duration);
+    const id = setTimeout(() => hideNotification(), duration);
 
     setTimeoutId(id);
   };
@@ -67,7 +57,6 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   );
 };
 
-// Hook
 export const useNotification = (): NotificationContextProps => {
   const context = useContext(NotificationContext);
 
@@ -78,7 +67,6 @@ export const useNotification = (): NotificationContextProps => {
   return context;
 };
 
-// Notification Component
 export const Notification: React.FC = () => {
   const { message, type, visible, hideNotification } = useNotification();
   const [isRendered, setIsRendered] = useState(false);
@@ -90,9 +78,7 @@ export const Notification: React.FC = () => {
       setAnimationClass("animate-slide-in");
     } else if (isRendered) {
       setAnimationClass("animate-slide-out");
-      const timer = setTimeout(() => {
-        setIsRendered(false);
-      }, 300); // Match this with the animation duration
+      const timer = setTimeout(() => setIsRendered(false), 300);
       return () => clearTimeout(timer);
     }
   }, [visible, isRendered]);
@@ -108,8 +94,9 @@ export const Notification: React.FC = () => {
       case "warning":
         return "text-amber-500";
       case "info":
-      default:
         return "text-blue-500";
+      default:
+        return "text-gray-500";
     }
   };
 
@@ -122,26 +109,22 @@ export const Notification: React.FC = () => {
       case "warning":
         return "border-amber-100";
       case "info":
-      default:
         return "border-blue-100";
+      default:
+        return "border-gray-100";
     }
   };
 
   const getIcon = () => {
     switch (type) {
       case "success":
-        return (
-          <Image src="/notifications/success-icon.svg" alt="success-icon" width={24} height={24} />
-        );
+        return <Image src="/notifications/success-icon.svg" alt="success-icon" width={24} height={24} />;
       case "error":
-        return (
-          <Image src="/notifications/error-icon.svg" alt="error-icon" width={24} height={24} />
-        );
+        return <Image src="/notifications/error-icon.svg" alt="error-icon" width={24} height={24} />;
       case "warning":
-        return (
-          <Image src="/notifications/warning-icon.svg" alt="warning-icon" width={24} height={24} />
-        );
+        return <Image src="/notifications/warning-icon.svg" alt="warning-icon" width={24} height={24} />;
       case "info":
+        return <Image src="/notifications/info-icon.svg" alt="info-icon" width={24} height={24} />;
       default:
         return <Image src="/notifications/info-icon.svg" alt="info-icon" width={24} height={24} />;
     }
@@ -156,8 +139,9 @@ export const Notification: React.FC = () => {
       case "warning":
         return "Warning";
       case "info":
+        return "Info";
       default:
-        return "Information";
+        return "Unknown";
     }
   };
 

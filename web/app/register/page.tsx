@@ -13,10 +13,9 @@ import {
   containerStyles,
   headingStyles,
   formContainerStyles,
-  NOTIFICATION_DURATION
-} from "@/components/ui-styles";
+} from "@/constants/styles";
 
-const ERROR_NOTIFICATION_DURATION = NOTIFICATION_DURATION;
+const ERROR_NOTIFICATION_DURATION = 5000;
 const SUCCESS_NOTIFICATION_DURATION = 2000;
 const REDIRECT_DELAY = 2500;
 

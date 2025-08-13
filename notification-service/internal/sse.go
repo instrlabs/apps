@@ -11,9 +11,10 @@ import (
 )
 
 type SSEClient struct {
-	userId     string
-	connection chan []byte
-	done       chan bool
+	userId      string
+	connection  chan []byte
+	done        chan bool
+	connectedAt time.Time
 }
 
 type SSEService struct {
@@ -53,9 +54,10 @@ func (s *SSEService) HandleSSE(w http.ResponseWriter, r *http.Request) {
 	doneChan := make(chan bool)
 
 	client := &SSEClient{
-		userId:     userId,
-		connection: messageChan,
-		done:       doneChan,
+		userId:      userId,
+		connection:  messageChan,
+		done:        doneChan,
+		connectedAt: time.Now(),
 	}
 
 	s.mutex.Lock()
@@ -69,12 +71,7 @@ func (s *SSEService) HandleSSE(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("New SSE client connected for user %s. Total clients: %d", userId, len(s.clients))
 
-	closeNotifier, ok := w.(http.CloseNotifier)
-	if !ok {
-		log.Printf("ResponseWriter does not implement http.CloseNotifier")
-		http.Error(w, "SSE not supported", http.StatusInternalServerError)
-		return
-	}
+	ctx := r.Context()
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -89,7 +86,7 @@ func (s *SSEService) HandleSSE(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		select {
-		case <-closeNotifier.CloseNotify():
+		case <-ctx.Done():
 			s.mutex.Lock()
 			if s.clients[userId] == client {
 				delete(s.clients, userId)
@@ -107,6 +104,8 @@ func (s *SSEService) HandleSSE(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case <-client.done:
+			return
+		case <-ctx.Done():
 			return
 		case msg := <-client.connection:
 			fmt.Fprintf(w, "event: message\ndata: %s\n\n", msg)
@@ -162,10 +161,5 @@ func (s *SSEService) BroadcastNotification(ctx context.Context, notification *Jo
 }
 
 func extractUserIdFromToken(token string) string {
-	// This is a simplified implementation
-	// In a real application, you would validate the token and extract the user ID
-	// For example, by decoding a JWT token or looking up the token in a database
-
-	// For this example, we'll just use the token as the userId
 	return token
 }

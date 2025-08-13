@@ -9,13 +9,7 @@ class SSEService {
   private isConnecting: boolean = false;
 
   constructor() {
-    // Get SSE URL from environment or use default
-    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-    const host = process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_HOST || window.location.hostname;
-    const port = process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_PORT || '3030';
-    const path = process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_PATH || '/sse';
-    
-    this.baseUrl = `${protocol}//${host}:${port}${path}`;
+    this.baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/notification/jobs`;
   }
   
   // Get the authentication token from localStorage
