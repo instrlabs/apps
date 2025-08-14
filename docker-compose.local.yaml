@@ -85,6 +85,8 @@ services:
     restart: unless-stopped
     env_file:
       - ./labs-service/.env.local
+    environment:
+      - PDF_SERVICE_URL=http://pdf-service:3000
     command: [ "./app" ]
     labels:
       - "traefik.enable=true"

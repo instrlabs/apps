@@ -3,6 +3,11 @@ import { Roboto } from "next/font/google";
 
 import "./globals.css";
 import { NotificationProvider, Notification } from "@/components/notification";
+import OverlayTop from "@/components/overlay-top";
+import OverlayLeft from "@/components/overlay-left";
+import OverlayRight from "@/components/overlay-right";
+import OverlayContent from "@/components/overlay-content";
+import { OverlayProvider } from "@/hooks/useOverlay";
 
 const robotoSans = Roboto({
   variable: "--font-roboto",
@@ -21,12 +26,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${robotoSans.variable} antialiased`}
-      >
+      <body className={`${robotoSans.variable} antialiased`}>
         <NotificationProvider>
-          {children}
-          <Notification />
+          <OverlayProvider>
+            <OverlayContent>
+              {children}
+            </OverlayContent>
+            <OverlayLeft />
+            <OverlayRight />
+            <OverlayTop />
+            <Notification />
+          </OverlayProvider>
         </NotificationProvider>
       </body>
     </html>
