@@ -11,7 +11,7 @@ function cx(...classes: Array<string | undefined | false | null>) {
 }
 
 export default function ButtonIcon({ className, children, type = "button", ...rest }: ButtonIconProps) {
-  const base = "p-2 rounded-full hover:bg-gray-300 focus:outline-none";
+  const base = "p-2 rounded-full hover:bg-blue-50 focus:outline-none";
   return (
     <button type={type} className={cx(base, className)} {...rest}>
       {children}

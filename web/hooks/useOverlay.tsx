@@ -24,12 +24,17 @@ export type OverlayState = {
   modalNode: React.ReactNode | null;
   modalTitle: string;
   modalContentKey: number;
+  // active keys for toggling by identity
+  leftActiveKey?: string | null;
+  rightActiveKey?: string | null;
+  modalActiveKey?: string | null;
 };
 
 export type OverlayActions = {
   openLeft: () => void;
   closeLeft: () => void;
   toggleLeft: () => void;
+  toggleLeftByKey: (key: string) => void;
   setLeftWidth: (px: number) => void;
   // legacy: still allow setting a type label
   setLeftContent: (c: LeftOverlayContent) => void;
@@ -40,6 +45,7 @@ export type OverlayActions = {
   openRight: () => void;
   closeRight: () => void;
   toggleRight: () => void;
+  toggleRightByKey: (key: string) => void;
   setRightWidth: (px: number) => void;
   // right side content setters
   setRightNode: (node: React.ReactNode) => void;
@@ -48,6 +54,7 @@ export type OverlayActions = {
   // modal (center) overlay actions
   openModal: () => void;
   closeModal: () => void;
+  toggleModalByKey: (key: string) => void;
   setModalNode: (node: React.ReactNode) => void;
   setModalTitle: (title: string) => void;
 };
@@ -80,47 +87,160 @@ export function OverlayProvider({
   const [rightNode, setRightNodeState] = useState<React.ReactNode | null>(null);
   const [rightTitle, setRightTitleState] = useState<string>("");
   const [rightContentKey, setRightContentKey] = useState<number>(0);
-  // modal state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalNode, setModalNodeState] = useState<React.ReactNode | null>(null);
   const [modalTitle, setModalTitleState] = useState<string>("");
   const [modalContentKey, setModalContentKey] = useState<number>(0);
 
+  // last-shown content caches (restored on open if no new content is set)
+  const [lastLeftNode, setLastLeftNode] = useState<React.ReactNode | null>(null);
+  const [lastLeftTitle, setLastLeftTitle] = useState<string>("");
+  const [lastRightNode, setLastRightNode] = useState<React.ReactNode | null>(null);
+  const [lastRightTitle, setLastRightTitle] = useState<string>("");
+  const [lastModalNode, setLastModalNode] = useState<React.ReactNode | null>(null);
+  const [lastModalTitle, setLastModalTitle] = useState<string>("");
+
+  const [leftActiveKey, setLeftActiveKey] = useState<string | null>(null);
+  const [rightActiveKey, setRightActiveKey] = useState<string | null>(null);
+  const [modalActiveKey, setModalActiveKey] = useState<string | null>(null);
+
   // Clamp helper
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
   // Actions
-  const openLeft = useCallback(() => setIsLeftOpen(true), []);
-  const closeLeft = useCallback(() => setIsLeftOpen(false), []);
+  const openLeft = useCallback(() => {
+    setIsLeftOpen(true);
+    // restore last content if none present
+    if (leftNode == null && lastLeftNode != null) {
+      setLeftNodeState(lastLeftNode);
+      setLeftTitleState(lastLeftTitle);
+    }
+  }, [leftNode, lastLeftNode, lastLeftTitle]);
+  const closeLeft = useCallback(() => {
+    // cleanup content before closing
+    setLeftNodeState(null);
+    setLeftTitleState("");
+    setIsLeftOpen(false);
+    setLeftActiveKey(null);
+  }, []);
   const toggleLeft = useCallback(() => setIsLeftOpen(v => !v), []);
+  const toggleLeftByKey = useCallback((key: string) => {
+    if (isLeftOpen && leftActiveKey === key) {
+      // cleanup content before closing
+      setLeftNodeState(null);
+      setLeftTitleState("");
+      setIsLeftOpen(false);
+      setLeftActiveKey(null);
+    } else {
+      setIsLeftOpen(true);
+      setLeftActiveKey(key);
+      // restore last content if none present
+      if (leftNode == null && lastLeftNode != null) {
+        setLeftNodeState(lastLeftNode);
+        setLeftTitleState(lastLeftTitle);
+      }
+    }
+  }, [isLeftOpen, leftActiveKey, leftNode, lastLeftNode, lastLeftTitle]);
   const setLeftWidth = useCallback((px: number) => setLeftWidthState(prev => (Number.isFinite(px) ? clamp(Math.round(px), 0, 2000) : prev)), []);
 
-  const openRight = useCallback(() => setIsRightOpen(true), []);
-  const closeRight = useCallback(() => setIsRightOpen(false), []);
+  const openRight = useCallback(() => {
+    setIsRightOpen(true);
+    // restore last content if none present
+    if (rightNode == null && lastRightNode != null) {
+      setRightNodeState(lastRightNode);
+      setRightTitleState(lastRightTitle);
+    }
+  }, [rightNode, lastRightNode, lastRightTitle]);
+  const closeRight = useCallback(() => {
+    // cleanup content before closing
+    setRightNodeState(null);
+    setRightTitleState("");
+    setIsRightOpen(false);
+    setRightActiveKey(null);
+  }, []);
   const toggleRight = useCallback(() => setIsRightOpen(v => !v), []);
+  const toggleRightByKey = useCallback((key: string) => {
+    if (isRightOpen && rightActiveKey === key) {
+      // cleanup content before closing
+      setRightNodeState(null);
+      setRightTitleState("");
+      setIsRightOpen(false);
+      setRightActiveKey(null);
+    } else {
+      setIsRightOpen(true);
+      setRightActiveKey(key);
+      // restore last content if none present
+      if (rightNode == null && lastRightNode != null) {
+        setRightNodeState(lastRightNode);
+        setRightTitleState(lastRightTitle);
+      }
+    }
+  }, [isRightOpen, rightActiveKey, rightNode, lastRightNode, lastRightTitle]);
   const setRightWidth = useCallback((px: number) => setRightWidthState(prev => (Number.isFinite(px) ? clamp(Math.round(px), 0, 2000) : prev)), []);
   const setLeftContent = useCallback((c: LeftOverlayContent) => setLeftContentState(c), []);
 
   const setLeftNode = useCallback((node: React.ReactNode) => {
     setLeftNodeState(node);
+    setLastLeftNode(node);
     setLeftContentKey(k => k + 1);
   }, []);
-  const setLeftTitle = useCallback((title: string) => setLeftTitleState(title), []);
+  const setLeftTitle = useCallback((title: string) => {
+    setLeftTitleState(title);
+    setLastLeftTitle(title);
+  }, []);
 
   const setRightNode = useCallback((node: React.ReactNode) => {
     setRightNodeState(node);
+    setLastRightNode(node);
     setRightContentKey(k => k + 1);
   }, []);
-  const setRightTitle = useCallback((title: string) => setRightTitleState(title), []);
+  const setRightTitle = useCallback((title: string) => {
+    setRightTitleState(title);
+    setLastRightTitle(title);
+  }, []);
 
   // modal actions
-  const openModal = useCallback(() => setIsModalOpen(true), []);
-  const closeModal = useCallback(() => setIsModalOpen(false), []);
+  const openModal = useCallback(() => {
+    setIsModalOpen(true);
+    // restore last content if none present
+    if (modalNode == null && lastModalNode != null) {
+      setModalNodeState(lastModalNode);
+      setModalTitleState(lastModalTitle);
+    }
+  }, [modalNode, lastModalNode, lastModalTitle]);
+  const closeModal = useCallback(() => {
+    // cleanup content before closing
+    setModalNodeState(null);
+    setModalTitleState("");
+    setIsModalOpen(false);
+    setModalActiveKey(null);
+  }, []);
+  const toggleModalByKey = useCallback((key: string) => {
+    if (isModalOpen && modalActiveKey === key) {
+      // cleanup content before closing
+      setModalNodeState(null);
+      setModalTitleState("");
+      setIsModalOpen(false);
+      setModalActiveKey(null);
+    } else {
+      setIsModalOpen(true);
+      setModalActiveKey(key);
+      // restore last content if none present
+      if (modalNode == null && lastModalNode != null) {
+        setModalNodeState(lastModalNode);
+        setModalTitleState(lastModalTitle);
+      }
+    }
+  }, [isModalOpen, modalActiveKey, modalNode, lastModalNode, lastModalTitle]);
   const setModalNode = useCallback((node: React.ReactNode) => {
     setModalNodeState(node);
+    setLastModalNode(node);
     setModalContentKey(k => k + 1);
   }, []);
-  const setModalTitle = useCallback((title: string) => setModalTitleState(title), []);
+  const setModalTitle = useCallback((title: string) => {
+    setModalTitleState(title);
+    setLastModalTitle(title);
+  }, []);
 
   // Reflect state into CSS variables so existing components that rely on them continue to work
   useEffect(() => {
@@ -147,9 +267,14 @@ export function OverlayProvider({
     modalNode,
     modalTitle,
     modalContentKey,
+    // active keys
+    leftActiveKey,
+    rightActiveKey,
+    modalActiveKey,
     openLeft,
     closeLeft,
     toggleLeft,
+    toggleLeftByKey,
     setLeftWidth,
     setLeftContent,
     setLeftNode,
@@ -157,15 +282,17 @@ export function OverlayProvider({
     openRight,
     closeRight,
     toggleRight,
+    toggleRightByKey,
     setRightWidth,
     setRightNode,
     setRightTitle,
     // modal actions
     openModal,
     closeModal,
+    toggleModalByKey,
     setModalNode,
     setModalTitle,
-  }), [isLeftOpen, isRightOpen, leftWidth, rightWidth, leftContent, leftNode, leftTitle, leftContentKey, rightNode, rightTitle, rightContentKey, isModalOpen, modalNode, modalTitle, modalContentKey, openLeft, closeLeft, toggleLeft, setLeftWidth, setLeftContent, setLeftNode, setLeftTitle, openRight, closeRight, toggleRight, setRightWidth, setRightNode, setRightTitle, openModal, closeModal, setModalNode, setModalTitle]);
+  }), [isLeftOpen, isRightOpen, leftWidth, rightWidth, leftContent, leftNode, leftTitle, leftContentKey, rightNode, rightTitle, rightContentKey, isModalOpen, modalNode, modalTitle, modalContentKey, leftActiveKey, rightActiveKey, modalActiveKey, openLeft, closeLeft, toggleLeft, toggleLeftByKey, setLeftWidth, setLeftContent, setLeftNode, setLeftTitle, openRight, closeRight, toggleRight, toggleRightByKey, setRightWidth, setRightNode, setRightTitle, openModal, closeModal, toggleModalByKey, setModalNode, setModalTitle]);
 
   return (
     <OverlayContext.Provider value={value}>
