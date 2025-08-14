@@ -6,12 +6,17 @@ import { useNotification } from '@/components/notification';
 import { useSSECache } from '@/hooks/useSSECache';
 import { useOverlay } from '@/hooks/useOverlay';
 
+// Define a minimal event type used by SSE in this page
+type AppEvent = {
+  type?: string;
+  [key: string]: unknown;
+};
+
 export default function Home() {
   const [user, setUser] = useState<null | { [key: string]: unknown }>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { showNotification } = useNotification();
 
-  // Read auth token from localStorage on mount (client only)
   const [token, setToken] = useState<string | null>(null);
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -21,7 +26,7 @@ export default function Home() {
   }, []);
 
   // Hook up SSE with a small cache if token exists
-  const { events, lastEvent, isConnected, error, clear } = useSSECache<any>(token || undefined, {
+  const { events, lastEvent, isConnected, error, clear } = useSSECache<AppEvent>(token || undefined, {
     maxCacheSize: 50,
   });
 
@@ -38,7 +43,7 @@ export default function Home() {
     };
 
     checkAuth().then();
-  }, []);
+  }, [showNotification]);
 
   const connectionBadge = useMemo(() => {
     if (!token) return <span className="text-gray-500">No token</span>;
@@ -136,7 +141,7 @@ export default function Home() {
               </div>
               {lastEvent && (
                 <div className="mt-2 text-xs text-gray-500">
-                  Last event type: {typeof lastEvent === 'object' && lastEvent ? (lastEvent as any).type || 'unknown' : 'n/a'}
+                  Last event type: {typeof lastEvent === 'object' && lastEvent ? (lastEvent as AppEvent).type || 'unknown' : 'n/a'}
                 </div>
               )}
             </>

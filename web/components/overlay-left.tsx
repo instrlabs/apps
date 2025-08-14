@@ -3,16 +3,23 @@
 import { useOverlay } from "@/hooks/useOverlay";
 
 export default function OverlayLeft() {
-  const { isLeftOpen } = useOverlay();
+  const { isLeftOpen, leftNode, leftTitle, leftContentKey } = useOverlay();
+
   return (
     <div
-      className="absolute top-0 left-0 bottom-0 p-3 pt-[90px] h-screen transition-[width] duration-300 ease-in-out"
+      className="absolute top-0 left-0 bottom-0 p-3 pt-[80px] h-screen transition-[width] duration-300 ease-in-out"
       style={{ width: 'var(--overlay-left-width, 300px)', pointerEvents: isLeftOpen ? 'auto' : 'none' }}
       aria-hidden={!isLeftOpen}
       role="complementary"
       aria-label="Left overlay"
     >
-      <div className="w-full h-full rounded-3xl bg-neutral-50 flex flex-col justify-between">
+      <div className="w-full h-full rounded-3xl bg-neutral-50 flex flex-col overflow-hidden">
+        {leftTitle ? (
+          <div className="px-4 py-3 border-b text-sm font-semibold text-gray-700">{leftTitle}</div>
+        ) : null}
+        <div key={leftContentKey} className="flex-1 overflow-auto p-4 animate-fade-in">
+          {leftNode}
+        </div>
       </div>
     </div>
   )

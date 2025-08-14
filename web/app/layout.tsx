@@ -7,6 +7,7 @@ import OverlayTop from "@/components/overlay-top";
 import OverlayLeft from "@/components/overlay-left";
 import OverlayRight from "@/components/overlay-right";
 import OverlayContent from "@/components/overlay-content";
+import OverlayModal from "@/components/overlay-modal";
 import { OverlayProvider } from "@/hooks/useOverlay";
 
 const robotoSans = Roboto({
@@ -35,6 +36,7 @@ export default function RootLayout({
             <OverlayLeft />
             <OverlayRight />
             <OverlayTop />
+            <OverlayModal />
             <Notification />
           </OverlayProvider>
         </NotificationProvider>
