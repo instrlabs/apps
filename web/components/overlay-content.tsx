@@ -9,7 +9,7 @@ export default function OverlayContent({ children }: { children: ReactNode }) {
         right: 'var(--overlay-right-width, 300px)'
       }}
     >
-      <div className="w-full h-full rounded-3xl bg-gray-100">
+      <div className="w-full h-full rounded-3xl bg-neutral-50">
         <div className="h-full w-full flex items-center justify-center text-gray-700">
           {children}
         </div>
