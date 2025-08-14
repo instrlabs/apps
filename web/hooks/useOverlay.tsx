@@ -11,18 +11,15 @@ export type OverlayState = {
   rightWidth: number; // in px
   // legacy flag of what type of content we intend to show (optional)
   leftContent: LeftOverlayContent;
-  // new: arbitrary React content and title for the left overlay, and a key to trigger animations
+  // new: arbitrary React content for the left overlay, and a key to trigger animations
   leftNode: React.ReactNode | null;
-  leftTitle: string;
   leftContentKey: number;
   // right overlay content
   rightNode: React.ReactNode | null;
-  rightTitle: string;
   rightContentKey: number;
   // modal (center) overlay content
   isModalOpen: boolean;
   modalNode: React.ReactNode | null;
-  modalTitle: string;
   modalContentKey: number;
   // active keys for toggling by identity
   leftActiveKey?: string | null;
@@ -38,9 +35,8 @@ export type OverlayActions = {
   setLeftWidth: (px: number) => void;
   // legacy: still allow setting a type label
   setLeftContent: (c: LeftOverlayContent) => void;
-  // new: set arbitrary content and title
+  // new: set arbitrary content
   setLeftNode: (node: React.ReactNode) => void;
-  setLeftTitle: (title: string) => void;
 
   openRight: () => void;
   closeRight: () => void;
@@ -49,14 +45,12 @@ export type OverlayActions = {
   setRightWidth: (px: number) => void;
   // right side content setters
   setRightNode: (node: React.ReactNode) => void;
-  setRightTitle: (title: string) => void;
 
   // modal (center) overlay actions
   openModal: () => void;
   closeModal: () => void;
   toggleModalByKey: (key: string) => void;
   setModalNode: (node: React.ReactNode) => void;
-  setModalTitle: (title: string) => void;
 };
 
 export type OverlayContextType = OverlayState & OverlayActions;
@@ -82,23 +76,17 @@ export function OverlayProvider({
   const [rightWidth, setRightWidthState] = useState<number>(defaultRightWidth);
   const [leftContent, setLeftContentState] = useState<LeftOverlayContent>("menu");
   const [leftNode, setLeftNodeState] = useState<React.ReactNode | null>(null);
-  const [leftTitle, setLeftTitleState] = useState<string>("");
   const [leftContentKey, setLeftContentKey] = useState<number>(0);
   const [rightNode, setRightNodeState] = useState<React.ReactNode | null>(null);
-  const [rightTitle, setRightTitleState] = useState<string>("");
   const [rightContentKey, setRightContentKey] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalNode, setModalNodeState] = useState<React.ReactNode | null>(null);
-  const [modalTitle, setModalTitleState] = useState<string>("");
   const [modalContentKey, setModalContentKey] = useState<number>(0);
 
   // last-shown content caches (restored on open if no new content is set)
   const [lastLeftNode, setLastLeftNode] = useState<React.ReactNode | null>(null);
-  const [lastLeftTitle, setLastLeftTitle] = useState<string>("");
   const [lastRightNode, setLastRightNode] = useState<React.ReactNode | null>(null);
-  const [lastRightTitle, setLastRightTitle] = useState<string>("");
   const [lastModalNode, setLastModalNode] = useState<React.ReactNode | null>(null);
-  const [lastModalTitle, setLastModalTitle] = useState<string>("");
 
   const [leftActiveKey, setLeftActiveKey] = useState<string | null>(null);
   const [rightActiveKey, setRightActiveKey] = useState<string | null>(null);
@@ -113,13 +101,11 @@ export function OverlayProvider({
     // restore last content if none present
     if (leftNode == null && lastLeftNode != null) {
       setLeftNodeState(lastLeftNode);
-      setLeftTitleState(lastLeftTitle);
     }
-  }, [leftNode, lastLeftNode, lastLeftTitle]);
+  }, [leftNode, lastLeftNode]);
   const closeLeft = useCallback(() => {
     // cleanup content before closing
     setLeftNodeState(null);
-    setLeftTitleState("");
     setIsLeftOpen(false);
     setLeftActiveKey(null);
   }, []);
@@ -128,7 +114,6 @@ export function OverlayProvider({
     if (isLeftOpen && leftActiveKey === key) {
       // cleanup content before closing
       setLeftNodeState(null);
-      setLeftTitleState("");
       setIsLeftOpen(false);
       setLeftActiveKey(null);
     } else {
@@ -137,10 +122,9 @@ export function OverlayProvider({
       // restore last content if none present
       if (leftNode == null && lastLeftNode != null) {
         setLeftNodeState(lastLeftNode);
-        setLeftTitleState(lastLeftTitle);
       }
     }
-  }, [isLeftOpen, leftActiveKey, leftNode, lastLeftNode, lastLeftTitle]);
+  }, [isLeftOpen, leftActiveKey, leftNode, lastLeftNode]);
   const setLeftWidth = useCallback((px: number) => setLeftWidthState(prev => (Number.isFinite(px) ? clamp(Math.round(px), 0, 2000) : prev)), []);
 
   const openRight = useCallback(() => {
@@ -148,13 +132,11 @@ export function OverlayProvider({
     // restore last content if none present
     if (rightNode == null && lastRightNode != null) {
       setRightNodeState(lastRightNode);
-      setRightTitleState(lastRightTitle);
     }
-  }, [rightNode, lastRightNode, lastRightTitle]);
+  }, [rightNode, lastRightNode]);
   const closeRight = useCallback(() => {
     // cleanup content before closing
     setRightNodeState(null);
-    setRightTitleState("");
     setIsRightOpen(false);
     setRightActiveKey(null);
   }, []);
@@ -163,7 +145,6 @@ export function OverlayProvider({
     if (isRightOpen && rightActiveKey === key) {
       // cleanup content before closing
       setRightNodeState(null);
-      setRightTitleState("");
       setIsRightOpen(false);
       setRightActiveKey(null);
     } else {
@@ -172,10 +153,9 @@ export function OverlayProvider({
       // restore last content if none present
       if (rightNode == null && lastRightNode != null) {
         setRightNodeState(lastRightNode);
-        setRightTitleState(lastRightTitle);
       }
     }
-  }, [isRightOpen, rightActiveKey, rightNode, lastRightNode, lastRightTitle]);
+  }, [isRightOpen, rightActiveKey, rightNode, lastRightNode]);
   const setRightWidth = useCallback((px: number) => setRightWidthState(prev => (Number.isFinite(px) ? clamp(Math.round(px), 0, 2000) : prev)), []);
   const setLeftContent = useCallback((c: LeftOverlayContent) => setLeftContentState(c), []);
 
@@ -184,34 +164,22 @@ export function OverlayProvider({
     setLastLeftNode(node);
     setLeftContentKey(k => k + 1);
   }, []);
-  const setLeftTitle = useCallback((title: string) => {
-    setLeftTitleState(title);
-    setLastLeftTitle(title);
-  }, []);
-
   const setRightNode = useCallback((node: React.ReactNode) => {
     setRightNodeState(node);
     setLastRightNode(node);
     setRightContentKey(k => k + 1);
   }, []);
-  const setRightTitle = useCallback((title: string) => {
-    setRightTitleState(title);
-    setLastRightTitle(title);
-  }, []);
-
   // modal actions
   const openModal = useCallback(() => {
     setIsModalOpen(true);
     // restore last content if none present
     if (modalNode == null && lastModalNode != null) {
       setModalNodeState(lastModalNode);
-      setModalTitleState(lastModalTitle);
     }
-  }, [modalNode, lastModalNode, lastModalTitle]);
+  }, [modalNode, lastModalNode]);
   const closeModal = useCallback(() => {
     // cleanup content before closing
     setModalNodeState(null);
-    setModalTitleState("");
     setIsModalOpen(false);
     setModalActiveKey(null);
   }, []);
@@ -219,7 +187,6 @@ export function OverlayProvider({
     if (isModalOpen && modalActiveKey === key) {
       // cleanup content before closing
       setModalNodeState(null);
-      setModalTitleState("");
       setIsModalOpen(false);
       setModalActiveKey(null);
     } else {
@@ -228,20 +195,14 @@ export function OverlayProvider({
       // restore last content if none present
       if (modalNode == null && lastModalNode != null) {
         setModalNodeState(lastModalNode);
-        setModalTitleState(lastModalTitle);
       }
     }
-  }, [isModalOpen, modalActiveKey, modalNode, lastModalNode, lastModalTitle]);
+  }, [isModalOpen, modalActiveKey, modalNode, lastModalNode]);
   const setModalNode = useCallback((node: React.ReactNode) => {
     setModalNodeState(node);
     setLastModalNode(node);
     setModalContentKey(k => k + 1);
   }, []);
-  const setModalTitle = useCallback((title: string) => {
-    setModalTitleState(title);
-    setLastModalTitle(title);
-  }, []);
-
   // Reflect state into CSS variables so existing components that rely on them continue to work
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -257,15 +218,12 @@ export function OverlayProvider({
     rightWidth,
     leftContent,
     leftNode,
-    leftTitle,
     leftContentKey,
     rightNode,
-    rightTitle,
     rightContentKey,
     // modal
     isModalOpen,
     modalNode,
-    modalTitle,
     modalContentKey,
     // active keys
     leftActiveKey,
@@ -278,21 +236,18 @@ export function OverlayProvider({
     setLeftWidth,
     setLeftContent,
     setLeftNode,
-    setLeftTitle,
     openRight,
     closeRight,
     toggleRight,
     toggleRightByKey,
     setRightWidth,
     setRightNode,
-    setRightTitle,
     // modal actions
     openModal,
     closeModal,
     toggleModalByKey,
     setModalNode,
-    setModalTitle,
-  }), [isLeftOpen, isRightOpen, leftWidth, rightWidth, leftContent, leftNode, leftTitle, leftContentKey, rightNode, rightTitle, rightContentKey, isModalOpen, modalNode, modalTitle, modalContentKey, leftActiveKey, rightActiveKey, modalActiveKey, openLeft, closeLeft, toggleLeft, toggleLeftByKey, setLeftWidth, setLeftContent, setLeftNode, setLeftTitle, openRight, closeRight, toggleRight, toggleRightByKey, setRightWidth, setRightNode, setRightTitle, openModal, closeModal, toggleModalByKey, setModalNode, setModalTitle]);
+  }), [isLeftOpen, isRightOpen, leftWidth, rightWidth, leftContent, leftNode, leftContentKey, rightNode, rightContentKey, isModalOpen, modalNode, modalContentKey, leftActiveKey, rightActiveKey, modalActiveKey, openLeft, closeLeft, toggleLeft, toggleLeftByKey, setLeftWidth, setLeftContent, setLeftNode, openRight, closeRight, toggleRight, toggleRightByKey, setRightWidth, setRightNode, openModal, closeModal, toggleModalByKey, setModalNode]);
 
   return (
     <OverlayContext.Provider value={value}>

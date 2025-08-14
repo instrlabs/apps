@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useOverlay } from "@/hooks/useOverlay";
 
 export default function OverlayModal() {
-  const { isModalOpen, modalNode, modalTitle, modalContentKey, closeModal } = useOverlay();
+  const { isModalOpen, modalNode, modalContentKey, closeModal } = useOverlay();
   const backdropRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -39,11 +39,8 @@ export default function OverlayModal() {
         }}
       />
       {/* Dialog */}
-      <div role="dialog" aria-modal="true" aria-label={modalTitle || "Global search"} className="relative z-10 w-full max-w-2xl mx-4">
+      <div role="dialog" aria-modal="true" aria-label="Modal dialog" className="relative z-10 w-full max-w-2xl mx-4">
         <div className="rounded-2xl bg-white shadow-xl ring-1 ring-black/5 overflow-hidden">
-          {modalTitle ? (
-            <div className="px-4 py-3 border-b text-sm font-semibold text-gray-700">{modalTitle}</div>
-          ) : null}
           <div key={modalContentKey} className="max-h-[70vh] overflow-auto p-4 animate-fade-in">
             {modalNode}
           </div>

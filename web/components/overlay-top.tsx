@@ -6,20 +6,20 @@ import MenuIcon from "@/components/icons/menu";
 import SearchIcon from "@/components/icons/search";
 import BellIcon from "@/components/icons/bell";
 import Avatar from "@/components/avatar";
+import ProfileOverlay from "@/components/reuse/profile-overlay";
+import NotificationOverlay from "@/components/reuse/notification-overlay";
 
 export default function OverlayTop() {
   const {
     isLeftOpen,
     isRightOpen,
-    setLeftTitle,
     setLeftNode,
     toggleLeftByKey,
     leftActiveKey,
-    setRightTitle,
     setRightNode,
+    setRightWidth,
     toggleRightByKey,
     rightActiveKey,
-    setModalTitle,
     setModalNode,
     toggleModalByKey,
     isModalOpen,
@@ -34,7 +34,6 @@ export default function OverlayTop() {
       return;
     }
 
-    setModalTitle('Search');
     setModalNode(
       <div className="space-y-3">
         <div className="relative">
@@ -72,7 +71,6 @@ export default function OverlayTop() {
                 return;
               }
 
-              setLeftTitle('Menu');
               setLeftNode(
                 <ul className="space-y-2 text-sm text-gray-700">
                   <li><button className="w-full text-left px-3 py-2 rounded hover:bg-gray-100">Dashboard</button></li>
@@ -117,9 +115,8 @@ export default function OverlayTop() {
                 return;
               }
 
-              setRightTitle('Notification Overlay');
               setRightNode(
-                <div className="text-sm text-gray-700">Notification Overlay</div>
+                <NotificationOverlay />
               );
               toggleRightByKey(key);
             }}
@@ -132,14 +129,14 @@ export default function OverlayTop() {
             className="rounded-full focus:outline-none"
             onClick={() => {
               const key = 'right:profile';
+
               if (isRightOpen && rightActiveKey === key) {
                 toggleRightByKey(key);
                 return;
               }
-              setRightTitle('Profile Overlay');
-              setRightNode(
-                <div className="text-sm text-gray-700">Profile Overlay</div>
-              );
+
+              setRightWidth(400);
+              setRightNode(<ProfileOverlay />);
               toggleRightByKey(key);
             }}
           >

@@ -3,7 +3,7 @@
 import { useOverlay } from "@/hooks/useOverlay";
 
 export default function OverlayLeft() {
-  const { isLeftOpen, leftNode, leftTitle, leftContentKey } = useOverlay();
+  const { isLeftOpen, leftNode, leftContentKey } = useOverlay();
 
   return (
     <div
@@ -14,9 +14,6 @@ export default function OverlayLeft() {
       aria-label="Left overlay"
     >
       <div className="w-full h-full rounded-3xl bg-neutral-50 flex flex-col overflow-hidden">
-        {leftTitle ? (
-          <div className="px-4 py-3 border-b text-sm font-semibold text-gray-700">{leftTitle}</div>
-        ) : null}
         <div key={leftContentKey} className="flex-1 overflow-auto p-4 animate-fade-in">
           {leftNode}
         </div>
