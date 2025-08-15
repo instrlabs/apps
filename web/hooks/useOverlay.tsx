@@ -7,7 +7,6 @@ export type OverlayState = {
   leftWidth: number;
   leftNode: React.ReactNode | null;
   leftContentKey: number;
-  leftActiveKey?: string | null;
 
   isRightOpen: boolean;
   rightContentKey: number;
@@ -21,11 +20,9 @@ export type OverlayState = {
 };
 
 export type OverlayActions = {
-  openLeft: () => void;
-  closeLeft: () => void;
   setLeftWidth: (px: number) => void;
   setLeftNode: (node: React.ReactNode) => void;
-  setLeftActiveKey: (key: string | null) => void;
+  toggleLeft: (currentKey: string | null, nextNode?: React.ReactNode) => void;
 
   toggleRight: (currentKey: string | null, nextNode?: React.ReactNode) => void;
   setRightWidth: (px: number) => void;
@@ -74,22 +71,38 @@ export function OverlayProvider({
   const [lastModalNode, setLastModalNode] = useState<React.ReactNode | null>(null);
   const [modalActiveKey, setModalActiveKey] = useState<string | null>(null);
 
-  const openLeft = useCallback(() => {
-    setIsLeftOpen(true);
-    // restore last content if none present
-    if (leftNode == null && lastLeftNode != null) {
-      setLeftNodeState(lastLeftNode);
-    }
-  }, [leftNode, lastLeftNode]);
-  const closeLeft = useCallback(() => {
-    setLeftNodeState(null);
-    setIsLeftOpen(false);
-    setLeftActiveKey(null);
-  }, []);
   const setLeftWidth = useCallback((px: number) => {
     setLeftWidthState(prev => (Number.isFinite(px) ? Math.round(px) : prev));
   }, []);
 
+  const toggleLeft = useCallback((currentKey: string | null, nextNode?: React.ReactNode) => {
+    const lastKey = leftActiveKey;
+
+    if (
+      isLeftOpen &&
+      lastKey != null &&
+      currentKey === lastKey
+    ) {
+      setIsLeftOpen(false);
+      return;
+    }
+
+    if (nextNode !== undefined) {
+      setLeftNodeState(nextNode);
+      setLastLeftNode(nextNode);
+      setLeftContentKey(k => k + 1);
+    } else {
+      if (leftNode == null && lastLeftNode != null) {
+        setLeftNodeState(lastLeftNode);
+      }
+    }
+
+    setLeftActiveKey(currentKey);
+
+    if (!isLeftOpen) {
+      setIsLeftOpen(true);
+    }
+  }, [isLeftOpen, leftNode, lastLeftNode, leftActiveKey]);
 
   const toggleRight = useCallback((currentKey: string | null, nextNode?: React.ReactNode) => {
     const lastKey = rightActiveKey;
@@ -103,13 +116,11 @@ export function OverlayProvider({
       return;
     }
 
-    // Switching to a different key (or first time)
     if (nextNode !== undefined) {
       setRightNodeState(nextNode);
       setLastRightNode(nextNode);
       setRightContentKey(k => k + 1);
     } else {
-      // If no node provided and none currently, try to restore the last one
       if (rightNode == null && lastRightNode != null) {
         setRightNodeState(lastRightNode);
       }
@@ -118,10 +129,8 @@ export function OverlayProvider({
     setRightActiveKey(currentKey);
 
     if (!isRightOpen) {
-      // Case 3: was closed -> open it
       setIsRightOpen(true);
     }
-    // Case 2: already open -> remain open
   }, [isRightOpen, rightNode, lastRightNode, rightActiveKey]);
   const setRightWidth = useCallback((px: number) => {
     setRightWidthState(prev => (Number.isFinite(px) ? Math.round(px) : prev))
@@ -163,12 +172,9 @@ export function OverlayProvider({
     leftWidth,
     leftNode,
     leftContentKey,
-    leftActiveKey,
-    openLeft,
-    closeLeft,
     setLeftWidth,
     setLeftNode,
-    setLeftActiveKey,
+    toggleLeft,
 
     // Right overlay
     isRightOpen,
@@ -194,12 +200,9 @@ export function OverlayProvider({
     leftWidth,
     leftNode,
     leftContentKey,
-    leftActiveKey,
-    openLeft,
-    closeLeft,
     setLeftWidth,
     setLeftNode,
-    setLeftActiveKey,
+    toggleLeft,
 
     // Right overlay
     isRightOpen,

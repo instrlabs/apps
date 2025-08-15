@@ -14,17 +14,11 @@ export default function OverlayContent({
 }: {
   children: ReactNode;
   animation?: OverlayAnimation;
-  /**
-   * Optional key to indicate when "new content" is set. When this value changes,
-   * the inner content is re-mounted and the animation replays.
-   * If not provided, we fall back to the current pathname (client-side).
-   */
   contentKey?: string | number;
-  /** Optional override for animation duration in ms. */
   durationMs?: number;
 }) {
   const pathname = usePathname();
-  const { leftWidth, rightWidth, isRightOpen } = useOverlay();
+  const { leftWidth, rightWidth, isLeftOpen, isRightOpen } = useOverlay();
 
   // Determine a stable key for the content so that when it changes, we replay the animation
   const keyForContent = useMemo(() => {
@@ -38,15 +32,15 @@ export default function OverlayContent({
     ? "animate-bounce-in-left"
     : undefined;
 
-  const leftPx = Number.isFinite(leftWidth) ? Math.max(0, Math.round(leftWidth)) : 0;
+  const leftTargetPx = Number.isFinite(leftWidth) ? Math.max(0, Math.round(leftWidth)) : 0;
   const rightTargetPx = Number.isFinite(rightWidth) ? Math.max(0, Math.round(rightWidth)) : 0;
+  const leftPx = isLeftOpen ? leftTargetPx : 0;
   const rightPx = isRightOpen ? rightTargetPx : 0;
   const styleVars: React.CSSProperties = {
     left: `${leftPx}px`,
     right: `${rightPx}px`,
   } as React.CSSProperties;
 
-  // Allow overriding animation duration via CSS variable
   const innerStyle: React.CSSProperties = durationMs
     ? ({ ["--overlay-anim-duration"]: `${durationMs}ms` } as React.CSSProperties)
     : {};

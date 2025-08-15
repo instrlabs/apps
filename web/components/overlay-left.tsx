@@ -1,11 +1,13 @@
 "use client";
 
 import { useOverlay } from "@/hooks/useOverlay";
+import { useMemo } from "react";
 
 export default function OverlayLeft() {
   const { isLeftOpen, leftNode, leftContentKey, leftWidth } = useOverlay();
+  const targetWidth = Number.isFinite(leftWidth) ? Math.max(0, Math.round(leftWidth)) : 0;
+  const widthPx = useMemo(() => (isLeftOpen ? targetWidth : 0), [isLeftOpen, targetWidth]);
 
-  const widthPx = Number.isFinite(leftWidth) ? Math.max(0, Math.round(leftWidth)) : 0;
   return (
     <div
       className="absolute top-0 left-0 bottom-0 p-3 pt-[80px] h-screen transition-[width] duration-300 ease-in-out"
@@ -14,8 +16,8 @@ export default function OverlayLeft() {
       role="complementary"
       aria-label="Left overlay"
     >
-      <div className="w-full h-full rounded-3xl flex flex-col overflow-visible">
-        <div key={leftContentKey} className="flex-1 overflow-y-auto overflow-x-visible animate-fade-in">
+      <div className="w-full h-full rounded-xl bg-neutral-50 flex flex-col overflow-hidden">
+        <div key={leftContentKey} className="flex-1 overflow-auto animate-fade-in">
           {leftNode}
         </div>
       </div>

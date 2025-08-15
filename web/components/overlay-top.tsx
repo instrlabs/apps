@@ -25,22 +25,17 @@ function OverlayButtonIcon(props: {
   type?: "button" | "submit" | "reset";
 }) {
   const {
-    isLeftOpen,
-    leftActiveKey,
-    setLeftNode,
     setLeftWidth,
-    setLeftActiveKey,
+    toggleLeft,
 
     setRightWidth,
+    toggleRight,
 
     setModalNode,
     isModalOpen,
     modalActiveKey,
-    openLeft,
-    closeLeft,
     openModal,
     closeModal,
-    toggleRight,
     setModalActiveKey,
   } = useOverlay();
 
@@ -56,16 +51,8 @@ function OverlayButtonIcon(props: {
 
   function handleClick() {
     if (side === "left") {
-      if (isLeftOpen && leftActiveKey === overlayKey) {
-        // close current left overlay
-        setLeftActiveKey(null);
-        closeLeft();
-        return;
-      }
       if (typeof width === "number") setLeftWidth(width);
-      if (node) setLeftNode(node);
-      setLeftActiveKey(overlayKey);
-      openLeft();
+      toggleLeft(overlayKey, node);
       return;
     }
 
