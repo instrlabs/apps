@@ -132,7 +132,7 @@ export default function OverlayTop() {
           <OverlayButtonIcon
             side="left"
             overlayKey="left:menu"
-            width={88}
+            width={80}
             node={<NavigationOverlay />}
           >
             <MenuIcon className="w-6 h-6 text-gray-800" />

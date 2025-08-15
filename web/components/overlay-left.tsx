@@ -16,7 +16,7 @@ export default function OverlayLeft() {
       role="complementary"
       aria-label="Left overlay"
     >
-      <div className="w-full h-full rounded-xl bg-neutral-50 flex flex-col overflow-hidden">
+      <div className="w-full h-full rounded-xl flex flex-col overflow-hidden">
         <div key={leftContentKey} className="flex-1 overflow-auto animate-fade-in">
           {leftNode}
         </div>
