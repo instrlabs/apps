@@ -20,8 +20,8 @@ const Button: React.FC<SubmitButtonProps> = ({
     <button
       type={type}
       className={clsx(
-        "py-3 rounded-full cursor-pointer",
-        "text-sm font-semibold bg-blue-500 hover:bg-blue-400 text-white",
+        "py-4 rounded-xl cursor-pointer",
+        "font-bold text-white bg-blue-500 hover:bg-blue-400 shadow-primary",
         isLoading && "opacity-70 cursor-not-allowed"
       )}
       disabled={isLoading}

@@ -11,8 +11,8 @@ const GoogleSignInButton = () => {
       <button
           onClick={handleGoogleSignIn}
           className={clsx(
-            "w-full rounded-full bg-white shadow-primary px-5 py-3",
-            "text-sm font-medium text-gray-800",
+            "w-full rounded-xl bg-white shadow-primary px-5 py-4",
+            "font-medium text-gray-800",
             "cursor-pointer",
           )}
       >

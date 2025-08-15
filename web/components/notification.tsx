@@ -1,10 +1,12 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import clsx from "clsx";
-import Image from "next/image";
+import InfoIcon from "./icons/InfoIcon";
+import SuccessIcon from "./icons/SuccessIcon";
+import ErrorIcon from "./icons/ErrorIcon";
+import WarningIcon from "./icons/WarningIcon";
 
-type NotificationType = "success" | "error" | "warning" | "info";
+type NotificationType = "error" | "warning" | "info";
 
 interface NotificationContextProps {
   showNotification: (message: string, type: NotificationType, duration?: number) => void;
@@ -68,7 +70,7 @@ export const useNotification = (): NotificationContextProps => {
 };
 
 export const Notification: React.FC = () => {
-  const { message, type, visible, hideNotification } = useNotification();
+  const { message, type, visible } = useNotification();
   const [isRendered, setIsRendered] = useState(false);
   const [animationClass, setAnimationClass] = useState("");
 
@@ -85,95 +87,27 @@ export const Notification: React.FC = () => {
 
   if (!isRendered) return null;
 
-  const getTypeStyles = () => {
+  const getColorStyles = () => {
     switch (type) {
-      case "success":
-        return "text-green-500";
       case "error":
-        return "text-red-500";
+        return "bg-red-400";
       case "warning":
-        return "text-amber-500";
+        return "bg-amber-400";
       case "info":
-        return "text-blue-500";
+        return "bg-blue-400";
       default:
-        return "text-gray-500";
-    }
-  };
-
-  const getBorderStyles = () => {
-    switch (type) {
-      case "success":
-        return "border-green-100";
-      case "error":
-        return "border-red-100";
-      case "warning":
-        return "border-amber-100";
-      case "info":
-        return "border-blue-100";
-      default:
-        return "border-gray-100";
-    }
-  };
-
-  const getIcon = () => {
-    switch (type) {
-      case "success":
-        return <Image src="/notifications/success-icon.svg" alt="success-icon" width={24} height={24} />;
-      case "error":
-        return <Image src="/notifications/error-icon.svg" alt="error-icon" width={24} height={24} />;
-      case "warning":
-        return <Image src="/notifications/warning-icon.svg" alt="warning-icon" width={24} height={24} />;
-      case "info":
-        return <Image src="/notifications/info-icon.svg" alt="info-icon" width={24} height={24} />;
-      default:
-        return <Image src="/notifications/info-icon.svg" alt="info-icon" width={24} height={24} />;
-    }
-  };
-
-  const getTitle = () => {
-    switch (type) {
-      case "success":
-        return "Success";
-      case "error":
-        return "Error";
-      case "warning":
-        return "Warning";
-      case "info":
-        return "Info";
-      default:
-        return "Unknown";
+        return "bg-gray-400";
     }
   };
 
   return (
-    <div className="fixed top-0 right-0 z-50 flex justify-end px-4 pt-4">
-      <div className={`w-[350px] ${animationClass}`}>
-        <div
-          className={clsx(
-            "flex flex-row",
-            "p-2 gap-2 rounded-md bg-white",
-            `border ${getBorderStyles()}`
-          )}
-          role="alert"
-        >
-          <div className="flex items-start">{getIcon()}</div>
-          <div className="flex-1">
-            <h4 className={`font-medium ${getTypeStyles()}`}>{getTitle()}</h4>
-            <div className="text-sm">{message}</div>
-          </div>
-          <div className="flex items-center">
-            <button
-              type="button"
-              className={clsx(
-                "flex items-center justify-center",
-                "rounded-full p-1.5 h-8 w-8 hover:bg-white/20"
-              )}
-              onClick={hideNotification}
-              aria-label="Close"
-            >
-              <Image src="/notifications/close-icon.svg" alt="close-icon" width={16} height={16} />
-            </button>
-          </div>
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 w-full flex justify-center px-4">
+      <div className={`w-sm ${animationClass}`}>
+        <div className={`px-5 py-4 flex flex-row items-center gap-3 rounded-xl shadow-primary text-white ${getColorStyles()}`}>
+          {type === "error" && <ErrorIcon className="shrink-0" />}
+          {type === "warning" && <WarningIcon className="shrink-0" />}
+          {type === "info" && <InfoIcon className="shrink-0" />}
+          <div>{message}</div>
         </div>
       </div>
     </div>

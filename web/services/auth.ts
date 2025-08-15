@@ -31,9 +31,15 @@ interface VerifyTokenResponse {
   }
 }
 
+interface FieldError {
+  fieldName: string;
+  errorMessage: string;
+}
+
 interface WrapperResponse<T> {
   data: T | null;
   error: string | null;
+  errors?: FieldError[] | null;
 }
 
 export async function registerUser(email: string, password: string): Promise<WrapperResponse<RegisterResponse>> {
@@ -52,14 +58,14 @@ export async function loginUser(email: string, password: string): Promise<Wrappe
     body: JSON.stringify({ email, password }),
     credentials: "include"
   });
-  
+
   // If login is successful, store the token in localStorage
   if (response.data && !response.error) {
     // For simplicity, we'll use the email as the token
     // In a real application, you would get the actual token from the response
     storeAuthToken(email);
   }
-  
+
   return response;
 }
 
@@ -116,7 +122,7 @@ export async function logoutUser(): Promise<void> {
   // In a real application, you would call a logout endpoint
   // For now, we'll just clear the token from localStorage
   clearAuthToken();
-  
+
   // Disconnect from SSE
   if (typeof window !== 'undefined') {
     const sseService = await import('../services/sse').then(module => module.default);

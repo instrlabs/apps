@@ -23,17 +23,17 @@ export async function fetchWithErrorHandling(url: string, options: RequestInit) 
                 redirectToLogin();
             }
 
-            const response = await fetch(url, options);
+            const response2 = await fetch(url, options);
 
-            const data = await response.json();
+            const data = await response2.json();
 
             return { data, error: null };
         }
 
         if (!response.ok) {
-            const error = await response.json();
-
-            return { data: null, error: error.message };
+            const errorBody = await response.json();
+            // Pass through standard message and optional field-level errors if present
+            return { data: null, error: errorBody?.message ?? "", errors: errorBody?.errors ?? null };
         }
 
         const data = await response.json();
