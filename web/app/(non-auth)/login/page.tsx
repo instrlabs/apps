@@ -17,29 +17,49 @@ export default function LoginPage() {
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
+    setFieldErrors((prev) => ({ ...prev, [id]: undefined }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    setFieldErrors({});
     setIsLoading(true);
+    try {
+      const { data, error, errors } = await loginUser(formData.email, formData.password);
 
-    const { data, error } = await loginUser(formData.email, formData.password);
+      if (errors && errors.length > 0) {
+        const mapped: { email?: string; password?: string } = {};
+        errors.forEach((err: { fieldName: string; errorMessage: string }) => {
+          const key = err.fieldName || "";
+          mapped[key as keyof typeof mapped] = err.errorMessage || "";
+        });
+        setFieldErrors(mapped);
+        return;
+      }
 
-    if (error) showNotification(error, "error", 5000);
-    else if (data) router.push(ROUTES.HOME);
+      if (error) {
+        showNotification(error, "error", 3000);
+        return;
+      }
 
-    setIsLoading(false);
+      if (data) {
+        router.push(ROUTES.HOME);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="h-screen w-full flex flex-col justify-center items-center p-10">
-      <h2 className="text-2xl font-bold mb-6">Log in to your account</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm">
+      <h1 className="text-3xl font-bold mb-10">Log in to your account</h1>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-7 w-full max-w-sm">
         <FormInput
           id="email"
           type="email"
@@ -47,6 +67,8 @@ export default function LoginPage() {
           value={formData.email}
           onChange={handleInputChange}
           placeholder="Enter your email address"
+          isInvalid={!!fieldErrors.email}
+          errorMessage={fieldErrors.email}
         />
 
         <div className="space-y-1">
@@ -57,6 +79,8 @@ export default function LoginPage() {
             value={formData.password}
             onChange={handleInputChange}
             placeholder="Enter your password"
+            isInvalid={!!fieldErrors.password}
+            errorMessage={fieldErrors.password}
           />
           <div className="text-right">
             <a
@@ -73,7 +97,7 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <div className="flex flex-col gap-5 w-sm">
+      <div className="flex flex-col gap-5 w-sm mt-3">
         <GoogleSignInButton />
         <div className="text-sm text-center">
           Don&#39;t have an account?{" "}

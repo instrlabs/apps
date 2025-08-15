@@ -10,9 +10,6 @@ import { useNotification } from "@/components/notification";
 import FormInput from "@/components/form-input";
 import { ROUTES } from "@/constants/routes";
 
-const SUCCESS_NOTIFICATION_DURATION = 2000;
-const REDIRECT_DELAY = 2500;
-
 export default function RegisterPage() {
   const router = useRouter();
   const { showNotification } = useNotification();
@@ -27,7 +24,6 @@ export default function RegisterPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
-    // Clear field-specific error on change
     setFieldErrors((prev) => ({ ...prev, [id]: undefined }));
   };
 
