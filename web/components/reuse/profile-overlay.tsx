@@ -3,11 +3,12 @@ import Avatar from "@/components/avatar";
 import EditIcon from "@/components/icons/edit";
 import LockIcon from "@/components/icons/lock";
 import LogoutIcon from "@/components/icons/logout";
+import MenuButton from "@/components/menu-button";
 
 export default function ProfileOverlay() {
   return (
-    <div className="w-full h-full bg-blue-50 p-2">
-      <div className="flex flex-col gap-4 my-10">
+    <div className="w-full h-full bg-white shadow-primary rounded-xl">
+      <div className="flex flex-col gap-4 py-10">
         <div className="mx-auto">
           <Avatar name="Artha Dede" size={60} />
         </div>
@@ -16,19 +17,16 @@ export default function ProfileOverlay() {
           <p className="text-base text-gray-500 text-center">arthadede@gmail.com</p>
         </div>
       </div>
-      <div className="flex flex-col gap-1 my-10">
-        <button className="w-full flex items-center text-sm gap-3 px-3 py-2 text-gray-800 hover:bg-blue-200 rounded-xl">
-          <EditIcon className="h-5 w-5" aria-hidden="true" />
+      <div className="flex flex-col gap-2 p-3">
+        <MenuButton icon={<EditIcon className="h-5 w-5" aria-hidden="true" />}>
           Edit Profile
-        </button>
-        <button className="w-full flex items-center text-sm gap-3 px-3 py-2 text-gray-800 hover:bg-blue-200 rounded-xl">
-          <LockIcon className="h-5 w-5" aria-hidden="true" />
+        </MenuButton>
+        <MenuButton icon={<LockIcon className="h-5 w-5" aria-hidden="true" />}>
           Change Password
-        </button>
-        <button className="w-full flex items-center text-sm gap-3 px-3 py-2 text-gray-800 hover:bg-blue-200 rounded-xl">
-          <LogoutIcon className="h-5 w-5" aria-hidden="true" />
+        </MenuButton>
+        <MenuButton icon={<LogoutIcon className="h-5 w-5" aria-hidden="true" />}>
           Logout
-        </button>
+        </MenuButton>
       </div>
     </div>
   );

@@ -102,40 +102,42 @@ export default function NotificationOverlay({
   const data = items && items.length > 0 ? items : fallbackItems;
 
   return (
-    <section className="h-full flex flex-col bg-blue-50" aria-labelledby="notifications-title">
-      <header className="sticky top-0 z-10 backdrop-blur px-5 py-5 border-b border-gray-200">
-        <h2 id="notifications-title" className="text-base font-semibold text-gray-900">
-          Notifications
-        </h2>
-      </header>
+    <div className="h-full w-full bg-white shadow-primary rounded-xl">
+      <div className="flex flex-col">
+        <header className="sticky top-0 z-10 px-5 py-5 border-b border-gray-200">
+          <h2 id="notifications-title" className="text-base font-semibold text-gray-900">
+            Notifications
+          </h2>
+        </header>
 
-      <div className="flex-1 overflow-auto p-2">
-        <ul role="list" className="space-y-1">
-          {data.map((n) => (
-            <li key={n.id} role="listitem">
-              <div className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-200 transition">
-                <div className="shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                  {n.icon ?? <BellIcon className="w-6 h-6 text-gray-700" aria-hidden="true" />}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-col">
-                    <p className="truncate text-sm text-gray-900">{n.title}</p>
-                    <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo(n.createdAt)}</span>
+        <div className="flex-1 p-2">
+          <ul role="list" className="space-y-1">
+            {data.map((n) => (
+              <li key={n.id} role="listitem">
+                <div className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-200 transition">
+                  <div className="shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                    {n.icon ?? <BellIcon className="w-6 h-6 text-gray-700" aria-hidden="true" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col">
+                      <p className="truncate text-sm text-gray-900">{n.title}</p>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo(n.createdAt)}</span>
+                    </div>
+                  </div>
+                  <div className="ml-2">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusBadgeClass(n.status)}${n.status === "On Processing" ? " animate-pulse" : ""}`}
+                      aria-label={`status: ${n.status}`}
+                    >
+                      {n.status}
+                    </span>
                   </div>
                 </div>
-                <div className="ml-2">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusBadgeClass(n.status)}${n.status === "On Processing" ? " animate-pulse" : ""}`}
-                    aria-label={`status: ${n.status}`}
-                  >
-                    {n.status}
-                  </span>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

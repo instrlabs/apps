@@ -2,6 +2,7 @@
 
 import { useOverlay } from "@/hooks/useOverlay";
 import { useMemo } from "react";
+import clsx from "clsx";
 
 export default function OverlayRight() {
   const { isRightOpen, rightNode, rightContentKey, rightWidth } = useOverlay();
@@ -16,8 +17,11 @@ export default function OverlayRight() {
       role="complementary"
       aria-label="Right overlay"
     >
-      <div className="w-full h-full flex flex-col">
-        <div key={rightContentKey} className="flex-1 overflow-auto animate-fade-in">
+      <div className={clsx(
+        "w-full h-full flex flex-col",
+        isRightOpen ? "overflow-visible" : "overflow-hidden",
+      )}>
+        <div key={rightContentKey} className="flex-1 animate-fade-in">
           {rightNode}
         </div>
       </div>
