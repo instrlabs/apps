@@ -52,11 +52,9 @@ export default function RegisterPage() {
 
       if (errors && errors.length > 0) {
         const mapped: { email?: string; password?: string; verifyPassword?: string } = {};
-        errors.forEach((err: { fieldName?: string; errorMessage?: string }) => {
-          const key = (err.fieldName || "").toString();
-          if (key === "email" || key === "password" || key === "verifyPassword") {
-            mapped[key as keyof typeof mapped] = err.errorMessage || "";
-          }
+        errors.forEach((err: { fieldName: string; errorMessage: string }) => {
+          const key = err.fieldName || "";
+          mapped[key as keyof typeof mapped] = err.errorMessage || "";
         });
         setFieldErrors(mapped);
         return;
