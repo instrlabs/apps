@@ -8,11 +8,6 @@ import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
 import FormInput from "@/components/form-input";
 import { ROUTES } from "@/constants/routes";
-import {
-  containerStyles,
-  headingStyles,
-  formContainerStyles,
-} from "@/constants/styles";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,9 +37,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className={containerStyles}>
-      <h2 className={headingStyles}>Log in to your account</h2>
-      <form onSubmit={handleSubmit} className={formContainerStyles}>
+    <div className="h-screen w-full flex flex-col justify-center items-center p-10">
+      <h2 className="text-2xl font-bold mb-6">Log in to your account</h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm">
         <FormInput
           id="email"
           type="email"

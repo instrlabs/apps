@@ -6,15 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { resetPassword } from "@/services/auth";
 import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
-import {
-  containerStyles,
-  headingStyles,
-  paragraphStyles,
-  formContainerStyles,
-  inputGroupStyles,
-  inputStyles,
-  labelStyles,
-} from "@/constants/styles";
 
 // Constants
 const MIN_PASSWORD_LENGTH = 8;
@@ -95,9 +86,9 @@ function ResetPasswordContent() {
 
   if (tokenError) {
     return (
-      <div className={containerStyles}>
-        <h2 className={headingStyles}>Invalid Reset Link</h2>
-        <p className={paragraphStyles}>
+      <div className="h-screen w-full flex flex-col justify-center items-center p-10">
+        <h2 className="text-2xl font-bold mb-6">Invalid Reset Link</h2>
+        <p className="text-center mb-6 max-w-sm">
           The password reset link is invalid or has expired. Please request a new password reset.
         </p>
         <div className={formContainerStyles}>

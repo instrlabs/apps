@@ -6,7 +6,6 @@ interface SubmitButtonProps {
   isLoading?: boolean;
   loadingText?: string;
   children: React.ReactNode;
-  className?: string;
   onClick?: () => void;
 }
 
@@ -15,17 +14,15 @@ const Button: React.FC<SubmitButtonProps> = ({
   isLoading = false,
   loadingText = "Loading...",
   children,
-  className,
   onClick,
 }) => {
   return (
     <button
       type={type}
       className={clsx(
-        "py-3 mt-3 rounded cursor-pointer",
-        "text-sm font-medium bg-black hover:bg-gray-800 text-white",
-        isLoading && "opacity-70 cursor-not-allowed",
-        className
+        "py-3 rounded-full cursor-pointer",
+        "text-sm font-semibold bg-blue-500 hover:bg-blue-400 text-white",
+        isLoading && "opacity-70 cursor-not-allowed"
       )}
       disabled={isLoading}
       onClick={onClick}

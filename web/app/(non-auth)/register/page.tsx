@@ -9,11 +9,6 @@ import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
 import FormInput from "@/components/form-input";
 import { ROUTES } from "@/constants/routes";
-import {
-  containerStyles,
-  headingStyles,
-  formContainerStyles,
-} from "@/constants/styles";
 
 const ERROR_NOTIFICATION_DURATION = 5000;
 const SUCCESS_NOTIFICATION_DURATION = 2000;
@@ -25,6 +20,7 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    verifyPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,27 +31,34 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    const { data, error } = await registerUser(formData.email, formData.password);
-
-    if (error) {
-      showNotification(error, "error", ERROR_NOTIFICATION_DURATION);
+    if (formData.password !== formData.verifyPassword) {
+      showNotification("Passwords do not match", "error", ERROR_NOTIFICATION_DURATION);
       return;
     }
 
-    if (data) {
-      showNotification(data.message, "success", SUCCESS_NOTIFICATION_DURATION);
-      setTimeout(() => router.replace(ROUTES.LOGIN), REDIRECT_DELAY);
-    }
+    setIsLoading(true);
+    try {
+      const { data, error } = await registerUser(formData.email, formData.password);
 
-    setIsLoading(false);
-  }
+      if (error) {
+        showNotification(error, "error", ERROR_NOTIFICATION_DURATION);
+        return;
+      }
+
+      if (data) {
+        showNotification(data.message, "success", SUCCESS_NOTIFICATION_DURATION);
+        setTimeout(() => router.replace(ROUTES.LOGIN), REDIRECT_DELAY);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className={containerStyles}>
-      <h2 className={headingStyles}>Create your account</h2>
-      <form onSubmit={handleSubmit} className={formContainerStyles}>
+    <div className="h-screen w-full flex flex-col justify-center items-center p-10">
+      <h2 className="text-2xl font-bold mb-6">Create your account</h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm">
         <FormInput
           id="email"
           type="email"
@@ -72,11 +75,21 @@ export default function RegisterPage() {
           onChange={handleInputChange}
           placeholder="Create a password"
         />
+        <FormInput
+          id="verifyPassword"
+          type="password"
+          label="Verify Password"
+          value={formData.verifyPassword}
+          onChange={handleInputChange}
+          placeholder="Re-enter your password"
+        />
+
         <Button type="submit" isLoading={isLoading} loadingText="Signing up...">
-          Sign up
+          Register
         </Button>
       </form>
-      <div className="flex flex-col gap-5 w-sm mt-5">
+
+      <div className="flex flex-col gap-5 w-sm mt-3">
         <GoogleSignInButton />
         <div className="text-sm text-center">
           Already have an account?{" "}
