@@ -12,6 +12,7 @@ type NavItem = {
 import AppsIcon from "@/components/icons/apps";
 import HistoryIcon from "@/components/icons/history";
 import StorageIcon from "@/components/icons/storage";
+import clsx from "clsx";
 
 export default function NavigationOverlay({
   items = [
@@ -23,13 +24,17 @@ export default function NavigationOverlay({
   items?: NavItem[];
 }) {
   return (
-    <div className="w-full h-full bg-white py-3">
-      <ul className="flex flex-col items-center space-y-2">
+    <div className="w-full h-full bg-white shadow-primary rounded-xl py-3">
+      <div className="flex flex-col items-center space-y-2">
         {items.map((item) => (
-          <li key={item.key}>
+          <div key={item.key}>
             <button
               type="button"
-              className="relative group flex items-center center p-1 rounded-full hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+              className={clsx(
+                "relative group flex items-center rounded-full",
+                "hover:bg-blue-100 focus:outline-none",
+                "cursor-pointer",
+              )}
               onClick={item.onClick}
               aria-label={item.title}
             >
@@ -42,15 +47,15 @@ export default function NavigationOverlay({
               {item.title && (
                 <span
                   role="tooltip"
-                  className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded-md bg-gray-900 text-white text-xs opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap shadow-lg z-10"
+                  className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded-md bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg z-10"
                 >
                   {item.title}
                 </span>
               )}
             </button>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
