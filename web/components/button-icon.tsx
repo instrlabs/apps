@@ -1,19 +1,26 @@
 "use client";
 
 import React from "react";
+import clsx from "clsx";
 
-type ButtonIconProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  "aria-label"?: string;
-};
 
-function cx(...classes: Array<string | undefined | false | null>) {
-  return classes.filter(Boolean).join(" ");
-}
-
-export default function ButtonIcon({ className, children, type = "button", ...rest }: ButtonIconProps) {
-  const base = "p-2 rounded-full hover:bg-blue-50 focus:outline-none";
+export default function ButtonIcon({
+  className,
+  children,
+  type = "button",
+  ...rest
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button type={type} className={cx(base, className)} {...rest}>
+    <button
+      type={type}
+      className={clsx(
+        "p-2 rounded-full",
+        "bg-white shadow-primary hover:bg-blue-100 focus:outline-none",
+        "cursor-pointer",
+        className
+      )}
+      {...rest}
+    >
       {children}
     </button>
   );

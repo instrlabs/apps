@@ -8,29 +8,110 @@ import BellIcon from "@/components/icons/bell";
 import Avatar from "@/components/avatar";
 import ProfileOverlay from "@/components/reuse/profile-overlay";
 import NotificationOverlay from "@/components/reuse/notification-overlay";
+import NavigationOverlay from "@/components/reuse/navigation-overlay";
+import clsx from "clsx";
+import type { ReactNode } from "react";
+
+
+type Side = "left" | "right" | "modal";
+
+function OverlayButtonIcon(props: {
+  ariaLabel?: string;
+  side: Side;
+  overlayKey: string;
+  width?: number;
+  node?: ReactNode;
+  children: ReactNode;
+  type?: "button" | "submit" | "reset";
+}) {
+  const {
+    isLeftOpen,
+    leftActiveKey,
+    setLeftNode,
+    setLeftWidth,
+    setLeftActiveKey,
+
+    setRightWidth,
+
+    setModalNode,
+    isModalOpen,
+    modalActiveKey,
+    openLeft,
+    closeLeft,
+    openModal,
+    closeModal,
+    toggleRight,
+    setModalActiveKey,
+  } = useOverlay();
+
+  const {
+    ariaLabel,
+    side,
+    overlayKey,
+    width,
+    node,
+    children,
+    type = "button",
+  } = props;
+
+  function handleClick() {
+    if (side === "left") {
+      if (isLeftOpen && leftActiveKey === overlayKey) {
+        // close current left overlay
+        setLeftActiveKey(null);
+        closeLeft();
+        return;
+      }
+      if (typeof width === "number") setLeftWidth(width);
+      if (node) setLeftNode(node);
+      setLeftActiveKey(overlayKey);
+      openLeft();
+      return;
+    }
+
+    if (side === "right") {
+      if (typeof width === "number") setRightWidth(width);
+      toggleRight(overlayKey, node);
+      return;
+    }
+
+    if (side === "modal") {
+      if (isModalOpen && modalActiveKey === overlayKey) {
+        setModalActiveKey(null);
+        closeModal();
+        return;
+      }
+      if (node) setModalNode(node);
+      setModalActiveKey(overlayKey);
+      openModal();
+    }
+  }
+
+  return (
+    <ButtonIcon type={type} aria-label={ariaLabel} onClick={handleClick}>
+      {children}
+    </ButtonIcon>
+  );
+}
 
 export default function OverlayTop() {
   const {
-    isLeftOpen,
-    isRightOpen,
-    setLeftNode,
-    toggleLeftByKey,
-    leftActiveKey,
-    setRightNode,
     setRightWidth,
-    toggleRightByKey,
-    rightActiveKey,
     setModalNode,
-    toggleModalByKey,
     isModalOpen,
     modalActiveKey,
+    openModal,
+    closeModal,
+    toggleRight,
+    setModalActiveKey,
   } = useOverlay();
 
   function openSearchModal() {
     const key = 'modal:search';
 
     if (isModalOpen && modalActiveKey === key) {
-      toggleModalByKey(key);
+      setModalActiveKey(null);
+      closeModal();
       return;
     }
 
@@ -53,37 +134,22 @@ export default function OverlayTop() {
         <div className="text-sm text-gray-500">Type to search…</div>
       </div>
     );
-    toggleModalByKey(key);
+    setModalActiveKey(key);
+    openModal();
   }
 
   return (
     <div className="absolute top-0 left-0 right-0 w-full p-2">
       <div className="h-[60px] w-full flex flex-row justify-between items-center px-3">
         <div className="flex items-center space-x-3">
-          <ButtonIcon
-            type="button"
-            aria-label={isLeftOpen ? "Hide left" : "Show left (menu)"}
-            onClick={() => {
-              const key = 'left:menu';
-
-              if (isLeftOpen && leftActiveKey === key) {
-                toggleLeftByKey(key);
-                return;
-              }
-
-              setLeftNode(
-                <ul className="space-y-2 text-sm text-gray-700">
-                  <li><button className="w-full text-left px-3 py-2 rounded hover:bg-gray-100">Dashboard</button></li>
-                  <li><button className="w-full text-left px-3 py-2 rounded hover:bg-gray-100">Projects</button></li>
-                  <li><button className="w-full text-left px-3 py-2 rounded hover:bg-gray-100">Teams</button></li>
-                  <li><button className="w-full text-left px-3 py-2 rounded hover:bg-gray-100">Settings</button></li>
-                </ul>
-              );
-              toggleLeftByKey(key);
-            }}
+          <OverlayButtonIcon
+            side="left"
+            overlayKey="left:menu"
+            width={88}
+            node={<NavigationOverlay />}
           >
             <MenuIcon className="w-6 h-6 text-gray-800" />
-          </ButtonIcon>
+          </OverlayButtonIcon>
           <h1 className="text-xl">LOGO</h1>
         </div>
         <div className="flex items-center space-x-3 flex-1 justify-center">
@@ -93,7 +159,11 @@ export default function OverlayTop() {
               id="topbar-search"
               type="text"
               placeholder="Search..."
-              className="w-full py-2 pl-5 pr-10 rounded-full bg-blue-50 hover:bg-blue-100 placeholder:text-gray-600 focus:outline-none"
+              className={clsx(
+                "w-full py-3 pl-5 pr-10 rounded-full",
+                "bg-white shadow-primary placeholder:text-gray-600 focus:outline-none",
+                "cursor-pointer"
+              )}
               onFocus={openSearchModal}
               onClick={openSearchModal}
               readOnly
@@ -105,39 +175,23 @@ export default function OverlayTop() {
           </div>
         </div>
         <div className="flex items-center space-x-3">
-          <ButtonIcon
+          <OverlayButtonIcon
             type="button"
-            aria-label="Show notifications in right overlay"
-            onClick={() => {
-              const key = 'right:notifications';
-              if (isRightOpen && rightActiveKey === key) {
-                toggleRightByKey(key);
-                return;
-              }
-
-              setRightNode(
-                <NotificationOverlay />
-              );
-              toggleRightByKey(key);
-            }}
+            ariaLabel="Show notifications in right overlay"
+            side="right"
+            overlayKey="right:notifications"
+            node={<NotificationOverlay />}
           >
             <BellIcon className="w-6 h-6 text-gray-800" />
-          </ButtonIcon>
+          </OverlayButtonIcon>
           <button
             type="button"
-            aria-label="Profile"
-            className="rounded-full focus:outline-none"
+            className="rounded-full focus:outline-none cursor-pointer"
             onClick={() => {
               const key = 'right:profile';
 
-              if (isRightOpen && rightActiveKey === key) {
-                toggleRightByKey(key);
-                return;
-              }
-
               setRightWidth(400);
-              setRightNode(<ProfileOverlay />);
-              toggleRightByKey(key);
+              toggleRight(key, <ProfileOverlay />);
             }}
           >
             <Avatar name="Artha Dede" size={40} />

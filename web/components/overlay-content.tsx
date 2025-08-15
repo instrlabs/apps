@@ -2,6 +2,7 @@
 
 import { ReactNode, useMemo } from "react";
 import { usePathname } from "next/navigation";
+import { useOverlay } from "@/hooks/useOverlay";
 
 export type OverlayAnimation = "fadeIn" | "bounceInLeft" | "none";
 
@@ -23,6 +24,7 @@ export default function OverlayContent({
   durationMs?: number;
 }) {
   const pathname = usePathname();
+  const { leftWidth, rightWidth, isRightOpen } = useOverlay();
 
   // Determine a stable key for the content so that when it changes, we replay the animation
   const keyForContent = useMemo(() => {
@@ -36,9 +38,12 @@ export default function OverlayContent({
     ? "animate-bounce-in-left"
     : undefined;
 
+  const leftPx = Number.isFinite(leftWidth) ? Math.max(0, Math.round(leftWidth)) : 0;
+  const rightTargetPx = Number.isFinite(rightWidth) ? Math.max(0, Math.round(rightWidth)) : 0;
+  const rightPx = isRightOpen ? rightTargetPx : 0;
   const styleVars: React.CSSProperties = {
-    left: "var(--overlay-left-width, 300px)",
-    right: "var(--overlay-right-width, 300px)",
+    left: `${leftPx}px`,
+    right: `${rightPx}px`,
   } as React.CSSProperties;
 
   // Allow overriding animation duration via CSS variable
@@ -51,7 +56,7 @@ export default function OverlayContent({
       className="absolute top-0 bottom-0 p-3 pt-[80px] transition-[left,right] duration-300 ease-in-out"
       style={styleVars}
     >
-      <div className="w-full h-full rounded-3xl bg-neutral-50">
+      <div className="w-full h-full rounded-3xl bg-neutral-50 overflow-auto">
         <div
           key={keyForContent}
           className={"h-full w-full flex items-center justify-center text-gray-700" + (animationClass ? ` ${animationClass}` : "")}

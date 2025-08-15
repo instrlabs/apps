@@ -55,14 +55,14 @@ export default function Home() {
     );
   }, [token, isConnected, error]);
 
-  const { isLeftOpen, isRightOpen, toggleLeft, toggleRight, leftWidth, rightWidth, setLeftWidth, setRightWidth } = useOverlay();
+  const { isLeftOpen, isRightOpen, openLeft, closeLeft, toggleRight, leftWidth, rightWidth, setLeftWidth, setRightWidth } = useOverlay();
 
   return (
       <div className="container mx-auto p-4 space-y-6">
         {/* Overlay controls (demo) */}
         <div className="border rounded p-4 bg-white/60">
           <div className="flex flex-wrap items-center gap-3">
-            <button type="button" className="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200" onClick={toggleLeft}>
+            <button type="button" className="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200" onClick={() => (isLeftOpen ? closeLeft() : openLeft())}>
               {isLeftOpen ? 'Hide' : 'Show'} Left
             </button>
             <label className="text-sm">Left width
@@ -76,7 +76,7 @@ export default function Home() {
               />
             </label>
 
-            <button type="button" className="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200" onClick={toggleRight}>
+            <button type="button" className="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200" onClick={() => toggleRight('page:demo')}>
               {isRightOpen ? 'Hide' : 'Show'} Right
             </button>
             <label className="text-sm">Right width
