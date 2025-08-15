@@ -42,6 +42,8 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		h.logger.Printf("Register: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidRequestBody,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -49,6 +51,13 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		h.logger.Println("Register: Email is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrEmailRequired,
+			"errors": []fiber.Map{
+				{
+					"fieldName":    "email",
+					"errorMessage": ErrEmailRequired,
+				},
+			},
+			"data": nil,
 		})
 	}
 
@@ -56,6 +65,13 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		h.logger.Println("Register: Password is required and must be at least 6 characters")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrPasswordRequired,
+			"errors": []fiber.Map{
+				{
+					"fieldName":    "password",
+					"errorMessage": ErrPasswordRequired,
+				},
+			},
+			"data": nil,
 		})
 	}
 
@@ -66,20 +82,28 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 			h.logger.Printf("Register: Email already exists: %s", input.Email)
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 				"message": ErrEmailAlreadyExists,
+				"errors": []fiber.Map{
+					{
+						"fieldName":    "email",
+						"errorMessage": ErrEmailAlreadyExists,
+					},
+				},
+				"data": nil,
 			})
 		}
 		h.logger.Printf("Register: Internal server error: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
 	h.logger.Printf("Register: User registered successfully: %s", user.Email)
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "User registered successfully",
-		"data": fiber.Map{
-			"email": user.Email,
-		},
+		"errors":  nil,
+		"data":    user,
 	})
 }
 
@@ -106,6 +130,8 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		h.logger.Printf("Login: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidRequestBody,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -113,6 +139,8 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		h.logger.Println("Login: Email is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrEmailRequired,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -120,6 +148,13 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		h.logger.Println("Login: Password is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrPasswordRequired,
+			"errors": []fiber.Map{
+				{
+					"fieldName":    "password",
+					"errorMessage": ErrPasswordRequired,
+				},
+			},
+			"data": nil,
 		})
 	}
 
@@ -129,6 +164,8 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		h.logger.Printf("Login: Invalid credentials for email: %s, error: %v", input.Email, err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidCredentials,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -159,6 +196,8 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	h.logger.Printf("Login: User logged in successfully: %s", input.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Login successful",
+		"errors":  nil,
+		"data":    nil,
 	})
 }
 
@@ -180,6 +219,8 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		h.logger.Println("RefreshToken: Refresh token cookie is missing")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrRefreshTokenRequired,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -189,6 +230,8 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		h.logger.Printf("RefreshToken: Invalid token error: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidToken,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -219,6 +262,8 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	h.logger.Println("RefreshToken: Token refreshed successfully")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Token refreshed successfully",
+		"errors":  nil,
+		"data":    nil,
 	})
 }
 
@@ -244,6 +289,8 @@ func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
 		h.logger.Printf("ForgotPassword: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidRequestBody,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -251,6 +298,13 @@ func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
 		h.logger.Println("ForgotPassword: Email is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrEmailRequired,
+			"errors": []fiber.Map{
+				{
+					"fieldName":    "email",
+					"errorMessage": ErrEmailRequired,
+				},
+			},
+			"data": nil,
 		})
 	}
 
@@ -260,6 +314,8 @@ func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
 		h.logger.Printf("ForgotPassword: Error requesting password reset: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -291,6 +347,8 @@ func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 		h.logger.Printf("ResetPassword: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidRequestBody,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -298,6 +356,8 @@ func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 		h.logger.Println("ResetPassword: Token is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidToken,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -305,6 +365,13 @@ func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 		h.logger.Println("ResetPassword: New password is required and must be at least 6 characters")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrPasswordRequired,
+			"errors": []fiber.Map{
+				{
+					"fieldName":    "new_password",
+					"errorMessage": ErrPasswordRequired,
+				},
+			},
+			"data": nil,
 		})
 	}
 
@@ -314,12 +381,16 @@ func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 		h.logger.Printf("ResetPassword: Invalid token error: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidToken,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
 	h.logger.Println("ResetPassword: Password has been reset successfully")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Password has been reset successfully",
+		"errors":  nil,
+		"data":    nil,
 	})
 }
 
@@ -357,6 +428,8 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		h.logger.Println("GoogleCallback: Missing authorization code")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidToken,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -366,6 +439,8 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		h.logger.Printf("GoogleCallback: Error handling callback: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -422,6 +497,8 @@ func (h *UserHandler) VerifyToken(c *fiber.Ctx) error {
 		h.logger.Println("VerifyToken: Access token not found")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "Access token is required",
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
@@ -431,14 +508,15 @@ func (h *UserHandler) VerifyToken(c *fiber.Ctx) error {
 		h.logger.Printf("VerifyToken: Invalid token error: %v", err)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "Invalid token",
+			"errors":  nil,
+			"data":    nil,
 		})
 	}
 
 	h.logger.Printf("VerifyToken: Token verified successfully for user: %s", user.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Token verified successfully",
-		"data": fiber.Map{
-			"user": user,
-		},
+		"errors":  nil,
+		"data":    user,
 	})
 }
