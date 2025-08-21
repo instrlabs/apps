@@ -11,9 +11,12 @@
   --btn-primary-active: var(--color-gray-800);
   --btn-primary-disabled: var(--color-gray-400);
 
+  /* BUTTON BORDER */
+  --btn-border: var(--color-gray-200);
+
   /* BUTTON SECONDARY */
   --btn-secondary-bg: var(--color-white);
-  --btn-secondary-text: var(--color-gray-800);
+  --btn-secondary-text: var(--color-gray-600);
   --btn-secondary-hover: var(--color-gray-100);
   --btn-secondary-active: var(--color-gray-200);
   --btn-secondary-disabled: var(--color-gray-200);
@@ -45,6 +48,9 @@
   --btn-primary-hover: var(--color-blue-600);
   --btn-primary-active: var(--color-blue-700);
   --btn-primary-disabled: var(--color-blue-200);
+
+  /* BUTTON BORDER */
+  --btn-border: var(--color-gray-600);
 
   /* BUTTON SECONDARY */
   --btn-secondary-bg: var(--color-gray-700);

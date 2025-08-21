@@ -14,11 +14,13 @@ export default function ButtonIcon({
     <button
       type={type}
       className={clsx(
-        "p-2 rounded-xl",
-        "bg-card shadow-primary hover:bg-foreground/5 focus:outline-none",
-        "cursor-pointer",
-        // Ensure solid icon color in light mode, and readable color in dark mode
-        "text-gray-950 [data-theme=\"dark\"]:text-foreground",
+        "bg-[var(--btn-secondary-bg)]",
+        "text-[var(--btn-secondary-text)]",
+        "hover:bg-[var(--btn-secondary-hover)]",
+        "active:bg-[var(--btn-secondary-active)]",
+        "disabled:bg-[var(--btn-secondary-disabled)]",
+        "border border-[var(--btn-border)]",
+        "p-2 rounded-full cursor-pointer shadow-primary",
         className
       )}
       {...rest}

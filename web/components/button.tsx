@@ -47,6 +47,7 @@ const Button: React.FC<SubmitButtonProps> = ({
         "active:bg-[var(--btn-primary-active)]",
         "disabled:bg-[var(--btn-primary-disabled)]",
 
+        "border border-[var(--btn-border)]",
         "py-4 rounded-xl cursor-pointer",
         "font-medium shadow-primary",
         internalLoading && "opacity-70 cursor-not-allowed"

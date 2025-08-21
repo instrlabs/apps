@@ -138,7 +138,7 @@ export default function OverlayTop() {
             width={80}
             node={<NavigationOverlay />}
           >
-            <MenuIcon className="w-6 h-6 text-foreground" />
+            <MenuIcon className="w-6 h-6" />
           </OverlayButtonIcon>
           <Image src="/logo.svg" alt="logo" width={40} height={40} />
         </div>
@@ -159,7 +159,7 @@ export default function OverlayTop() {
               readOnly
             />
             <SearchIcon
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5"
               aria-hidden="true"
             />
           </div>
