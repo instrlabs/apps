@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { resetPassword } from "@/services/auth";
 import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
-import FormInput from "@/components/form-input";
+import FormInput from "@/components/text-field";
 import { ROUTES } from "@/constants/routes";
 
 function LoadingFallback() {
@@ -138,8 +138,8 @@ function ResetPasswordContent() {
           value={formData.password}
           onChange={handleInputChange}
           placeholder="Enter your new password"
-          isInvalid={!!fieldErrors.password}
-          errorMessage={fieldErrors.password}
+          xIsInvalid={!!fieldErrors.password}
+          xErrorMessage={fieldErrors.password}
         />
         <FormInput
           id="confirmPassword"
@@ -148,8 +148,8 @@ function ResetPasswordContent() {
           value={formData.confirmPassword}
           onChange={handleInputChange}
           placeholder="Confirm your new password"
-          isInvalid={!!fieldErrors.confirmPassword}
-          errorMessage={fieldErrors.confirmPassword}
+          xIsInvalid={!!fieldErrors.confirmPassword}
+          xErrorMessage={fieldErrors.confirmPassword}
         />
         <Button type="submit" isLoading={isLoading} loadingText="Resetting...">
           Reset Password

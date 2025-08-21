@@ -7,7 +7,7 @@ import { requestPasswordReset } from "@/services/auth";
 import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
 import { ROUTES } from "@/constants/routes";
-import FormInput from "@/components/form-input";
+import FormInput from "@/components/text-field";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -88,8 +88,8 @@ export default function ForgotPasswordPage() {
           value={formData.email}
           onChange={handleInputChange}
           placeholder="Enter your email address"
-          isInvalid={!!fieldErrors.email}
-          errorMessage={fieldErrors.email}
+          xIsInvalid={!!fieldErrors.email}
+          xErrorMessage={fieldErrors.email}
         />
         <Button type="submit" isLoading={isLoading} loadingText="Sending...">
           Send reset instructions

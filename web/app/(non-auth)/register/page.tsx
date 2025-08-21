@@ -7,7 +7,7 @@ import { registerUser } from "@/services/auth";
 import GoogleSignInButton from "@/components/google-signin";
 import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
-import FormInput from "@/components/form-input";
+import FormInput from "@/components/text-field";
 import { ROUTES } from "@/constants/routes";
 
 export default function RegisterPage() {
@@ -80,8 +80,8 @@ export default function RegisterPage() {
           value={formData.email}
           onChange={handleInputChange}
           placeholder="Enter your email address"
-          isInvalid={!!fieldErrors.email}
-          errorMessage={fieldErrors.email}
+          xIsInvalid={!!fieldErrors.email}
+          xErrorMessage={fieldErrors.email}
         />
         <FormInput
           id="password"
@@ -90,8 +90,8 @@ export default function RegisterPage() {
           value={formData.password}
           onChange={handleInputChange}
           placeholder="Create a password"
-          isInvalid={!!fieldErrors.password}
-          errorMessage={fieldErrors.password}
+          xIsInvalid={!!fieldErrors.password}
+          xErrorMessage={fieldErrors.password}
         />
         <FormInput
           id="verifyPassword"
@@ -100,8 +100,8 @@ export default function RegisterPage() {
           value={formData.verifyPassword}
           onChange={handleInputChange}
           placeholder="Re-enter your password"
-          isInvalid={!!fieldErrors.verifyPassword || passwordsMismatch}
-          errorMessage={fieldErrors.verifyPassword}
+          xIsInvalid={!!fieldErrors.verifyPassword || passwordsMismatch}
+          xErrorMessage={fieldErrors.verifyPassword}
         />
         <Button type="submit" isLoading={isLoading} loadingText="Signing up...">
           Register

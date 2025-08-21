@@ -24,7 +24,7 @@ export default function Avatar({
   className,
   rounded = true,
 }: AvatarProps) {
-  const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`;
+  const fallbackUrl = `https://ui-avatars.com/api/?name=${name[0]}&background=3b82f6&color=ffffff`;
   const finalSrc = src ?? fallbackUrl;
   const finalAlt = alt ?? (name ? `${name} avatar` : "Profile avatar");
 
@@ -36,7 +36,7 @@ export default function Avatar({
       height={size}
       className={clsx(
         rounded && "rounded-full",
-        "object-cover",
+        "object-cover shadow-primary",
         className
       )}
     />

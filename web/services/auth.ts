@@ -26,8 +26,15 @@ interface ResetPasswordResponse {
 
 interface VerifyTokenResponse {
   message: string;
+}
+
+interface ProfileResponse {
+  message: string;
   data: {
-    user: { [key: string]: unknown };
+    user: {
+      name: string;
+      email: string;
+    }
   }
 }
 
@@ -39,7 +46,7 @@ interface FieldError {
 interface WrapperResponse<T> {
   data: T | null;
   error: string | null;
-  errors?: FieldError[] | null;
+  errorFields?: FieldError[] | null;
 }
 
 export async function registerUser(email: string, password: string): Promise<WrapperResponse<RegisterResponse>> {
@@ -117,13 +124,30 @@ export async function verifyToken(): Promise<WrapperResponse<VerifyTokenResponse
   });
 }
 
-// Logout user and clear token
+export async function profile(): Promise<WrapperResponse<ProfileResponse>> {
+  return fetchWithErrorHandling(AUTH_ENDPOINTS.PROFILE, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include"
+  });
+}
+
 export async function logoutUser(): Promise<void> {
-  // In a real application, you would call a logout endpoint
-  // For now, we'll just clear the token from localStorage
+  // Attempt to log out on the server (clear httpOnly cookies/session)
+  try {
+    await fetch(AUTH_ENDPOINTS.LOGOUT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+  } catch {
+    // Best-effort: ignore network/server errors on logout
+  }
+
+  // Always clear local state/token
   clearAuthToken();
 
-  // Disconnect from SSE
+  // Disconnect SSE client-side if present
   if (typeof window !== 'undefined') {
     const sseService = await import('../services/sse').then(module => module.default);
     sseService.disconnect();

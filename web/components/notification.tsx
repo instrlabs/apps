@@ -88,22 +88,14 @@ export const Notification: React.FC = () => {
   if (!isRendered) return null;
 
   const getColorStyles = () => {
-    switch (type) {
-      case "error":
-        return "bg-red-400";
-      case "warning":
-        return "bg-amber-400";
-      case "info":
-        return "bg-blue-400";
-      default:
-        return "bg-gray-400";
-    }
+    // Use theme primary for all notification backgrounds to align with app theming
+    return "bg-primary text-primary-foreground";
   };
 
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 w-full flex justify-center px-4">
       <div className={`w-sm ${animationClass}`}>
-        <div className={`px-5 py-4 flex flex-row items-center gap-3 rounded-xl shadow-primary text-white ${getColorStyles()}`}>
+        <div className={`px-5 py-4 flex flex-row items-center gap-3 rounded-xl shadow-primary ${getColorStyles()}`}>
           {type === "error" && <ErrorIcon className="shrink-0" />}
           {type === "warning" && <WarningIcon className="shrink-0" />}
           {type === "info" && <InfoIcon className="shrink-0" />}

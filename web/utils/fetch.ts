@@ -1,6 +1,7 @@
+import {redirect} from "next/navigation";
+
 import {AUTH_ENDPOINTS} from "@/constants/api";
 import ROUTES from "@/constants/routes";
-import {redirect} from "next/navigation";
 
 function redirectToLogin() {
   if (typeof window !== "undefined") {
@@ -21,25 +22,25 @@ export async function fetchWithErrorHandling(url: string, options: RequestInit) 
 
             if (!refreshResponse.ok) {
                 redirectToLogin();
+                return { data: null, error: null, errorFields: null }
             }
 
             const response2 = await fetch(url, options);
 
             const data = await response2.json();
 
-            return { data, error: null };
+            return { data, error: null, errorFields: null };
         }
 
         if (!response.ok) {
             const errorBody = await response.json();
-            // Pass through standard message and optional field-level errors if present
-            return { data: null, error: errorBody?.message ?? "", errors: errorBody?.errors ?? null };
+            return { data: null, error: errorBody.message, errorFields: errorBody?.errors ?? null };
         }
 
         const data = await response.json();
 
-        return { data, error: null };
+        return { data, error: null, errorFields: null };
     } catch {
-        return { data: null, error: "Something went wrong" };
+        return { data: null, error: "Something went wrong", errorFields: null };
     }
 }

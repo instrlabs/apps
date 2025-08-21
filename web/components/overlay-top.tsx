@@ -11,6 +11,7 @@ import NotificationOverlay from "@/components/reuse/notification-overlay";
 import NavigationOverlay from "@/components/reuse/navigation-overlay";
 import clsx from "clsx";
 import type { ReactNode } from "react";
+import Image from "next/image";
 
 
 type Side = "left" | "right" | "modal";
@@ -111,14 +112,14 @@ export default function OverlayTop() {
             type="text"
             autoFocus
             placeholder="Search..."
-            className="w-full py-2 pl-3 pr-10 rounded-xl bg-white text-gray-800 placeholder:text-gray-400 border border-gray-200 focus:border-gray-400 focus:outline-none"
+            className="w-full py-2 pl-3 pr-10 rounded-xl bg-card text-foreground placeholder:text-muted border border-border focus:border-foreground focus:outline-none"
           />
           <SearchIcon
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500"
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted"
             aria-hidden="true"
           />
         </div>
-        <div className="text-sm text-gray-500">Type to search…</div>
+        <div className="text-sm text-muted">Type to search…</div>
       </div>
     );
     setModalActiveKey(key);
@@ -128,18 +129,18 @@ export default function OverlayTop() {
   return (
     <div className="absolute top-0 left-0 right-0 w-full p-2">
       <div className="h-[60px] w-full flex flex-row justify-between items-center px-3">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-5">
           <OverlayButtonIcon
             side="left"
             overlayKey="left:menu"
             width={80}
             node={<NavigationOverlay />}
           >
-            <MenuIcon className="w-6 h-6 text-gray-800" />
+            <MenuIcon className="w-6 h-6 text-foreground" />
           </OverlayButtonIcon>
-          <h1 className="text-xl">LOGO</h1>
+          <Image src="/logo.svg" alt="logo" width={40} height={40} />
         </div>
-        <div className="flex items-center space-x-3 flex-1 justify-center">
+        <div className="flex items-center space-x-5 flex-1 justify-center">
           <div className="relative w-96 max-w-full">
             <label htmlFor="topbar-search" className="sr-only">Search</label>
             <input
@@ -148,7 +149,7 @@ export default function OverlayTop() {
               placeholder="Search..."
               className={clsx(
                 "w-full py-3 pl-5 pr-10 rounded-full",
-                "bg-white shadow-primary placeholder:text-gray-600 focus:outline-none",
+                "bg-card shadow-primary placeholder:text-muted focus:outline-none",
                 "cursor-pointer"
               )}
               onFocus={openSearchModal}
@@ -156,12 +157,12 @@ export default function OverlayTop() {
               readOnly
             />
             <SearchIcon
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-800"
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground"
               aria-hidden="true"
             />
           </div>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-5">
           <OverlayButtonIcon
             type="button"
             ariaLabel="Show notifications in right overlay"

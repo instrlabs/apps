@@ -1,0 +1,20 @@
+"use client";
+
+import React from "react";
+import OverlayLeft from "@/components/overlay-left";
+import OverlayRight from "@/components/overlay-right";
+import OverlayTop from "@/components/overlay-top";
+import OverlayModal from "@/components/overlay-modal";
+import { Notification } from "@/components/notification";
+
+export default function Widgets() {
+  return (
+    <>
+      <OverlayLeft />
+      <OverlayRight />
+      <OverlayTop />
+      <OverlayModal />
+      <Notification />
+    </>
+  );
+}

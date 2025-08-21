@@ -6,104 +6,97 @@ import { loginUser } from "@/services/auth";
 import GoogleSignInButton from "@/components/google-signin";
 import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
-import FormInput from "@/components/form-input";
+import TextField from "@/components/text-field";
+import LinkText from "@/components/link-text";
 import { ROUTES } from "@/constants/routes";
+import { useForm } from "react-hook-form";
+
+type LoginFormValues = {
+  email: string;
+  password: string;
+};
 
 export default function LoginPage() {
   const router = useRouter();
   const { showNotification } = useNotification();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    defaultValues: { email: "", password: "" },
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
-    setFieldErrors((prev) => ({ ...prev, [id]: undefined }));
-  };
+  const onSubmit = async (values: LoginFormValues) => {
+    const { data, error, errorFields } = await loginUser(values.email, values.password);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    if (errorFields && errorFields.length > 0) {
+      errorFields.forEach((err: { fieldName: string; errorMessage: string }) => {
+        setError(err.fieldName as keyof LoginFormValues, { type: "server", message: err.errorMessage || "" });
+      });
+      return;
+    }
 
-    setFieldErrors({});
-    setIsLoading(true);
-    try {
-      const { data, error, errors } = await loginUser(formData.email, formData.password);
+    if (error) {
+      showNotification(error, "error", 3000);
+      return;
+    }
 
-      if (errors && errors.length > 0) {
-        const mapped: { email?: string; password?: string } = {};
-        errors.forEach((err: { fieldName: string; errorMessage: string }) => {
-          const key = err.fieldName || "";
-          mapped[key as keyof typeof mapped] = err.errorMessage || "";
-        });
-        setFieldErrors(mapped);
-        return;
-      }
-
-      if (error) {
-        showNotification(error, "error", 3000);
-        return;
-      }
-
-      if (data) {
-        router.push(ROUTES.HOME);
-      }
-    } finally {
-      setIsLoading(false);
+    if (data) {
+      router.push(ROUTES.HOME);
     }
   };
 
   return (
     <div className="h-screen w-full flex flex-col justify-center items-center p-10">
-      <h1 className="text-3xl font-bold mb-10">Log in to your account</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-7 w-full max-w-sm">
-        <FormInput
-          id="email"
+      <h1 className="text-3xl font-bold mb-15">Log in to your account</h1>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7 w-full max-w-sm">
+        <TextField
           type="email"
-          label="Email"
-          value={formData.email}
-          onChange={handleInputChange}
-          placeholder="Enter your email address"
-          isInvalid={!!fieldErrors.email}
-          errorMessage={fieldErrors.email}
+          placeholder="Enter your email"
+          xIsInvalid={!!errors.email}
+          xErrorMessage={errors.email?.message}
+          {...register("email", {
+            required: "Email is required",
+            pattern: {
+              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+              message: "Enter a valid email address",
+            },
+          })}
         />
 
         <div className="space-y-1">
-          <FormInput
-            id="password"
+          <TextField
             type="password"
-            label="Password"
-            value={formData.password}
-            onChange={handleInputChange}
             placeholder="Enter your password"
-            isInvalid={!!fieldErrors.password}
-            errorMessage={fieldErrors.password}
+            xIsInvalid={!!errors.password}
+            xErrorMessage={errors.password?.message}
+            {...register("password", {
+              required: "Password is required",
+              minLength: { value: 6, message: "Password must be at least 6 characters" },
+            })}
           />
           <div className="text-right">
-            <a
-              className="text-sm text-blue-600 hover:underline"
-              href={ROUTES.FORGOT_PASSWORD}
-            >
+            <LinkText href={ROUTES.FORGOT_PASSWORD}>
               Forgot password?
-            </a>
+            </LinkText>
           </div>
         </div>
 
-        <Button type="submit" isLoading={isLoading} loadingText="Signing in...">
-          Sign in
-        </Button>
+        <Button type="submit">Sign in</Button>
       </form>
 
       <div className="flex flex-col gap-5 w-sm mt-3">
         <GoogleSignInButton />
         <div className="text-sm text-center">
           Don&#39;t have an account?{" "}
-          <a className="underline" href={ROUTES.REGISTER}>
+          <LinkText href={ROUTES.REGISTER}>
             Sign up
-          </a>
+          </LinkText>
         </div>
       </div>
     </div>

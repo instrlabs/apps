@@ -2,24 +2,16 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { verifyToken } from '@/services/auth';
-import { NotificationProvider, Notification, useNotification } from '@/components/notification';
+import { useNotification } from '@/components/notification';
 import { useSSECache } from '@/hooks/useSSECache';
-import { OverlayProvider, useOverlay } from '@/hooks/useOverlay';
-import OverlayTop from '@/components/overlay-top';
-import OverlayLeft from '@/components/overlay-left';
-import OverlayRight from '@/components/overlay-right';
-import OverlayContent from '@/components/overlay-content';
-import OverlayModal from '@/components/overlay-modal';
+import { useOverlay } from '@/hooks/useOverlay';
 
-// Define a minimal event type used by SSE in this page
 type AppEvent = {
   type?: string;
   [key: string]: unknown;
 };
 
-function HomeContent() {
-  const [user, setUser] = useState<null | { [key: string]: unknown }>(null);
-  const [isLoading, setIsLoading] = useState(false);
+export default function HomeContent() {
   const { showNotification } = useNotification();
 
   const [token, setToken] = useState<string | null>(null);
@@ -37,24 +29,19 @@ function HomeContent() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      setIsLoading(true);
-
-      const { data, error } = await verifyToken();
+      const { error } = await verifyToken();
 
       if (error) showNotification(error, "error", 5000);
-      else if (data) setUser(data.data.user);
-
-      setIsLoading(false);
     };
 
     checkAuth().then();
   }, [showNotification]);
 
   const connectionBadge = useMemo(() => {
-    if (!token) return <span className="text-gray-500">No token</span>;
-    if (error) return <span className="text-red-600">Error</span>;
+    if (!token) return <span className="text-muted">No token</span>;
+    if (error) return <span className="text-primary">Error</span>;
     return (
-      <span className={isConnected ? 'text-green-600' : 'text-amber-600'}>
+      <span className={isConnected ? 'text-primary' : 'text-muted'}>
         {isConnected ? 'Connected' : 'Connecting...'}
       </span>
     );
@@ -65,15 +52,15 @@ function HomeContent() {
   return (
     <div className="container mx-auto p-4 space-y-6">
       {/* Overlay controls (demo) */}
-      <div className="border rounded p-4 bg-white/60">
+      <div className="border border-border rounded p-4 bg-card/60">
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" className="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200" onClick={() => { toggleLeft('page:demo-left'); }}>
+          <button type="button" className="px-3 py-1 rounded bg-foreground/5 hover:bg-foreground/10" onClick={() => { toggleLeft('page:demo-left'); }}>
             {isLeftOpen ? 'Hide' : 'Show'} Left
           </button>
           <label className="text-sm">Left width
             <input
               type="number"
-              className="ml-2 w-24 px-2 py-1 border rounded"
+              className="ml-2 w-24 px-2 py-1 border border-border rounded"
               value={leftWidth}
               min={0}
               max={2000}
@@ -81,13 +68,13 @@ function HomeContent() {
             />
           </label>
 
-          <button type="button" className="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200" onClick={() => toggleRight('page:demo')}>
+          <button type="button" className="px-3 py-1 rounded bg-foreground/5 hover:bg-foreground/10" onClick={() => toggleRight('page:demo')}>
             {isRightOpen ? 'Hide' : 'Show'} Right
           </button>
           <label className="text-sm">Right width
             <input
               type="number"
-              className="ml-2 w-24 px-2 py-1 border rounded"
+              className="ml-2 w-24 px-2 py-1 border border-border rounded"
               value={rightWidth}
               min={0}
               max={2000}
@@ -97,37 +84,21 @@ function HomeContent() {
         </div>
       </div>
 
-      {isLoading ? (
-        <p>Loading...</p>
-      ) : user ? (
-        <div>
-          <h1 className="text-2xl font-bold mb-4">Welcome back!</h1>
-          <pre className="bg-gray-100 p-4 rounded">
-            {JSON.stringify(user, null, 2)}
-          </pre>
-        </div>
-      ) : (
-        <div>
-          <h1 className="text-2xl font-bold mb-4">Hello World!</h1>
-          <p>Please log in to see your profile information.</p>
-        </div>
-      )}
-
       {/* Simple SSE demo panel */}
-      <div className="border rounded p-4 bg-white/50">
+      <div className="border border-border rounded p-4 bg-card/50">
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold">Live jobs (SSE)</h2>
           <div className="text-sm">Status: {connectionBadge}</div>
         </div>
         {!token ? (
-          <p className="text-sm text-gray-600">No auth token found. Log in to start receiving live updates.</p>
+          <p className="text-sm text-muted">No auth token found. Log in to start receiving live updates.</p>
         ) : (
           <>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-primary">{error}</p>}
             <div className="flex items-center gap-2 mb-2">
               <button
                 type="button"
-                className="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
+                className="text-xs px-2 py-1 rounded bg-foreground/5 hover:bg-foreground/10"
                 onClick={clear}
               >
                 Clear
@@ -135,17 +106,17 @@ function HomeContent() {
             </div>
             <div className="space-y-2 max-h-64 overflow-auto">
               {events.length === 0 ? (
-                <p className="text-sm text-gray-600">No events yet.</p>
+                <p className="text-sm text-muted">No events yet.</p>
               ) : (
                 events.slice(-10).map((evt, idx) => (
-                  <pre key={idx} className="text-xs bg-gray-50 p-2 rounded border">
+                  <pre key={idx} className="text-xs bg-card p-2 rounded border border-border">
                     {JSON.stringify(evt, null, 2)}
                   </pre>
                 ))
               )}
             </div>
             {lastEvent && (
-              <div className="mt-2 text-xs text-gray-500">
+              <div className="mt-2 text-xs text-muted">
                 Last event type: {typeof lastEvent === 'object' && lastEvent ? (lastEvent as AppEvent).type || 'unknown' : 'n/a'}
               </div>
             )}
@@ -153,22 +124,5 @@ function HomeContent() {
         )}
       </div>
     </div>
-  );
-}
-
-export default function Home() {
-  return (
-    <NotificationProvider>
-      <OverlayProvider>
-        <OverlayContent>
-          <HomeContent />
-        </OverlayContent>
-        <OverlayLeft />
-        <OverlayRight />
-        <OverlayTop />
-        <OverlayModal />
-        <Notification />
-      </OverlayProvider>
-    </NotificationProvider>
   );
 }

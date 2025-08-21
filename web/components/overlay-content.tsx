@@ -50,10 +50,10 @@ export default function OverlayContent({
       className="absolute top-0 bottom-0 p-3 pt-[80px] transition-[left,right] duration-300 ease-in-out"
       style={styleVars}
     >
-      <div className="w-full h-full rounded-3xl bg-neutral-50 overflow-auto">
+      <div className="w-full h-full rounded-xl bg-card overflow-auto">
         <div
           key={keyForContent}
-          className={"h-full w-full flex items-center justify-center text-gray-700" + (animationClass ? ` ${animationClass}` : "")}
+          className={"h-full w-full flex " + (animationClass ? ` ${animationClass}` : "")}
           style={innerStyle}
         >
           {children}

@@ -39,15 +39,14 @@ function timeAgo(input: Date | string | number): string {
 function statusBadgeClass(status: NotificationStatus): string {
   switch (status) {
     case "On Queue":
-      return "bg-blue-100 text-blue-800 border-blue-200";
     case "On Processing":
-      return "bg-amber-100 text-amber-800 border-amber-200";
+      return "bg-primary/10 text-primary border border-primary/20";
     case "Finished":
-      return "bg-green-100 text-green-800 border-green-200";
+      return "bg-foreground/10 text-foreground border border-border";
     case "Failed":
-      return "bg-red-100 text-red-800 border-red-200";
+      return "bg-foreground/10 text-foreground border border-border";
     default:
-      return "bg-green-100 text-green-800 border-green-200";
+      return "bg-foreground/10 text-foreground border border-border";
   }
 }
 
@@ -66,35 +65,35 @@ export default function NotificationOverlay({
         title: "New project assigned: Phoenix",
         createdAt: new Date(now - 5 * 60 * 1000), // 5m ago
         status: "On Queue",
-        icon: <BellIcon className="w-6 h-6 text-blue-600" aria-hidden="true" />,
+        icon: <BellIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
       },
       {
         id: "2",
         title: "Build succeeded on main",
         createdAt: new Date(now - 2 * 60 * 60 * 1000), // 2h ago
         status: "Finished",
-        icon: <BellIcon className="w-6 h-6 text-green-600" aria-hidden="true" />,
+        icon: <BellIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
       },
       {
         id: "3",
         title: "You have 3 unread messages",
         createdAt: new Date(now - 26 * 60 * 60 * 1000), // 26h ago
         status: "On Processing",
-        icon: <BellIcon className="w-6 h-6 text-indigo-600" aria-hidden="true" />,
+        icon: <BellIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
       },
       {
         id: "4",
         title: "Deployment failed: api-service",
         createdAt: new Date(now - 3 * 24 * 60 * 60 * 1000), // 3d ago
         status: "Failed",
-        icon: <BellIcon className="w-6 h-6 text-red-600" aria-hidden="true" />,
+        icon: <BellIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
       },
       {
         id: "5",
         title: "Weekly summary is ready",
         createdAt: new Date(now - 10 * 24 * 60 * 60 * 1000), // 10d ago
         status: "Finished",
-        icon: <BellIcon className="w-6 h-6 text-gray-600" aria-hidden="true" />,
+        icon: <BellIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
       },
     ];
   }, []);
@@ -102,40 +101,36 @@ export default function NotificationOverlay({
   const data = items && items.length > 0 ? items : fallbackItems;
 
   return (
-    <div className="h-full w-full bg-white shadow-primary rounded-xl">
+    <div className="h-full w-full bg-card shadow-primary rounded-xl">
       <div className="flex flex-col">
-        <header className="sticky top-0 z-10 px-5 py-5 border-b border-gray-200">
-          <h2 id="notifications-title" className="text-base font-semibold text-gray-900">
+        <header className="sticky top-0 z-10 px-5 py-5 bg-primary shadow-lg rounded-t-xl">
+          <h2 className="text-lg font-bold text-primary-foreground">
             Notifications
           </h2>
         </header>
 
-        <div className="flex-1 p-2">
-          <ul role="list" className="space-y-1">
+        <div className="flex-1 px-2 py-4 space-y-1">
             {data.map((n) => (
-              <li key={n.id} role="listitem">
-                <div className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-blue-200 transition">
-                  <div className="shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                    {n.icon ?? <BellIcon className="w-6 h-6 text-gray-700" aria-hidden="true" />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-col">
-                      <p className="truncate text-sm text-gray-900">{n.title}</p>
-                      <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo(n.createdAt)}</span>
-                    </div>
-                  </div>
-                  <div className="ml-2">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusBadgeClass(n.status)}${n.status === "On Processing" ? " animate-pulse" : ""}`}
-                      aria-label={`status: ${n.status}`}
-                    >
-                      {n.status}
-                    </span>
+              <div key={n.id} className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-foreground/10 transition">
+                <div className="shrink-0 w-10 h-10 rounded-full bg-border flex items-center justify-center">
+                  {n.icon ?? <BellIcon className="w-6 h-6 text-foreground" aria-hidden="true"/>}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col">
+                    <p className="truncate text-sm text-foreground">{n.title}</p>
+                    <span className="text-xs text-muted whitespace-nowrap">{timeAgo(n.createdAt)}</span>
                   </div>
                 </div>
-              </li>
+                <div className="ml-2">
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusBadgeClass(n.status)}${n.status === "On Processing" ? " animate-pulse" : ""}`}
+                    aria-label={`status: ${n.status}`}
+                  >
+                    {n.status}
+                  </span>
+                </div>
+              </div>
             ))}
-          </ul>
         </div>
       </div>
     </div>

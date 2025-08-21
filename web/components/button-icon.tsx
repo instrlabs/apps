@@ -14,9 +14,11 @@ export default function ButtonIcon({
     <button
       type={type}
       className={clsx(
-        "p-2 rounded-full",
-        "bg-white shadow-primary hover:bg-blue-100 focus:outline-none",
+        "p-2 rounded-xl",
+        "bg-card shadow-primary hover:bg-foreground/5 focus:outline-none",
         "cursor-pointer",
+        // Ensure solid icon color in light mode, and readable color in dark mode
+        "text-gray-950 [data-theme=\"dark\"]:text-foreground",
         className
       )}
       {...rest}

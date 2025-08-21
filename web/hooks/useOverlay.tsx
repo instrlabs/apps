@@ -40,9 +40,9 @@ const OverlayContext = createContext<OverlayContextType | undefined>(undefined);
 
 export function OverlayProvider({
   children,
-  defaultLeftOpen = false,
+  defaultLeftOpen = true,
   defaultRightOpen = false,
-  defaultLeftWidth = 0,
+  defaultLeftWidth = 80,
   defaultRightWidth = 0,
 }: {
   children: React.ReactNode;

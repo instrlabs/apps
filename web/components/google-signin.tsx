@@ -11,9 +11,14 @@ const GoogleSignInButton = () => {
       <button
           onClick={handleGoogleSignIn}
           className={clsx(
-            "w-full rounded-xl bg-white shadow-primary px-5 py-4",
-            "font-medium text-gray-800",
-            "cursor-pointer",
+            "bg-[var(--btn-secondary-bg)]",
+            "text-[var(--btn-secondary-text)]",
+            "hover:bg-[var(--btn-secondary-hover)]",
+            "active:bg-[var(--btn-secondary-active)]",
+            "disabled:bg-[var(--btn-secondary-disabled)]",
+
+            "py-4 rounded-xl cursor-pointer",
+            "font-medium shadow-primary",
           )}
       >
         <div className="flex items-center justify-center gap-2">

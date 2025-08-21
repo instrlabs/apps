@@ -19,8 +19,8 @@ export default function MenuButton({
       type={type}
       className={clsx(
         "w-full flex items-center gap-3 px-4 py-3",
-        "text-sm font-medium text-gray-800",
-        "bg-slate-50 hover:bg-blue-100",
+        "text-sm font-medium text-foreground",
+        "bg-card hover:bg-foreground/5",
         "rounded-sm cursor-pointer",
         className
       )}
