@@ -1,8 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import clsx from "clsx";
+
 import InfoIcon from "./icons/InfoIcon";
-import SuccessIcon from "./icons/SuccessIcon";
 import ErrorIcon from "./icons/ErrorIcon";
 import WarningIcon from "./icons/WarningIcon";
 
@@ -87,15 +88,14 @@ export const Notification: React.FC = () => {
 
   if (!isRendered) return null;
 
-  const getColorStyles = () => {
-    // Use theme primary for all notification backgrounds to align with app theming
-    return "bg-primary text-primary-foreground";
-  };
-
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 w-full flex justify-center px-4">
       <div className={`w-sm ${animationClass}`}>
-        <div className={`px-5 py-4 flex flex-row items-center gap-3 rounded-xl shadow-primary ${getColorStyles()}`}>
+        <div className={clsx(
+          "px-5 py-4",
+          "flex flex-row items-center gap-3",
+          "rounded-xl shadow-primary bg-white"
+        )}>
           {type === "error" && <ErrorIcon className="shrink-0" />}
           {type === "warning" && <WarningIcon className="shrink-0" />}
           {type === "info" && <InfoIcon className="shrink-0" />}

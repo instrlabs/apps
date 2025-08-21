@@ -1,120 +1,109 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
 
 import { registerUser } from "@/services/auth";
 import GoogleSignInButton from "@/components/google-signin";
 import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
-import FormInput from "@/components/text-field";
+import TextField from "@/components/text-field";
+import LinkText from "@/components/link-text";
 import { ROUTES } from "@/constants/routes";
+
+type RegisterFormValues = {
+  email: string;
+  password: string;
+  verifyPassword: string;
+};
 
 export default function RegisterPage() {
   const router = useRouter();
   const { showNotification } = useNotification();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    verifyPassword: "",
+
+  const {
+    register,
+    handleSubmit,
+    setError,
+    getValues,
+    formState: { errors },
+  } = useForm<RegisterFormValues>({
+    defaultValues: { email: "", password: "", verifyPassword: "" },
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; verifyPassword?: string }>({});
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
-    setFieldErrors((prev) => ({ ...prev, [id]: undefined }));
-  };
-
-  const passwordsMismatch =
-    formData.password.length > 0 &&
-    formData.verifyPassword.length > 0 &&
-    formData.password !== formData.verifyPassword;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    setFieldErrors({});
-
-    if (formData.password !== formData.verifyPassword) {
-      setFieldErrors({ verifyPassword: "Passwords do not match" });
+  const onSubmit = async (values: RegisterFormValues) => {
+    if (values.password !== values.verifyPassword) {
+      setError("verifyPassword", { type: "validate", message: "Passwords do not match" });
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const { data, error, errors } = await registerUser(formData.email, formData.password);
+    const { data, error, errorFields } = await registerUser(values.email, values.password);
 
-      if (errors && errors.length > 0) {
-        const mapped: { email?: string; password?: string; verifyPassword?: string } = {};
-        errors.forEach((err: { fieldName: string; errorMessage: string }) => {
-          const key = err.fieldName || "";
-          mapped[key as keyof typeof mapped] = err.errorMessage || "";
-        });
-        setFieldErrors(mapped);
-        return;
-      }
+    if (errorFields && errorFields.length > 0) {
+      errorFields.forEach((err: { fieldName: string; errorMessage: string }) => {
+        setError(err.fieldName as keyof RegisterFormValues, { type: "server", message: err.errorMessage || "" });
+      });
+      return;
+    }
 
-      if (error) {
-        showNotification(error, "error", 3000);
-        return;
-      }
+    if (error) {
+      showNotification(error, "error", 3000);
+      return;
+    }
 
-      if (data) {
-        router.replace(ROUTES.LOGIN);
-      }
-    } finally {
-      setIsLoading(false);
+    if (data) {
+      router.replace(ROUTES.LOGIN);
     }
   };
 
   return (
     <div className="h-screen w-full flex flex-col justify-center items-center p-10">
       <h1 className="text-3xl font-bold mb-10">Create your account</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-7 w-full max-w-sm">
-        <FormInput
-          id="email"
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7 w-full max-w-sm">
+        <TextField
           type="email"
-          label="Email"
-          value={formData.email}
-          onChange={handleInputChange}
           placeholder="Enter your email address"
-          xIsInvalid={!!fieldErrors.email}
-          xErrorMessage={fieldErrors.email}
+          xIsInvalid={!!errors.email}
+          xErrorMessage={errors.email?.message}
+          {...register("email", {
+            required: "Email is required",
+            pattern: {
+              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+              message: "Enter a valid email address",
+            },
+          })}
         />
-        <FormInput
-          id="password"
+        <TextField
           type="password"
-          label="Password"
-          value={formData.password}
-          onChange={handleInputChange}
           placeholder="Create a password"
-          xIsInvalid={!!fieldErrors.password}
-          xErrorMessage={fieldErrors.password}
+          xIsInvalid={!!errors.password}
+          xErrorMessage={errors.password?.message}
+          {...register("password", {
+            required: "Password is required",
+            minLength: { value: 6, message: "Password must be at least 6 characters" },
+          })}
         />
-        <FormInput
-          id="verifyPassword"
+        <TextField
           type="password"
-          label="Verify Password"
-          value={formData.verifyPassword}
-          onChange={handleInputChange}
           placeholder="Re-enter your password"
-          xIsInvalid={!!fieldErrors.verifyPassword || passwordsMismatch}
-          xErrorMessage={fieldErrors.verifyPassword}
+          xIsInvalid={!!errors.verifyPassword}
+          xErrorMessage={errors.verifyPassword?.message}
+          {...register("verifyPassword", {
+            required: "Please verify your password",
+            validate: (val) => val === getValues("password") || "Passwords do not match",
+          })}
         />
-        <Button type="submit" isLoading={isLoading} loadingText="Signing up...">
-          Register
-        </Button>
+        <Button type="submit">Register</Button>
       </form>
 
       <div className="flex flex-col gap-5 w-sm mt-3">
         <GoogleSignInButton />
         <div className="text-sm text-center">
           Already have an account?{" "}
-          <a className="underline" href={ROUTES.LOGIN}>
-            Sign in
-          </a>
+          <LinkText href={ROUTES.LOGIN}>Sign in</LinkText>
         </div>
       </div>
     </div>

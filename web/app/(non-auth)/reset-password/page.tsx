@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
 
 import { resetPassword } from "@/services/auth";
 import Button from "@/components/button";
 import { useNotification } from "@/components/notification";
-import FormInput from "@/components/text-field";
+import TextField from "@/components/text-field";
 import { ROUTES } from "@/constants/routes";
 
 function LoadingFallback() {
@@ -27,11 +28,8 @@ function ResetPasswordContent() {
   const { showNotification } = useNotification();
 
   const [token, setToken] = useState("");
-  const [formData, setFormData] = useState({ password: "", confirmPassword: "" });
-  const [fieldErrors, setFieldErrors] = useState<{ password?: string; confirmPassword?: string }>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [tokenError, setTokenError] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
     const tokenParam = searchParams.get("token");
@@ -47,46 +45,37 @@ function ResetPasswordContent() {
     }
   }, [searchParams, showNotification]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
-    setFieldErrors((prev) => ({ ...prev, [id]: undefined }));
-  };
+  type ResetFormValues = { password: string; confirmPassword: string };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const { register, handleSubmit, setError, getValues, formState: { errors } } = useForm<ResetFormValues>({
+    defaultValues: { password: "", confirmPassword: "" },
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+  });
 
-    if (formData.password !== formData.confirmPassword) {
-      setFieldErrors((prev) => ({ ...prev, confirmPassword: "Passwords do not match" }));
+  const onSubmit = async (values: ResetFormValues) => {
+    if (values.password !== values.confirmPassword) {
+      setError("confirmPassword", { type: "validate", message: "Passwords do not match" });
       return;
     }
 
-    setFieldErrors({});
-    setIsLoading(true);
-    try {
-      const { data, error, errors } = await resetPassword(token, formData.password);
+    const { data, error, errorFields } = await resetPassword(token, values.password);
 
-      if (errors && errors.length > 0) {
-        const mapped: { password?: string; confirmPassword?: string } = {};
-        errors.forEach((err: { fieldName: string; errorMessage: string }) => {
-          const key = err.fieldName || "";
-          mapped[key as keyof typeof mapped] = err.errorMessage || "";
-        });
-        setFieldErrors(mapped);
-        return;
-      }
+    if (errorFields && errorFields.length > 0) {
+      errorFields.forEach((err: { fieldName: string; errorMessage: string }) => {
+        setError(err.fieldName as keyof ResetFormValues, { type: "server", message: err.errorMessage || "" });
+      });
+      return;
+    }
 
-      if (error) {
-        showNotification(error, "error", 3000);
-        return;
-      }
+    if (error) {
+      showNotification(error, "error", 3000);
+      return;
+    }
 
-      if (data) {
-        setIsSubmitted(true);
-        showNotification(data?.message, "info", 3000);
-      }
-    } finally {
-      setIsLoading(false);
+    if (data) {
+      setIsSubmitted(true);
+      showNotification(data?.message, "info", 3000);
     }
   };
 
@@ -130,30 +119,28 @@ function ResetPasswordContent() {
           Enter your new password below. Password must be at least 8 characters long.
         </p>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-7 w-full max-w-sm">
-        <FormInput
-          id="password"
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7 w-full max-w-sm">
+        <TextField
           type="password"
-          label="New Password"
-          value={formData.password}
-          onChange={handleInputChange}
           placeholder="Enter your new password"
-          xIsInvalid={!!fieldErrors.password}
-          xErrorMessage={fieldErrors.password}
+          xIsInvalid={!!errors.password}
+          xErrorMessage={errors.password?.message}
+          {...register("password", {
+            required: "Password is required",
+            minLength: { value: 6, message: "Password must be at least 6 characters" },
+          })}
         />
-        <FormInput
-          id="confirmPassword"
+        <TextField
           type="password"
-          label="Confirm Password"
-          value={formData.confirmPassword}
-          onChange={handleInputChange}
           placeholder="Confirm your new password"
-          xIsInvalid={!!fieldErrors.confirmPassword}
-          xErrorMessage={fieldErrors.confirmPassword}
+          xIsInvalid={!!errors.confirmPassword}
+          xErrorMessage={errors.confirmPassword?.message}
+          {...register("confirmPassword", {
+            required: "Please confirm your password",
+            validate: (val) => val === getValues("password") || "Passwords do not match",
+          })}
         />
-        <Button type="submit" isLoading={isLoading} loadingText="Resetting...">
-          Reset Password
-        </Button>
+        <Button type="submit">Reset Password</Button>
       </form>
     </div>
   );
