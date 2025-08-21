@@ -20,7 +20,6 @@ export default function OverlayContent({
   const pathname = usePathname();
   const { leftWidth, rightWidth, isLeftOpen, isRightOpen } = useOverlay();
 
-  // Determine a stable key for the content so that when it changes, we replay the animation
   const keyForContent = useMemo(() => {
     if (contentKey !== undefined && contentKey !== null) return String(contentKey);
     return pathname ?? "static";

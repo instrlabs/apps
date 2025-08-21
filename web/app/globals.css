@@ -67,6 +67,8 @@
 }
 
 body {
+  width: 100vw;
+  height: 100vh;
   background: radial-gradient(circle, var(--color-slate-100), var(--color-slate-200));
   color: var(--text-primary);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;

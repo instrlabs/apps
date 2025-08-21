@@ -9,6 +9,7 @@ import Avatar from "@/components/avatar";
 import ProfileOverlay from "@/components/reuse/profile-overlay";
 import NotificationOverlay from "@/components/reuse/notification-overlay";
 import NavigationOverlay from "@/components/reuse/navigation-overlay";
+import TextField from "@/components/text-field";
 import clsx from "clsx";
 import type { ReactNode } from "react";
 import Image from "next/image";
@@ -107,12 +108,13 @@ export default function OverlayTop() {
       <div className="space-y-3">
         <div className="relative">
           <label htmlFor="global-search-input" className="sr-only">Search</label>
-          <input
+          <TextField
             id="global-search-input"
             type="text"
             autoFocus
             placeholder="Search..."
-            className="w-full py-2 pl-3 pr-10 rounded-xl bg-card text-foreground placeholder:text-muted border border-border focus:border-foreground focus:outline-none"
+            className="pr-10"
+            xSize="md"
           />
           <SearchIcon
             className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted"
@@ -143,15 +145,15 @@ export default function OverlayTop() {
         <div className="flex items-center space-x-5 flex-1 justify-center">
           <div className="relative w-96 max-w-full">
             <label htmlFor="topbar-search" className="sr-only">Search</label>
-            <input
+            <TextField
               id="topbar-search"
               type="text"
               placeholder="Search..."
               className={clsx(
-                "w-full py-3 pl-5 pr-10 rounded-full",
-                "bg-card shadow-primary placeholder:text-muted focus:outline-none",
+                "pr-10",
                 "cursor-pointer"
               )}
+              xSize="md"
               onFocus={openSearchModal}
               onClick={openSearchModal}
               readOnly
@@ -172,9 +174,10 @@ export default function OverlayTop() {
           >
             <BellIcon className="w-6 h-6 text-gray-800" />
           </OverlayButtonIcon>
-          <button
+          <ButtonIcon
             type="button"
-            className="rounded-full focus:outline-none cursor-pointer"
+            aria-label="Open profile overlay"
+            className="p-0 rounded-full bg-transparent shadow-none hover:bg-transparent"
             onClick={() => {
               const key = 'right:profile';
 
@@ -183,7 +186,7 @@ export default function OverlayTop() {
             }}
           >
             <Avatar name="Artha Dede" size={40} />
-          </button>
+          </ButtonIcon>
         </div>
       </div>
     </div>

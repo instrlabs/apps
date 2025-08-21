@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useOverlay } from "@/hooks/useOverlay";
+import Button from "@/components/button";
 
 export default function OverlayModal() {
   const { isModalOpen, modalNode, modalContentKey, closeModal } = useOverlay();
@@ -45,7 +46,7 @@ export default function OverlayModal() {
             {modalNode}
           </div>
           <div className="px-4 py-3 border-t border-border flex justify-end">
-            <button onClick={closeModal} className="px-3 py-1.5 rounded-md bg-foreground/5 hover:bg-foreground/10 text-sm text-foreground">Close</button>
+            <Button type="button" onClick={closeModal}>Close</Button>
           </div>
         </div>
       </div>

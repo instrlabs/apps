@@ -22,7 +22,6 @@ export default function HomeContent() {
     }
   }, []);
 
-  // Hook up SSE with a small cache if token exists
   const { events, lastEvent, isConnected, error, clear } = useSSECache<AppEvent>(token || undefined, {
     maxCacheSize: 50,
   });
