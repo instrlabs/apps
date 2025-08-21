@@ -151,6 +151,31 @@ paths:
       summary: Login user
       tags:
       - auth
+  /logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout a user by clearing their refresh token and cookies
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout successful
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "401":
+          description: Missing or invalid access token
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+      summary: Logout user
+      tags:
+      - auth
   /refresh:
     post:
       consumes:

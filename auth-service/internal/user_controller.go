@@ -44,8 +44,8 @@ func NewUserController(userRepo *UserRepository, config *Config) *UserController
 	}
 }
 
-func (c *UserController) RegisterUser(email, password string) (*User, error) {
-	user, err := NewUser(email, password)
+func (c *UserController) RegisterUser(name, email, password string) (*User, error) {
+	user, err := NewUser(name, email, password)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func (c *UserController) HandleGoogleCallback(code string) (map[string]string, e
 	if err != nil {
 		user, err = c.userRepo.FindByEmail(userInfo.Email)
 		if err != nil {
-			user = NewGoogleUser(userInfo.Email, userInfo.ID)
+			user = NewGoogleUser(userInfo.Name, userInfo.Email, userInfo.ID)
 			err = c.userRepo.Create(user)
 			if err != nil {
 				return nil, errors.New("failed to create user")
@@ -342,4 +342,64 @@ func (c *UserController) GetOAuthRedirectURL() string {
 // GetCookieDomain returns the cookie domain from configuration
 func (c *UserController) GetCookieDomain() string {
 	return c.config.CookieDomain
+}
+
+// UpdateProfile updates a user's profile information (currently only name)
+func (c *UserController) UpdateProfile(userID string, name string) error {
+	// Validate input
+	if name == "" {
+		return errors.New("name cannot be empty")
+	}
+
+	// Update the user's profile
+	err := c.userRepo.UpdateProfile(userID, name)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ChangePassword changes a user's password
+func (c *UserController) ChangePassword(userID string, currentPassword string, newPassword string) error {
+	// Validate input
+	if currentPassword == "" || newPassword == "" {
+		return errors.New("passwords cannot be empty")
+	}
+
+	// Find the user
+	user, err := c.userRepo.FindByID(userID)
+	if err != nil {
+		return err
+	}
+
+	// Verify current password
+	if !user.ComparePassword(currentPassword) {
+		return errors.New("current password is incorrect")
+	}
+
+	// Hash the new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New("failed to hash password")
+	}
+
+	// Update the password
+	err = c.userRepo.UpdatePassword(userID, string(hashedPassword))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// LogoutUser logs out a user by clearing their refresh token
+func (c *UserController) LogoutUser(userID string) error {
+	// Clear the refresh token
+	err := c.userRepo.ClearRefreshToken(userID)
+	if err != nil {
+		return errors.New("failed to logout user")
+	}
+
+	return nil
 }

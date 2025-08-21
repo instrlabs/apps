@@ -79,10 +79,15 @@ func main() {
 
 	app.Post("/register", userHandler.Register)
 	app.Post("/login", userHandler.Login)
+	app.Post("/logout", userHandler.Logout)
 	app.Post("/refresh", userHandler.RefreshToken)
 	app.Post("/forgot-password", userHandler.ForgotPassword)
 	app.Post("/reset-password", userHandler.ResetPassword)
 	app.Post("/verify-token", userHandler.VerifyToken)
+
+	app.Get("/profile", userHandler.GetProfile)
+	app.Put("/profile", userHandler.UpdateProfile)
+	app.Post("/change-password", userHandler.ChangePassword)
 
 	// Google OAuth routes
 	app.Get("/google", userHandler.GoogleLogin)

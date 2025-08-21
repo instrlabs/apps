@@ -10,6 +10,7 @@ import (
 // User represents a user in the system
 type User struct {
 	ID                primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Name              string             `json:"name" bson:"name"`
 	Email             string             `json:"email" bson:"email"`
 	Password          string             `json:"-" bson:"password"`
 	GoogleID          string             `json:"-" bson:"google_id,omitempty"`
@@ -20,8 +21,8 @@ type User struct {
 	UpdatedAt         time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
-// NewUser creates a new user with the given email and password
-func NewUser(email, password string) (*User, error) {
+// NewUser creates a new user with the given name, email and password
+func NewUser(name, email, password string) (*User, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
@@ -29,6 +30,7 @@ func NewUser(email, password string) (*User, error) {
 
 	now := time.Now()
 	return &User{
+		Name:      name,
 		Email:     email,
 		Password:  string(hashedPassword),
 		CreatedAt: now,
@@ -37,9 +39,10 @@ func NewUser(email, password string) (*User, error) {
 }
 
 // NewGoogleUser creates a new user from a Google profile
-func NewGoogleUser(email, googleID string) *User {
+func NewGoogleUser(name, email, googleID string) *User {
 	now := time.Now()
 	return &User{
+		Name:      name,
 		Email:     email,
 		GoogleID:  googleID,
 		CreatedAt: now,

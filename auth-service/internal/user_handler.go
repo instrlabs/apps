@@ -24,8 +24,8 @@ func NewUserHandler(userController *UserController) *UserHandler {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body object{email=string,password=string} true "User registration details"
-// @Success 201 {object} object{message=string,data=object{email=string}} "User registered successfully"
+// @Param request body object{name=string,email=string,password=string} true "User registration details"
+// @Success 201 {object} object{message=string,data=object{name=string,email=string}} "User registered successfully"
 // @Failure 400 {object} object{message=string} "Invalid request body or validation error"
 // @Failure 409 {object} object{message=string} "Email already exists"
 // @Failure 500 {object} object{message=string} "Internal server error"
@@ -34,6 +34,7 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	h.logger.Println("Register: Processing registration request")
 
 	var input struct {
+		Name     string `json:"name" validate:"required"`
 		Email    string `json:"email" validate:"required,email"`
 		Password string `json:"password" validate:"required,min=6"`
 	}
@@ -44,6 +45,20 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 			"message": ErrInvalidRequestBody,
 			"errors":  nil,
 			"data":    nil,
+		})
+	}
+
+	if input.Name == "" {
+		h.logger.Println("Register: Name is required")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Name is required",
+			"errors": []fiber.Map{
+				{
+					"fieldName":    "name",
+					"errorMessage": "Name is required",
+				},
+			},
+			"data": nil,
 		})
 	}
 
@@ -75,8 +90,8 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		})
 	}
 
-	h.logger.Printf("Register: Attempting to register user with email: %s", input.Email)
-	user, err := h.userController.RegisterUser(input.Email, input.Password)
+	h.logger.Printf("Register: Attempting to register user with name: %s, email: %s", input.Name, input.Email)
+	user, err := h.userController.RegisterUser(input.Name, input.Email, input.Password)
 	if err != nil {
 		if err.Error() == "user with this email already exists" {
 			h.logger.Printf("Register: Email already exists: %s", input.Email)
@@ -517,6 +532,293 @@ func (h *UserHandler) VerifyToken(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Token verified successfully",
 		"errors":  nil,
-		"data":    user,
+		"data":    nil,
+	})
+}
+
+// GetProfile godoc
+// @Summary Get user profile
+// @Description Get the user profile information based on the authentication token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} object{message=string,data=object{user=User}} "Profile retrieved successfully"
+// @Failure 401 {object} object{message=string} "Missing or invalid access token"
+// @Router /profile [get]
+func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
+	h.logger.Println("GetProfile: Processing profile request")
+
+	var accessToken string
+	if token, ok := c.Locals("token").(string); ok && token != "" {
+		h.logger.Println("GetProfile: Using token from context")
+		accessToken = token
+	} else {
+		h.logger.Println("GetProfile: Access token not found")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Access token is required",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	h.logger.Println("GetProfile: Attempting to verify token and get user profile")
+	user, err := h.userController.VerifyToken(accessToken)
+	if err != nil {
+		h.logger.Printf("GetProfile: Invalid token error: %v", err)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Invalid token",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	h.logger.Printf("GetProfile: Profile retrieved successfully for user: %s", user.Email)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Profile retrieved successfully",
+		"errors":  nil,
+		"data": fiber.Map{
+			"user": user,
+		},
+	})
+}
+
+// UpdateProfile godoc
+// @Summary Update user profile
+// @Description Update the user profile information (currently only name)
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body object{name=string} true "Profile update request"
+// @Success 200 {object} object{message=string,data=object{user=User}} "Profile updated successfully"
+// @Failure 400 {object} object{message=string,errors=object} "Invalid request"
+// @Failure 401 {object} object{message=string} "Missing or invalid access token"
+// @Router /profile [put]
+func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
+	h.logger.Println("UpdateProfile: Processing profile update request")
+
+	// Get token from context (set by middleware)
+	var accessToken string
+	if token, ok := c.Locals("token").(string); ok && token != "" {
+		h.logger.Println("UpdateProfile: Using token from context")
+		accessToken = token
+	} else {
+		h.logger.Println("UpdateProfile: Access token not found")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Access token is required",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	// Verify token and get user
+	user, err := h.userController.VerifyToken(accessToken)
+	if err != nil {
+		h.logger.Printf("UpdateProfile: Invalid token error: %v", err)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Invalid token",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	// Parse request body
+	var request struct {
+		Name string `json:"name"`
+	}
+	if err := c.BodyParser(&request); err != nil {
+		h.logger.Printf("UpdateProfile: Failed to parse request body: %v", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid request body",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	// Update profile
+	err = h.userController.UpdateProfile(user.ID.Hex(), request.Name)
+	if err != nil {
+		h.logger.Printf("UpdateProfile: Failed to update profile: %v", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Failed to update profile",
+			"errors": fiber.Map{
+				"general": err.Error(),
+			},
+			"data": nil,
+		})
+	}
+
+	// Get updated user
+	updatedUser, err := h.userController.VerifyToken(accessToken)
+	if err != nil {
+		h.logger.Printf("UpdateProfile: Failed to get updated user: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Profile updated but failed to retrieve updated data",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	h.logger.Printf("UpdateProfile: Profile updated successfully for user: %s", updatedUser.Email)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Profile updated successfully",
+		"errors":  nil,
+		"data": fiber.Map{
+			"user": updatedUser,
+		},
+	})
+}
+
+// ChangePassword godoc
+// @Summary Change user password
+// @Description Change the user's password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body object{current_password=string,new_password=string} true "Password change request"
+// @Success 200 {object} object{message=string} "Password changed successfully"
+// @Failure 400 {object} object{message=string,errors=object} "Invalid request"
+// @Failure 401 {object} object{message=string} "Missing or invalid access token"
+// @Router /change-password [post]
+func (h *UserHandler) ChangePassword(c *fiber.Ctx) error {
+	h.logger.Println("ChangePassword: Processing password change request")
+
+	// Get token from context (set by middleware)
+	var accessToken string
+	if token, ok := c.Locals("token").(string); ok && token != "" {
+		h.logger.Println("ChangePassword: Using token from context")
+		accessToken = token
+	} else {
+		h.logger.Println("ChangePassword: Access token not found")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Access token is required",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	// Verify token and get user
+	user, err := h.userController.VerifyToken(accessToken)
+	if err != nil {
+		h.logger.Printf("ChangePassword: Invalid token error: %v", err)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Invalid token",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	// Parse request body
+	var request struct {
+		CurrentPassword string `json:"current_password"`
+		NewPassword     string `json:"new_password"`
+	}
+	if err := c.BodyParser(&request); err != nil {
+		h.logger.Printf("ChangePassword: Failed to parse request body: %v", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid request body",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	// Change password
+	err = h.userController.ChangePassword(user.ID.Hex(), request.CurrentPassword, request.NewPassword)
+	if err != nil {
+		h.logger.Printf("ChangePassword: Failed to change password: %v", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Failed to change password",
+			"errors": fiber.Map{
+				"general": err.Error(),
+			},
+			"data": nil,
+		})
+	}
+
+	h.logger.Printf("ChangePassword: Password changed successfully for user: %s", user.Email)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Password changed successfully",
+		"errors":  nil,
+		"data":    nil,
+	})
+}
+
+// Logout godoc
+// @Summary Logout user
+// @Description Logout a user by clearing their refresh token and cookies
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} object{message=string} "Logout successful"
+// @Failure 401 {object} object{message=string} "Missing or invalid access token"
+// @Router /logout [post]
+func (h *UserHandler) Logout(c *fiber.Ctx) error {
+	h.logger.Println("Logout: Processing logout request")
+
+	// Get token from context (set by middleware)
+	var accessToken string
+	if token, ok := c.Locals("token").(string); ok && token != "" {
+		h.logger.Println("Logout: Using token from context")
+		accessToken = token
+	} else {
+		h.logger.Println("Logout: Access token not found")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Access token is required",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	// Verify token and get user
+	user, err := h.userController.VerifyToken(accessToken)
+	if err != nil {
+		h.logger.Printf("Logout: Invalid token error: %v", err)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Invalid token",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	// Logout user
+	err = h.userController.LogoutUser(user.ID.Hex())
+	if err != nil {
+		h.logger.Printf("Logout: Failed to logout user: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to logout user",
+			"errors": fiber.Map{
+				"general": err.Error(),
+			},
+			"data": nil,
+		})
+	}
+
+	// Clear cookies
+	c.Cookie(&fiber.Cookie{
+		Domain:   h.userController.GetCookieDomain(),
+		Name:     "access_token",
+		Value:    "",
+		HTTPOnly: true,
+		SameSite: "None",
+		Secure:   h.userController.GetEnvironment() == "production",
+		Path:     "/",
+		MaxAge:   -1,
+	})
+
+	c.Cookie(&fiber.Cookie{
+		Domain:   h.userController.GetCookieDomain(),
+		Name:     "refresh_token",
+		Value:    "",
+		HTTPOnly: true,
+		SameSite: "None",
+		Secure:   h.userController.GetEnvironment() == "production",
+		Path:     "/",
+		MaxAge:   -1,
+	})
+
+	h.logger.Printf("Logout: User logged out successfully: %s", user.Email)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Logout successful",
+		"errors":  nil,
+		"data":    nil,
 	})
 }
