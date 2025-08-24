@@ -5,24 +5,8 @@ import { useOverlay } from "@/hooks/useOverlay";
 import Button from "@/components/button";
 
 export default function OverlayModal() {
-  const { isModalOpen, modalNode, modalContentKey, closeModal } = useOverlay();
+  const { isModalOpen, modalNode, modalContentKey } = useOverlay();
   const backdropRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        closeModal();
-      }
-    }
-    if (isModalOpen) {
-      document.addEventListener("keydown", onKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = '';
-    };
-  }, [isModalOpen, closeModal]);
 
   if (!isModalOpen) return null;
 
@@ -33,11 +17,7 @@ export default function OverlayModal() {
         ref={backdropRef}
         className="absolute inset-0 bg-black/40"
         aria-hidden="true"
-        onClick={(e) => {
-          if (e.target === backdropRef.current) {
-            closeModal();
-          }
-        }}
+        onClick={() => {}}
       />
       {/* Dialog */}
       <div role="dialog" aria-modal="true" aria-label="Modal dialog" className="relative z-10 w-full max-w-2xl mx-4">
@@ -46,7 +26,7 @@ export default function OverlayModal() {
             {modalNode}
           </div>
           <div className="px-4 py-3 border-t border-border flex justify-end">
-            <Button type="button" onClick={closeModal}>Close</Button>
+            <Button type="button">Close</Button>
           </div>
         </div>
       </div>

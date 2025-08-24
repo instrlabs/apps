@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";import { getOverlayEntry, resolveOverlayNode } from "@/hooks/overlayRegistry";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { getOverlayEntry, resolveOverlayNode } from "@/hooks/overlayRegistry";
 
 export type OverlayActions = {
   // actions

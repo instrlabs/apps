@@ -22,6 +22,10 @@ export function getOverlayEntry(key: string): OverlayEntry | undefined {
   return registry.get(key);
 }
 
+export function resetOverlayRegistry() {
+  registry.clear();
+}
+
 export function resolveOverlayNode(entry: OverlayEntry): React.ReactNode {
   return entry.action();
 }
