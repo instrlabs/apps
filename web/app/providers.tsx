@@ -4,13 +4,11 @@ import React, { useEffect } from "react";
 
 import { ProfileProvider } from "@/hooks/useProfile";
 import { NotificationProvider } from "@/components/notification";
-import { OverlayProvider } from "@/hooks/useOverlay";
-import {registerBuiltInOverlays, resetOverlayRegistry} from "@/hooks/overlayRegistry";
+import { OverlayProvider, registerOverlays } from "@/hooks/useOverlay";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    registerBuiltInOverlays();
-    return () => resetOverlayRegistry();
+    registerOverlays();
   }, []);
 
   return (

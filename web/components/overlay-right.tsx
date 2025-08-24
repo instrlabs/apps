@@ -5,8 +5,8 @@ import { useMemo } from "react";
 import clsx from "clsx";
 
 export default function OverlayRight() {
-  const { isRightOpen, rightNode, rightContentKey, rightWidth } = useOverlay();
-  const targetWidth = Number.isFinite(rightWidth) ? Math.max(0, Math.round(rightWidth)) : 0;
+  const { isRightOpen, rightNode, rightWidth } = useOverlay();
+  const targetWidth = Math.max(0, rightWidth);
   const widthPx = useMemo(() => isRightOpen ? targetWidth : 0, [isRightOpen, targetWidth]);
 
   return (
@@ -21,7 +21,7 @@ export default function OverlayRight() {
         "w-full h-full flex flex-col",
         isRightOpen ? "overflow-visible" : "overflow-hidden",
       )}>
-        <div key={rightContentKey} className="flex-1 animate-fade-in">
+        <div className="flex-1 animate-fade-in">
           {rightNode}
         </div>
       </div>

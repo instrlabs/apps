@@ -1,7 +1,11 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { getOverlayEntry, resolveOverlayNode } from "@/hooks/overlayRegistry";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+
+import NavigationOverlay from "@/components/overlays/navigation-overlay";
+import NotificationOverlay from "@/components/overlays/notification-overlay";
+import ProfileOverlay from "@/components/overlays/profile-overlay";
+import SearchOverlay from "@/components/overlays/search-overlay";
 
 export type OverlayActions = {
   // actions
@@ -9,41 +13,93 @@ export type OverlayActions = {
   closeAll: () => void;
   // left overlay state
   isLeftOpen: boolean;
+  leftKey: string;
   leftNode: React.ReactNode;
-  leftContentKey: string;
-  leftWidth?: number;
+  leftWidth: number;
   // right overlay state
   isRightOpen: boolean;
+  rightKey: string;
   rightNode: React.ReactNode;
-  rightContentKey: string;
-  rightWidth?: number;
+  rightWidth: number;
   // modal state
   isModalOpen: boolean;
+  modalKey: string;
   modalNode: React.ReactNode;
-  modalContentKey: string;
 };
+
+export type OverlaySide = "left" | "right" | "modal";
+export type OverlayRender = () => React.ReactNode;
+export type OverlayOpts = {
+  side: OverlaySide;
+  width: number;
+  render: OverlayRender;
+};
+
+const overlay = new Map<string, OverlayOpts>();
+
+function registerOverlay(key: string, config: OverlayOpts): void {
+  const [overlaySide] = config.side.split(":", 1);
+
+  overlay.set(key, {
+    side: overlaySide as OverlaySide,
+    width: config.width,
+    render: config.render,
+  });
+}
+
+export function registerOverlays() {
+  // Left navigation rail
+  registerOverlay("left:navigation", {
+    side: "left",
+    width: 80,
+    render: () => <NavigationOverlay />,
+  });
+
+  // Right notifications
+  registerOverlay("right:notifications", {
+    side: "right",
+    width: 400,
+    render: () => <NotificationOverlay />,
+  });
+
+  // Right profile
+  registerOverlay("right:profile", {
+    side: "right",
+    width: 400,
+    render: () => <ProfileOverlay />,
+  });
+
+  // Modal: search
+  registerOverlay("modal:search", {
+    side: "modal",
+    width: 400,
+    render: () => <SearchOverlay />,
+  });
+}
 
 const OverlayContext = createContext<OverlayActions | undefined>(undefined);
 
-export function OverlayProvider({ children }: { children: React.ReactNode }) {
+export function OverlayProvider({ children }: {
+  children: React.ReactNode;
+}) {
   // left
   const [isLeftOpen, setIsLeftOpen] = useState<boolean>(false);
   const [leftNode, setLeftNodeState] = useState<React.ReactNode>(<div />);
   const [leftKey, setLeftKey] = useState<string>("");
-  const [leftWidth, setLeftWidth] = useState<number | undefined>(undefined);
+  const [leftWidth, setLeftWidth] = useState<number>(0);
 
   // right
   const [isRightOpen, setIsRightOpen] = useState<boolean>(false);
   const [rightNode, setRightNodeState] = useState<React.ReactNode>(<div />);
-  const [rightActiveKey, setRightActiveKey] = useState<string>("");
-  const [rightWidth, setRightWidth] = useState<number | undefined>(undefined);
+  const [rightKey, setRightKey] = useState<string>("");
+  const [rightWidth, setRightWidth] = useState<number>(0);
 
   // modal
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalNode, setModalNodeState] = useState<React.ReactNode>(<div />);
-  const [modalActiveKey, setModalActiveKey] = useState<string>("");
+  const [modalKey, setModalKey] = useState<string>("");
 
-  const toggleLeft = useCallback((currentKey: string | null, nextNode?: React.ReactNode, width?: number) => {
+  const toggleLeft = useCallback((currentKey: string | null, params: OverlayOpts) => {
     const key = currentKey ?? "";
     if (isLeftOpen && leftKey === key) {
       setIsLeftOpen(false);
@@ -51,37 +107,38 @@ export function OverlayProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (nextNode) setLeftNodeState(nextNode);
+    setLeftNodeState(params.render());
     setLeftKey(key);
-    setLeftWidth(width);
+    setLeftWidth(params.width);
     setIsLeftOpen(true);
   }, [isLeftOpen, leftKey]);
 
-  const toggleRight = useCallback((currentKey: string | null, nextNode?: React.ReactNode, width?: number) => {
+  const toggleRight = useCallback((currentKey: string | null, params: OverlayOpts) => {
     const key = currentKey ?? "";
-    if (isRightOpen && rightActiveKey === key) {
+    if (isRightOpen && rightKey === key) {
       setIsRightOpen(false);
-      setRightActiveKey("");
+      setRightKey("");
       return;
     }
-    if (nextNode) setRightNodeState(nextNode);
-    setRightActiveKey(key);
-    setRightWidth(width);
+
+    setRightNodeState(params.render());
+    setRightKey(key);
+    setRightWidth(params.width);
     setIsRightOpen(true);
-  }, [isRightOpen, rightActiveKey]);
+  }, [isRightOpen, rightKey]);
 
-  const toggleModal = useCallback((currentKey: string | null, nextNode?: React.ReactNode) => {
+  const toggleModal = useCallback((currentKey: string | null, params: OverlayOpts) => {
     const key = currentKey ?? "";
-    if (isModalOpen && modalActiveKey === key) {
+    if (isModalOpen && modalKey === key) {
       setIsModalOpen(false);
-      setModalActiveKey("");
+      setModalKey("");
       return;
     }
 
-    if (nextNode) setModalNodeState(nextNode);
-    setModalActiveKey(key);
+    setModalNodeState(params.render());
+    setModalKey(key);
     setIsModalOpen(true);
-  }, [isModalOpen, modalActiveKey]);
+  }, [isModalOpen, modalKey]);
 
   const closeAll = useCallback(() => {
     setIsLeftOpen(false);
@@ -90,38 +147,23 @@ export function OverlayProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleByKey = useCallback((key: string) => {
-    const entry = getOverlayEntry(key);
+    const entry = overlay.get(key);
     if (!entry) return;
 
-    const node = resolveOverlayNode(entry);
-
-    if (entry.side === 'left') {
-      toggleLeft(key, node, entry.width);
-      return;
-    }
-
-    if (entry.side === 'right') {
-      toggleRight(key, node, entry.width);
-      return;
-    }
-
-    if(entry.side === 'modal') {
-      toggleModal(key, node);
+    switch (entry.side) {
+      case 'left':
+        toggleLeft(key, entry);
+        return;
+      case 'right':
+        toggleRight(key, entry);
+        return;
+      case 'modal':
+        toggleModal(key, entry);
+        return;
+      default:
+        return;
     }
   }, [toggleLeft, toggleRight, toggleModal]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (isModalOpen || isLeftOpen || isRightOpen) {
-          e.stopPropagation();
-          closeAll();
-        }
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isModalOpen, isLeftOpen, isRightOpen, closeAll]);
 
   const value = useMemo<OverlayActions>(() => ({
     // actions
@@ -130,18 +172,18 @@ export function OverlayProvider({ children }: { children: React.ReactNode }) {
     // left
     isLeftOpen,
     leftNode,
-    leftContentKey: leftKey,
+    leftKey,
     leftWidth,
     // right
-    isRightOpen: isRightOpen,
+    isRightOpen,
     rightNode,
-    rightContentKey: rightActiveKey,
+    rightKey,
     rightWidth,
     // modal
     isModalOpen,
     modalNode,
-    modalContentKey: modalActiveKey,
-  }), [toggleByKey, closeAll, isLeftOpen, leftNode, leftKey, leftWidth, isRightOpen, rightNode, rightActiveKey, rightWidth, isModalOpen, modalNode, modalActiveKey]);
+    modalKey,
+  }), [toggleByKey, closeAll, isLeftOpen, leftNode, leftKey, leftWidth, isRightOpen, rightNode, rightKey, rightWidth, isModalOpen, modalNode, modalKey]);
 
   return (
     <OverlayContext.Provider value={value}>

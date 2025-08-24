@@ -1,4 +1,10 @@
+"use client";
+
+import { useEffect } from "react";
+import {useOverlay} from "@/hooks/useOverlay";
+
 export default function AppsPage() {
+
   const tools = [
     {
       key: 'compress',

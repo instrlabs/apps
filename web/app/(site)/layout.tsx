@@ -1,7 +1,7 @@
 import React from "react";
-import OverlayContent from "@/components/overlay-content";
 import Providers from "@/app/providers";
 import Widgets from "@/app/widgets";
+import OverlayContentWrapper from "@/components/overlay-content-wrapper";
 
 export default function SiteLayout({
   children,
@@ -10,9 +10,9 @@ export default function SiteLayout({
 }>) {
   return (
     <Providers>
-      <OverlayContent>
+      <OverlayContentWrapper>
         {children}
-      </OverlayContent>
+      </OverlayContentWrapper>
       <Widgets />
     </Providers>
   );

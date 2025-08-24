@@ -12,8 +12,8 @@ export default function Widgets() {
     <>
       <OverlayLeft />
       <OverlayRight />
-      <OverlayTop />
       <OverlayModal />
+      <OverlayTop />
       <Notification />
     </>
   );
