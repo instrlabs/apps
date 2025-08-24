@@ -12,7 +12,7 @@ export const imageToolsDict: Record<string, ToolItem> = {
     key: "compress",
     title: "Compress",
     desc: "Reduce image file size while preserving quality.",
-    href: "#",
+    href: "/apps/image-compress",
     icon: "🗜️",
   },
   resize: {
