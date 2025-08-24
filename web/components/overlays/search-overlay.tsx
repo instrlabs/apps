@@ -6,6 +6,7 @@ import TextField from "@/components/text-field";
 import SearchIcon from "@/components/icons/search";
 import { imageTools, pdfTools } from "@/constants/tools";
 import { useOverlay } from "@/hooks/useOverlay";
+import Chip from "@/components/chip";
 
 type SearchItem = {
   key: string;
@@ -69,47 +70,35 @@ export default function SearchOverlay() {
   }, [results, activeIndex, handleSelect, closeAll]);
 
   return (
-    <div className="space-y-3">
-      <div className="relative">
-        <label htmlFor="global-search-input" className="sr-only">Search</label>
+    <div className="h-[70vh] flex-col">
+      <div className="flex flex-row items-center gap-3 p-4 border-b bg-card">
+        <SearchIcon
+          className="pointer-events-none w-5 h-5"
+          aria-hidden="true"
+        />
         <TextField
-          id="global-search-input"
-          type="text"
-          autoFocus
-          placeholder="Search tools…"
-          className="pr-10"
-          xSize="md"
+          ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
-          ref={inputRef}
-          aria-autocomplete="list"
-          role="combobox"
-          aria-expanded={results.length > 0}
-          aria-controls="global-search-results"
+          placeholder="What are you looking for?"
+          className="p-0! rounded-none! border-none shadow-none bg-transparent focus:shadow-none"
+          autoComplete="off"
         />
-        <SearchIcon
-          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted"
-          aria-hidden="true"
-        />
+        <Chip xVariant="outlined" xSize="sm">
+          esc
+        </Chip>
       </div>
-
-      {results.length === 0 ? (
-        <div className="text-sm text-muted">No matches. Try different keywords.</div>
-      ) : (
-        <ul
-          id="global-search-results"
-          role="listbox"
-          className="divide-y divide-border rounded-xl border border-border overflow-hidden"
-        >
+      <div className="max-h-full overflow-y-auto divide-y divide-border">
           {results.map((item, idx) => (
-            <li key={`${item.category}:${item.key}`} role="option" aria-selected={idx === activeIndex}>
+            <div key={`${item.category}:${item.key}`} role="option" aria-selected={idx === activeIndex}>
               <button
                 type="button"
                 className={`w-full text-left p-3 flex gap-3 items-start hover:bg-hover ${idx === activeIndex ? "bg-hover" : ""}`}
                 onClick={() => handleSelect(item)}
               >
-                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-muted text-xs px-2">
+                <span
+                  className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-muted text-xs px-2">
                   {item.category}
                 </span>
                 <span>
@@ -117,14 +106,9 @@ export default function SearchOverlay() {
                   <span className="block text-sm text-muted">{item.desc}</span>
                 </span>
               </button>
-            </li>
+            </div>
           ))}
-        </ul>
-      )}
-
-      {query.trim().length === 0 && (
-        <div className="text-sm text-muted">Type to search image and PDF tools. Use ↑/↓ to navigate, Enter to open, Esc to close.</div>
-      )}
+      </div>
     </div>
   );
 }

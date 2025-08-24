@@ -36,7 +36,7 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
       : undefined;
 
     return (
-      <div className="relative">
+      <div className="relative w-full">
         <input
           className={clsx(
             baseClasses,
