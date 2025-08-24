@@ -12,5 +12,6 @@ export const AUTH_ENDPOINTS = {
   REFRESH_TOKEN: `${API_BASE_URL}/auth/refresh`,
   VERIFY_TOKEN: `${API_BASE_URL}/auth/verify-token`,
   PROFILE: `${API_BASE_URL}/auth/profile`,
+  CHANGE_PASSWORD: `${API_BASE_URL}/auth/change-password`,
   LOGOUT: `${API_BASE_URL}/auth/logout`,
 };

@@ -345,19 +345,18 @@ func (c *UserController) GetCookieDomain() string {
 }
 
 // UpdateProfile updates a user's profile information (currently only name)
-func (c *UserController) UpdateProfile(userID string, name string) error {
-	// Validate input
-	if name == "" {
-		return errors.New("name cannot be empty")
-	}
+// Validate input
+if name == "" {
+return errors.New("name cannot be empty")
+}
 
-	// Update the user's profile
-	err := c.userRepo.UpdateProfile(userID, name)
-	if err != nil {
-		return err
-	}
+// Update the user's profile
+err := c.userRepo.UpdateProfile(userID, name)
+if err != nil {
+return err
+}
 
-	return nil
+return nil
 }
 
 // ChangePassword changes a user's password

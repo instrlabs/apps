@@ -18,7 +18,7 @@ export default function OverlayTop() {
     <div className="absolute top-0 left-0 right-0 w-full p-2">
       <div className="h-[60px] w-full flex flex-row justify-between items-center px-3">
         <div className="flex items-center space-x-5">
-          <ButtonIcon type="button" onClick={() => toggleByKey("left:navigation")}>
+          <ButtonIcon type="button" xSize="lg" xColor="secondary" onClick={() => toggleByKey("left:navigation")}>
             <MenuIcon className="w-6 h-6" />
           </ButtonIcon>
           <Image src="/logo.svg" alt="logo" width={40} height={40} />
@@ -30,10 +30,8 @@ export default function OverlayTop() {
               id="topbar-search"
               type="text"
               placeholder="Search..."
-              className={clsx(
-                "pr-10",
-                "cursor-pointer"
-              )}
+              className="pr-10 cursor-pointer"
+              xIsRounded
               xSize="md"
               onFocus={() => toggleByKey("modal:search")}
               onClick={() => toggleByKey("modal:search")}
@@ -45,15 +43,19 @@ export default function OverlayTop() {
             />
           </div>
         </div>
-        <div className="flex items-center space-x-5">
+        <div className="flex items-center space-x-3">
           <ButtonIcon
-            type="button"
-            onClick={() => toggleByKey("right:notifications")}
-          >
+             type="button"
+             xSize="lg"
+             xColor="secondary"
+             onClick={() => toggleByKey("right:notifications")}
+           >
             <BellIcon className="w-6 h-6 text-gray-800" />
           </ButtonIcon>
           <ButtonIcon
             type="button"
+            xSize="lg"
+            xColor="secondary"
             aria-label="Open profile overlay"
             className="p-0 rounded-full bg-transparent shadow-none hover:bg-transparent"
             onClick={() => toggleByKey("right:profile")}

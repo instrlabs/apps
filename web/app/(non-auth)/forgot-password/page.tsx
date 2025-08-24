@@ -76,6 +76,7 @@ export default function ForgotPasswordPage() {
         <TextField
           type="email"
           placeholder="Enter your email address"
+          xIsRounded
           xIsInvalid={!!errors.email}
           xErrorMessage={errors.email?.message}
           {...register("email", {

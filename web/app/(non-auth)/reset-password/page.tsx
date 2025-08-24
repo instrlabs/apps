@@ -123,6 +123,7 @@ function ResetPasswordContent() {
         <TextField
           type="password"
           placeholder="Enter your new password"
+          xIsRounded
           xIsInvalid={!!errors.password}
           xErrorMessage={errors.password?.message}
           {...register("password", {
@@ -133,6 +134,7 @@ function ResetPasswordContent() {
         <TextField
           type="password"
           placeholder="Confirm your new password"
+          xIsRounded
           xIsInvalid={!!errors.confirmPassword}
           xErrorMessage={errors.confirmPassword?.message}
           {...register("confirmPassword", {

@@ -5,6 +5,7 @@ interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   xSize?: "sm" | "md" | "lg";
   xIsInvalid?: boolean;
   xErrorMessage?: string;
+  xIsRounded?: boolean;
 }
 
 const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
@@ -14,6 +15,7 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
       xIsInvalid,
       xErrorMessage,
       className,
+      xIsRounded,
       ...rest
     },
     ref
@@ -23,8 +25,10 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
         : xSize === "md" ? "px-4 py-3"
           : "px-5 py-4";
 
+    const shapeClass = xIsRounded === true ? "rounded-full" : "rounded-lg";
+
     const baseClasses =
-      "w-full rounded-full shadow-primary border bg-[var(--input-bg)] " +
+      "w-full shadow-primary border bg-[var(--input-bg)] " +
       "border-[var(--input-border)] placeholder:[color:var(--input-placeholder)] " +
       "hover:border-[var(--input-hover-border)] focus:border-[var(--input-focus-border)] " +
       "focus:shadow-[var(--input-focus-shadow)] focus:outline-none " +
@@ -40,6 +44,7 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
         <input
           className={clsx(
             baseClasses,
+            shapeClass,
             sizeClasses,
             errorClasses,
             className

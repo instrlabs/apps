@@ -1,22 +1,27 @@
+"use client";
+
 import React from "react";
 import clsx from "clsx";
 
-interface SubmitButtonProps {
-  type?: "button" | "submit";
-  /**
-   * Deprecated: external loading control. If provided, it overrides internal loading state.
-   */
+type ButtonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> & {
+  xSize?: "sm" | "md" | "lg";
+  xColor?: "primary" | "secondary";
   isLoading?: boolean;
   loadingText?: string;
-  children: React.ReactNode;
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void | Promise<void>;
-}
+};
 
-const Button: React.FC<SubmitButtonProps> = ({
+export default function Button({
   type = "button",
   children,
   onClick,
-}) => {
+  className,
+  disabled,
+  xSize = "md",
+  xColor = "primary",
+  isLoading,
+  ...rest
+}: ButtonProps) {
   const [internalLoading, setInternalLoading] = React.useState(false);
 
   const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -26,7 +31,7 @@ const Button: React.FC<SubmitButtonProps> = ({
     try {
       const maybePromise = onClick(e);
       const isPromise = !!maybePromise && typeof (maybePromise as PromiseLike<unknown>).then === "function";
-      if (isPromise && internalLoading) {
+      if (isPromise) {
         setInternalLoading(true);
         try {
           await (maybePromise as Promise<void>);
@@ -34,31 +39,50 @@ const Button: React.FC<SubmitButtonProps> = ({
           setInternalLoading(false);
         }
       }
-    } catch (err) { throw err; }
+    } catch (err) {
+      throw err;
+    }
   };
+
+  // Size classes tailored for text buttons
+  const sizeClass =
+    xSize === "sm" ? "py-2 px-3 text-sm" : xSize === "md" ? "py-3 px-4" : "py-4 px-6 text-base";
+
+  const colorClasses =
+    xColor === "primary"
+      ? [
+          "bg-[var(--btn-primary-bg)]",
+          "text-[var(--btn-primary-text)]",
+          "hover:bg-[var(--btn-primary-hover)]",
+          "active:bg-[var(--btn-primary-active)]",
+          "disabled:bg-[var(--btn-primary-disabled)]",
+        ]
+      : [
+          "bg-[var(--btn-secondary-bg)]",
+          "text-[var(--btn-secondary-text)]",
+          "hover:bg-[var(--btn-secondary-hover)]",
+          "active:bg-[var(--btn-secondary-active)]",
+          "disabled:bg-[var(--btn-secondary-disabled)]",
+        ];
+
+  const isDisabled = disabled || isLoading || internalLoading;
 
   return (
     <button
       type={type}
       className={clsx(
-        "bg-[var(--btn-primary-bg)]",
-        "text-[var(--btn-primary-text)]",
-        "hover:bg-[var(--btn-primary-hover)]",
-        "active:bg-[var(--btn-primary-active)]",
-        "disabled:bg-[var(--btn-primary-disabled)]",
-
+        colorClasses,
         "border border-[var(--btn-border)]",
-        "py-4 rounded-xl cursor-pointer",
-        "font-medium shadow-primary",
-        internalLoading && "opacity-70 cursor-not-allowed"
+        sizeClass,
+        "rounded-xl cursor-pointer font-medium shadow-primary",
+        isDisabled && "opacity-70 cursor-not-allowed",
+        className
       )}
-      disabled={internalLoading}
-      aria-busy={internalLoading || undefined}
+      disabled={isDisabled}
       onClick={handleClick}
+      {...rest}
     >
       {children}
     </button>
   );
-};
-
-export default Button;
+}

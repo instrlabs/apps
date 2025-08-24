@@ -58,6 +58,7 @@ export default function LoginPage() {
         <TextField
           type="email"
           placeholder="Enter your email"
+          xIsRounded
           xIsInvalid={!!errors.email}
           xErrorMessage={errors.email?.message}
           {...register("email", {
@@ -73,6 +74,7 @@ export default function LoginPage() {
           <TextField
             type="password"
             placeholder="Enter your password"
+            xIsRounded
             xIsInvalid={!!errors.password}
             xErrorMessage={errors.password?.message}
             {...register("password", {

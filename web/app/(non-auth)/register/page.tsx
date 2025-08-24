@@ -66,6 +66,7 @@ export default function RegisterPage() {
         <TextField
           type="email"
           placeholder="Enter your email address"
+          xIsRounded
           xIsInvalid={!!errors.email}
           xErrorMessage={errors.email?.message}
           {...register("email", {
@@ -79,6 +80,7 @@ export default function RegisterPage() {
         <TextField
           type="password"
           placeholder="Create a password"
+          xIsRounded
           xIsInvalid={!!errors.password}
           xErrorMessage={errors.password?.message}
           {...register("password", {
@@ -89,6 +91,7 @@ export default function RegisterPage() {
         <TextField
           type="password"
           placeholder="Re-enter your password"
+          xIsRounded
           xIsInvalid={!!errors.verifyPassword}
           xErrorMessage={errors.verifyPassword?.message}
           {...register("verifyPassword", {

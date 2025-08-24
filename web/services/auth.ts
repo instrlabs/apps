@@ -38,6 +38,16 @@ interface ProfileResponse {
   }
 }
 
+interface UpdateProfileResponse {
+  message: string;
+  data: {
+    user: {
+      name: string;
+      email: string;
+    }
+  }
+}
+
 interface FieldError {
   fieldName: string;
   errorMessage: string;
@@ -152,4 +162,26 @@ export async function logoutUser(): Promise<void> {
     const sseService = await import('../services/sse').then(module => module.default);
     sseService.disconnect();
   }
+}
+
+export async function updateProfile(name: string): Promise<WrapperResponse<UpdateProfileResponse>> {
+  return fetchWithErrorHandling(AUTH_ENDPOINTS.PROFILE, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ name }),
+  });
+}
+
+interface ChangePasswordResponse {
+  message: string;
+}
+
+export async function changePassword(current_password: string, new_password: string): Promise<WrapperResponse<ChangePasswordResponse>> {
+  return fetchWithErrorHandling(AUTH_ENDPOINTS.CHANGE_PASSWORD, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ current_password, new_password }),
+  });
 }

@@ -18,10 +18,10 @@ export default function MenuButton({
     <button
       type={type}
       className={clsx(
-        "w-full flex items-center gap-3 px-4 py-3",
+        "w-full flex items-center gap-3 p-3",
         "text-sm font-medium text-foreground",
         "bg-menu border border-border hover:bg-menu-hover hover:border-border-hover",
-        "rounded-sm cursor-pointer",
+        "rounded-lg cursor-pointer",
         className
       )}
       {...rest}
