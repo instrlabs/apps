@@ -5,7 +5,7 @@ import { useOverlay } from "@/hooks/useOverlay";
 import Button from "@/components/button";
 
 export default function OverlayModal() {
-  const { isModalOpen, modalNode, modalKey } = useOverlay();
+  const { isModalOpen, modalNode, modalKey, closeAll } = useOverlay();
   const backdropRef = useRef<HTMLDivElement | null>(null);
 
   if (!isModalOpen) return null;
@@ -17,7 +17,7 @@ export default function OverlayModal() {
         ref={backdropRef}
         className="absolute inset-0 bg-black/40"
         aria-hidden="true"
-        onClick={() => {}}
+        onClick={closeAll}
       />
       {/* Dialog */}
       <div role="dialog" aria-modal="true" aria-label="Modal dialog" className="relative z-10 w-full max-w-2xl mx-4">
