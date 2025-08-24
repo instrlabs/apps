@@ -20,7 +20,7 @@ export default function MenuButton({
       className={clsx(
         "w-full flex items-center gap-3 px-4 py-3",
         "text-sm font-medium text-foreground",
-        "bg-card hover:bg-foreground/5",
+        "bg-menu border border-border hover:bg-menu-hover hover:border-border-hover",
         "rounded-sm cursor-pointer",
         className
       )}

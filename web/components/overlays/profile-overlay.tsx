@@ -20,8 +20,7 @@ export default function ProfileOverlay() {
   const handleLogout = async () => {
     await logoutUser();
     setProfile(null);
-    // Ensure server components/pages reflect logged-out state
-    router.refresh();
+    router.replace("/login");
   };
 
   return (
