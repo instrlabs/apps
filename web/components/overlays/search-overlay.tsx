@@ -7,15 +7,20 @@ import SearchIcon from "@/components/icons/search";
 import { imageTools, pdfTools } from "@/constants/tools";
 import { useOverlay } from "@/hooks/useOverlay";
 import Chip from "@/components/chip";
-import clsx from "clsx";
+import MenuButton from "@/components/menu-button";
+import HashtagIcon from "@/components/icons/hashtag";
 
 type SearchItem = {
   key: string;
   title: string;
   desc: string;
   href: string;
-  icon: string;
-  category: "Image" | "PDF";
+};
+
+type Section = {
+  key: string;
+  title: string;
+  items: SearchItem[];
 };
 
 export default function SearchOverlay() {
@@ -24,22 +29,42 @@ export default function SearchOverlay() {
   const [query, setQuery] = useState<string>("");
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const items: SearchItem[] = useMemo(() => {
+  const sections: Section[] = useMemo(() => {
     return [
-      ...imageTools.map((t) => ({ ...t, category: "Image" as const })),
-      ...pdfTools.map((t) => ({ ...t, category: "PDF" as const })),
+      {
+        key: "image",
+        title: "Image Tools",
+        items: imageTools,
+      },
+      {
+        key: "pdf",
+        title: "PDF Tools",
+        items: pdfTools,
+      },
     ];
   }, []);
 
-  const results = useMemo(() => {
+  // Apply search only to items within each section (keep sections markup intact)
+  const filteredSections: Section[] = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((it) =>
-      it.title.toLowerCase().includes(q) ||
-      it.desc.toLowerCase().includes(q) ||
-      it.key.toLowerCase().includes(q)
-    );
-  }, [items, query]);
+    if (!q) return sections;
+    return sections
+      .map((sec) => ({
+        ...sec,
+        items: sec.items.filter(
+          (it) =>
+            it.title.toLowerCase().includes(q) ||
+            it.desc.toLowerCase().includes(q) ||
+            it.key.toLowerCase().includes(q)
+        ),
+      }))
+      .filter((sec) => sec.items.length > 0);
+  }, [sections, query]);
+
+  const totalResults = useMemo(
+    () => filteredSections.reduce((acc, s) => acc + s.items.length, 0),
+    [filteredSections]
+  );
 
   const handleSelect = useCallback((item: SearchItem) => {
     if (item.href && item.href !== "#") {
@@ -49,20 +74,17 @@ export default function SearchOverlay() {
   }, [closeAll]);
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (!results.length) return;
+    if (!totalResults) return;
     if (e.key === "Escape") {
       e.preventDefault();
       closeAll();
     }
-  }, [results, closeAll]);
+  }, [totalResults, closeAll]);
 
   return (
     <div className="h-[70vh] flex flex-col">
-      <div className="sticky top-0 z-10 flex flex-row items-center gap-3 p-4 border-b bg-card">
-        <SearchIcon
-          className="pointer-events-none w-6 h-6"
-          aria-hidden="true"
-        />
+      <div className="sticky top-0 z-10 flex flex-row items-center gap-3 p-5 border-b border-border">
+        <SearchIcon className="pointer-events-none w-6 h-6" />
         <TextField
           ref={inputRef}
           value={query}
@@ -75,41 +97,29 @@ export default function SearchOverlay() {
         <Chip xVariant="outlined" xSize="sm">esc</Chip>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {(["Image", "PDF"] as const).map((cat) => {
-          const section = results.filter((it) => it.category === cat);
-          if (!section.length) return null;
-          const header = cat === "Image" ? "Image Tools" : "PDF Tools";
-          return (
-            <div key={cat} className="py-2">
-              <div className="px-4 py-2 text-xs font-bold uppercase tracking-wide text-muted">
-                {header}
-              </div>
-              <div className="flex flex-col gap-2">
-                {section.map((item) => (
-                  <button
-                    key={`${item.category}:${item.key}`}
-                    type="button"
-                    className={clsx(
-                      "group flex items-center gap-3 rounded-md p-2 text-left text-sm",
-                      "bg-gray-50 border border-gray-100",
-                      "transition-colors duration-200 ease-in-out",
-                      "cursor-pointer"
-                    )}
-                    onClick={() => handleSelect(item)}
-                  >
-                    <span className="inline-flex h-6 min-w-6 items-center justify-center text-base">
-                      {item.icon}
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{item.title}</span>
-                      <span className="font-light">{item.desc}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
+        {filteredSections.map((section) => (
+          <div key={section.key} className="py-2">
+            <div className="px-4 py-3 text-sm font-bold tracking-wide text-muted">
+              {section.title}
             </div>
-          );
-        })}
+            <div className="px-4 flex flex-col gap-3">
+              {section.items.map((item) => (
+                <MenuButton
+                  key={`${section.key}:${item.key}`}
+                  onClick={() => handleSelect(item)}
+                >
+                  <div className="flex items-center gap-3">
+                    <HashtagIcon className="w-5 h-5" />
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-medium">{item.title}</span>
+                      <span className="text-xs font-light">{item.desc}</span>
+                    </div>
+                  </div>
+                </MenuButton>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

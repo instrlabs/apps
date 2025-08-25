@@ -1,30 +1,31 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { useOverlay } from "@/hooks/useOverlay";
-import Button from "@/components/button";
 
 export default function OverlayModal() {
-  const { isModalOpen, modalNode, modalKey, closeAll } = useOverlay();
-  const backdropRef = useRef<HTMLDivElement | null>(null);
+  const { isModalOpen, modalNode, modalKey, closeAll, modalWidth } = useOverlay();
 
   if (!isModalOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
       <div
-        ref={backdropRef}
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/30"
         aria-hidden="true"
         onClick={closeAll}
       />
-      {/* Dialog */}
-      <div role="dialog" aria-modal="true" aria-label="Modal dialog" className="relative z-10 w-full max-w-2xl mx-4">
-        <div className="rounded-2xl bg-card shadow-xl ring-1 ring-foreground/5 overflow-hidden">
-          <div key={modalKey} className="overflow-auto animate-fade-in">
-            {modalNode}
-          </div>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Modal dialog"
+        className="relative z-10 w-full mx-4"
+        style={{ maxWidth: modalWidth ? modalWidth : 0 }}
+      >
+        <div
+          key={modalKey}
+          className="rounded-2xl bg-card shadow-xl overflow-auto animate-fade-in"
+        >
+          {modalNode}
         </div>
       </div>
     </div>

@@ -25,6 +25,7 @@ export type OverlayActions = {
   isModalOpen: boolean;
   modalKey: string;
   modalNode: React.ReactNode;
+  modalWidth: number;
 };
 
 export type OverlaySide = "left" | "right" | "modal";
@@ -72,7 +73,7 @@ export function registerOverlays() {
   // Modal: search
   registerOverlay("modal:search", {
     side: "modal",
-    width: 400,
+    width: 800,
     render: () => <SearchOverlay />,
   });
 }
@@ -98,6 +99,7 @@ export function OverlayProvider({ children }: {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalNode, setModalNodeState] = useState<React.ReactNode>(<div />);
   const [modalKey, setModalKey] = useState<string>("");
+  const [modalWidth, setModalWidth] = useState<number>(0);
 
   const toggleLeft = useCallback((currentKey: string | null, params: OverlayOpts) => {
     const key = currentKey ?? "";
@@ -137,6 +139,7 @@ export function OverlayProvider({ children }: {
 
     setModalNodeState(params.render());
     setModalKey(key);
+    setModalWidth(params.width);
     setIsModalOpen(true);
   }, [isModalOpen, modalKey]);
 
@@ -183,7 +186,8 @@ export function OverlayProvider({ children }: {
     isModalOpen,
     modalNode,
     modalKey,
-  }), [toggleByKey, closeAll, isLeftOpen, leftNode, leftKey, leftWidth, isRightOpen, rightNode, rightKey, rightWidth, isModalOpen, modalNode, modalKey]);
+    modalWidth,
+  }), [toggleByKey, closeAll, isLeftOpen, leftNode, leftKey, leftWidth, isRightOpen, rightNode, rightKey, rightWidth, isModalOpen, modalNode, modalKey, modalWidth]);
 
   return (
     <OverlayContext.Provider value={value}>
