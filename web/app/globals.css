@@ -1,26 +1,133 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary: var(--color-white);
+  --bg-secondary: var(--color-gray-950);
+  --text-primary: var(--color-gray-800);
+  --card-primary: var(--color-white);
+  --menu-primary: var(--color-gray-50);
+  --menu-hover-primary: var(--color-blue-50);
+  --border-primary: var(--color-gray-200);
+  --border-hover-primary: var(--color-blue-200);
+
+  /* BUTTON */
+  --btn-primary-bg: var(--color-gray-800);
+  --btn-primary-text: var(--color-white);
+  --btn-primary-hover: var(--color-gray-700);
+  --btn-primary-active: var(--color-gray-800);
+  --btn-primary-disabled: var(--color-gray-400);
+
+  /* BUTTON BORDER */
+  --btn-border: var(--color-gray-200);
+
+  /* BUTTON SECONDARY */
+  --btn-secondary-bg: var(--color-white);
+  --btn-secondary-text: var(--color-gray-600);
+  --btn-secondary-hover: var(--color-gray-100);
+  --btn-secondary-active: var(--color-gray-200);
+  --btn-secondary-disabled: var(--color-gray-200);
+
+  /* INPUT */
+  --input-bg: var(--color-white);
+  --input-border: var(--color-gray-300);
+  --input-placeholder: var(--color-gray-400);
+  --input-hover-border: var(--color-gray-400);
+  --input-focus-border: var(--color-blue-500);
+  --input-focus-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  --input-disabled-bg: var(--color-gray-100);
+  --input-disabled-text: var(--color-gray-400);
+  --input-error-border: var(--color-red-500);
+  --input-error-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+
+
+  --font-roboto: "Roboto", sans-serif;
+  --overlay-anim-duration: 300ms;
+}
+
+[data-theme="dark"] {
+  --bg-primary: var(--color-gray-900);
+  --bg-secondary: var(--color-gray-100);
+  --text-primary: var(--color-gray-100);
+  --card-primary: var(--color-gray-800);
+
+  /* BUTTON */
+  --btn-primary-bg: var(--color-blue-500);
+  --btn-primary-text: var(--color-white);
+  --btn-primary-hover: var(--color-blue-600);
+  --btn-primary-active: var(--color-blue-700);
+  --btn-primary-disabled: var(--color-blue-200);
+
+  /* BUTTON BORDER */
+  --btn-border: var(--color-gray-600);
+
+  /* BUTTON SECONDARY */
+  --btn-secondary-bg: var(--color-gray-700);
+  --btn-secondary-text: var(--color-white);
+  --btn-secondary-hover: var(--color-gray-600);
+  --btn-secondary-active: var(--color-gray-800);
+  --btn-secondary-disabled: var(--color-gray-500);
+
+  /* INPUT */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-text-primary: var(--text-primary);
+  --color-error: var(--color-red-500);
+  --color-card: var(--card-primary);
+  --color-menu: var(--menu-primary);
+  --color-menu-hover: var(--menu-hover-primary);
+  --color-border: var(--border-primary);
+  --color-border-hover: var(--border-hover-primary);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Fonts & effects */
+  --font-sans: var(--font-roboto);
+  --shadow-primary: 0 0 30px 0 rgba(0, 0, 0, 0.04);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle, var(--color-slate-100), var(--color-slate-200));
+  color: var(--text-primary);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  overflow: hidden;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-slide-out {
+  animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 300ms ease-out both;
 }
