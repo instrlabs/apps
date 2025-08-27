@@ -1,6 +1,5 @@
 "use client";
 
-import clsx from "clsx";
 import Image from "next/image";
 
 import { useOverlay } from "@/hooks/useOverlay";
@@ -10,9 +9,11 @@ import SearchIcon from "@/components/icons/search";
 import BellIcon from "@/components/icons/bell";
 import Avatar from "@/components/avatar";
 import TextField from "@/components/text-field";
+import {useProfile} from "@/hooks/useProfile";
 
 export default function OverlayTop() {
   const { toggleByKey } = useOverlay();
+  const { profile } = useProfile();
 
   return (
     <div className="absolute top-0 left-0 right-0 w-full p-2">
@@ -60,7 +61,7 @@ export default function OverlayTop() {
             className="p-0 rounded-full bg-transparent shadow-none hover:bg-transparent"
             onClick={() => toggleByKey("right:profile")}
           >
-            <Avatar name="Artha Dede" size={40} />
+            <Avatar name={profile?.name} size={40} />
           </ButtonIcon>
         </div>
       </div>

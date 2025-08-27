@@ -24,9 +24,45 @@ export default function Avatar({
   className,
   rounded = true,
 }: AvatarProps) {
-  const fallbackUrl = `https://ui-avatars.com/api/?name=${name[0]}&background=3b82f6&color=ffffff`;
+  // Choose one of 8 background colors based on the first letter (A–Z) bucketed by modulo 8
+  const safeName = (name ?? "User").trim() || "User";
+  const firstChar = safeName[0]?.toLowerCase() ?? "u";
+  const isAlpha = firstChar >= "a" && firstChar <= "z";
+  const alphaIndex = isAlpha ? firstChar.charCodeAt(0) - 97 : (firstChar.charCodeAt(0) % 26);
+  const bucket = ((alphaIndex % 26) + 26) % 8; // ensure 0-7
+
+  // 8 distinct, readable colors (Tailwind-inspired hex, without the leading '#')
+  const bgPalette = [
+    "3b82f6", // blue-500
+    "22c55e", // green-500
+    "ef4444", // red-500
+    "eab308", // yellow-500
+    "a855f7", // purple-500
+    "14b8a6", // teal-500
+    "f97316", // orange-500
+    "64748b", // slate-500
+  ];
+  // Pick contrasting text color; for lighter backgrounds prefer black text
+  const textPalette = [
+    "ffffff", // on blue
+    "ffffff", // on green
+    "ffffff", // on red
+    "000000", // on yellow
+    "ffffff", // on purple
+    "ffffff", // on teal
+    "000000", // on orange
+    "ffffff", // on slate
+  ];
+
+  const background = bgPalette[bucket] ?? "3b82f6";
+  const textColor = textPalette[bucket] ?? "ffffff";
+
+  // Let ui-avatars create initials from the full name; ensure proper encoding
+  const initialsName = encodeURIComponent(safeName);
+  const fallbackUrl = `https://ui-avatars.com/api/?name=${initialsName}&background=${background}&color=${textColor}`;
+
   const finalSrc = src ?? fallbackUrl;
-  const finalAlt = alt ?? (name ? `${name} avatar` : "Profile avatar");
+  const finalAlt = alt ?? (safeName ? `${safeName} avatar` : "Profile avatar");
 
   return (
     <img
