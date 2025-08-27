@@ -33,7 +33,7 @@ export default function NavigationOverlay({
   };
 
   return (
-    <div className="w-full h-full">
+    <div className="w-[80px] h-full">
       <div className="flex flex-col items-center space-y-5">
         {items.map((item) => {
           const target = keyToPath[item.key];

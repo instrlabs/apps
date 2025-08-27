@@ -1,80 +1,103 @@
 import clsx from "clsx";
 import React from "react";
+import Image from "next/image";
+
+export type AvatarSize = "sm" | "md" | "lg";
 
 export type AvatarProps = {
-  name?: string; // Used for fallback initials/avatar service
-  src?: string; // If provided, used as image source instead of generated
-  alt?: string; // Accessible alt text; defaults to `${name} avatar` or "Profile avatar"
-  size?: number; // Pixel size for width/height
-  className?: string; // Extra classes to merge
-  rounded?: boolean; // Whether to make it fully rounded
+  name?: string;
+  src?: string;
+  size: AvatarSize;
+  className?: string;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 };
 
-/**
- * Reusable Avatar component with sensible defaults.
- * - If `src` is not provided, it falls back to ui-avatars.com using the `name`.
- * - Controls width/height via the `size` prop (default 40px).
- * - Applies `rounded-full` and `object-cover` by default for consistency.
- */
 export default function Avatar({
   name = "User",
   src,
-  alt,
-  size = 40,
+  size = "md",
   className,
-  rounded = true,
+  onClick,
 }: AvatarProps) {
-  // Choose one of 8 background colors based on the first letter (A–Z) bucketed by modulo 8
   const safeName = (name ?? "User").trim() || "User";
   const firstChar = safeName[0]?.toLowerCase() ?? "u";
   const isAlpha = firstChar >= "a" && firstChar <= "z";
-  const alphaIndex = isAlpha ? firstChar.charCodeAt(0) - 97 : (firstChar.charCodeAt(0) % 26);
-  const bucket = ((alphaIndex % 26) + 26) % 8; // ensure 0-7
+  const alphaIndex = isAlpha ? firstChar.charCodeAt(0) - 97 : firstChar.charCodeAt(0) % 26;
+  const bucket = ((alphaIndex % 26) + 26) % 8;
 
-  // 8 distinct, readable colors (Tailwind-inspired hex, without the leading '#')
-  const bgPalette = [
-    "3b82f6", // blue-500
-    "22c55e", // green-500
-    "ef4444", // red-500
-    "eab308", // yellow-500
-    "a855f7", // purple-500
-    "14b8a6", // teal-500
-    "f97316", // orange-500
-    "64748b", // slate-500
+  // Tailwind color classes by bucket (no hex values)
+  const bgPaletteCls = [
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-red-500",
+    "bg-yellow-500",
+    "bg-purple-500",
+    "bg-teal-500",
+    "bg-orange-500",
+    "bg-slate-500",
   ];
-  // Pick contrasting text color; for lighter backgrounds prefer black text
-  const textPalette = [
-    "ffffff", // on blue
-    "ffffff", // on green
-    "ffffff", // on red
-    "000000", // on yellow
-    "ffffff", // on purple
-    "ffffff", // on teal
-    "000000", // on orange
-    "ffffff", // on slate
+  const textPaletteCls = [
+    "text-white", // on blue
+    "text-white", // on green
+    "text-white", // on red
+    "text-black", // on yellow
+    "text-white", // on purple
+    "text-white", // on teal
+    "text-black", // on orange
+    "text-white", // on slate
   ];
 
-  const background = bgPalette[bucket] ?? "3b82f6";
-  const textColor = textPalette[bucket] ?? "ffffff";
+  const bgClass = bgPaletteCls[bucket] ?? "bg-blue-500";
+  const fgClass = textPaletteCls[bucket] ?? "text-white";
 
-  // Let ui-avatars create initials from the full name; ensure proper encoding
-  const initialsName = encodeURIComponent(safeName);
-  const fallbackUrl = `https://ui-avatars.com/api/?name=${initialsName}&background=${background}&color=${textColor}`;
+  // Compute two-letter initials (prefer first letters of first two words; fallback to first two letters)
+  const words = safeName.split(/\s+/).filter(Boolean);
+  let initials = "";
+  if (words.length >= 2) {
+    initials = `${words[0][0] ?? ""}${words[1][0] ?? ""}`;
+  } else {
+    const lettersOnly = safeName.replace(/[^A-Za-z]/g, "");
+    initials = lettersOnly.slice(0, 2) || safeName.slice(0, 2);
+  }
+  initials = initials.toUpperCase();
 
-  const finalSrc = src ?? fallbackUrl;
-  const finalAlt = alt ?? (safeName ? `${safeName} avatar` : "Profile avatar");
+  // Size mappings
+  const sizeClass =
+    size === "sm" ? "w-8 h-8" : size === "lg" ? "w-14 h-14" : "w-10 h-10"; // md default
+  const textSizeClass = size === "sm" ? "text-xs" : size === "lg" ? "text-lg" : "text-sm";
 
   return (
-    <img
-      src={finalSrc}
-      alt={finalAlt}
-      width={size}
-      height={size}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={safeName}
+      title={safeName}
       className={clsx(
-        rounded && "rounded-full",
-        "object-cover shadow-primary",
+        "relative inline-flex items-center justify-center shadow-primary leading-none rounded-full cursor-pointer overflow-hidden",
+        sizeClass,
+        bgClass,
+        fgClass,
         className
       )}
-    />
+    >
+      {src ? (
+        <Image
+          src={src}
+          alt={safeName}
+          fill
+          sizes={size === "sm" ? "2rem" : size === "lg" ? "3.5rem" : "2.5rem"}
+          className="object-cover rounded-full"
+        />
+      ) : (
+        <div
+          className={clsx(
+            "w-full h-full flex items-center justify-center font-semibold",
+            textSizeClass
+          )}
+        >
+          {initials}
+        </div>
+      )}
+    </button>
   );
 }

@@ -11,11 +11,15 @@ export default function OverlayRight() {
 
   return (
     <div
-      className="absolute top-0 right-0 bottom-0 p-3 pt-[80px] h-screen transition-[width] duration-300 ease-in-out"
-      style={{ width: `${widthPx}px`, pointerEvents: isRightOpen ? 'auto' : 'none' }}
-      aria-hidden={!isRightOpen}
-      role="complementary"
-      aria-label="Right overlay"
+      className={clsx(
+        "absolute top-0 right-0 bottom-0",
+        "pt-[80px] h-screen",
+        "transition-[width] duration-300 ease-in-out"
+      )}
+      style={{
+        width: `${widthPx}px`,
+        pointerEvents: isRightOpen ? 'auto' : 'none'
+      }}
     >
       <div className={clsx(
         "w-full h-full flex flex-col",

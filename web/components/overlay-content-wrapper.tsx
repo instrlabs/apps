@@ -21,9 +21,8 @@ export default function OverlayContentWrapper({ children }: {
   return (
     <div
       className={clsx(
-        "absolute top-0 bottom-0 py-3 pt-[80px]",
+        "absolute top-0 bottom-0 py-3 pt-[80px] px-3",
         "transition-[left,right,padding] duration-300 ease-in-out",
-        isLeftOpen ? "pl-0" : "pl-3"
       )}
       style={{ left: `${leftPx}px`, right: `${rightPx}px` }}
     >

@@ -11,19 +11,24 @@ export default function OverlayLeft() {
 
   return (
     <div
-      className="absolute top-0 left-0 bottom-0 p-3 pt-[80px] h-screen transition-[width] duration-300 ease-in-out"
-      style={{ width: `${widthPx}px`, pointerEvents: isLeftOpen ? 'auto' : 'none' }}
-      aria-hidden={!isLeftOpen}
-      role="complementary"
-      aria-label="Left overlay"
+      className={clsx(
+        "absolute top-0 left-0 bottom-0",
+        "pt-[80px] h-screen",
+        "transition-[width] duration-300 ease-in-out"
+      )}
+      style={{
+        width: `${widthPx}px`,
+        pointerEvents: isLeftOpen ? 'auto' : 'none'
+      }}
     >
-      <div className={clsx(
-        "w-full h-full flex flex-col",
-        isLeftOpen ? "overflow-visible" : "overflow-hidden",
-      )}>
-        <div key={leftKey} className="flex-1 animate-fade-in">
-          {leftNode}
-        </div>
+      <div
+        key={leftKey}
+        className={clsx(
+          "flex-1 animate-fade-in",
+          isLeftOpen ? "overflow-visible" : "overflow-hidden",
+        )}
+      >
+        {leftNode}
       </div>
     </div>
   )

@@ -27,7 +27,7 @@ export default function ProfileOverlay() {
     <div className="w-[400px] h-full bg-card shadow-primary rounded-xl">
       <div className="flex flex-col gap-4 py-10">
         <div className="mx-auto">
-          <Avatar name={name} size={60} />
+          <Avatar name={name} size="lg" />
         </div>
         <div className="flex flex-col">
           <h3 className="text-2xl font-bold text-foreground text-center">{name}</h3>

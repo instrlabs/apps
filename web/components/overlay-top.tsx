@@ -16,15 +16,19 @@ export default function OverlayTop() {
   const { profile } = useProfile();
 
   return (
-    <div className="absolute top-0 left-0 right-0 w-full p-2">
-      <div className="h-[60px] w-full flex flex-row justify-between items-center px-3">
+    <div className="absolute top-0 left-0 right-0 ">
+      <div className="h-[80px] w-full p-3 flex flex-row justify-between items-center">
         <div className="flex items-center space-x-5">
-          <ButtonIcon type="button" xSize="lg" xColor="secondary" onClick={() => toggleByKey("left:navigation")}>
+          <ButtonIcon
+            xSize="lg"
+            xColor="secondary"
+            onClick={() => toggleByKey("left:navigation")}
+          >
             <MenuIcon className="w-6 h-6" />
           </ButtonIcon>
           <Image src="/logo.svg" alt="logo" width={40} height={40} />
         </div>
-        <div className="flex items-center space-x-5 flex-1 justify-center">
+        <div className="flex items-center space-x-5">
           <div className="relative w-96 max-w-full">
             <label htmlFor="topbar-search" className="sr-only">Search</label>
             <TextField
@@ -44,25 +48,19 @@ export default function OverlayTop() {
             />
           </div>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-5">
           <ButtonIcon
-             type="button"
              xSize="lg"
              xColor="secondary"
              onClick={() => toggleByKey("right:notifications")}
            >
             <BellIcon className="w-6 h-6 text-gray-800" />
           </ButtonIcon>
-          <ButtonIcon
-            type="button"
-            xSize="lg"
-            xColor="secondary"
-            aria-label="Open profile overlay"
-            className="p-0 rounded-full bg-transparent shadow-none hover:bg-transparent"
+          <Avatar
+            name={profile?.name}
+            size="md"
             onClick={() => toggleByKey("right:profile")}
-          >
-            <Avatar name={profile?.name} size={40} />
-          </ButtonIcon>
+          />
         </div>
       </div>
     </div>
