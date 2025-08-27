@@ -1,5 +1,6 @@
 import { AUTH_ENDPOINTS } from "@/constants/api";
 import { fetchWithErrorHandling } from "@/utils";
+import type { FieldError } from "@/shared/types";
 
 interface RegisterResponse {
   message: string;
@@ -48,15 +49,11 @@ interface UpdateProfileResponse {
   }
 }
 
-interface FieldError {
-  fieldName: string;
-  errorMessage: string;
-}
 
 interface WrapperResponse<T> {
   data: T | null;
   error: string | null;
-  errorFields?: FieldError[] | null;
+  errorFields: FieldError[] | null;
 }
 
 export async function registerUser(email: string, password: string): Promise<WrapperResponse<RegisterResponse>> {

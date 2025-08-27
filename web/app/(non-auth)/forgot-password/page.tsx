@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 
 import { requestPasswordReset } from "@/services/auth";
 import Button from "@/components/button";
-import { useNotification } from "@/components/notification";
+import useNotification from "@/hooks/useNotification";
 import { ROUTES } from "@/constants/routes";
 import TextField from "@/components/text-field";
 import LinkText from "@/components/link-text";

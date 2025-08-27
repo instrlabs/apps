@@ -8,7 +8,7 @@ import TextField from "@/components/text-field";
 import Button from "@/components/button";
 import ButtonIcon from "@/components/button-icon";
 import ChevronLeftIcon from "@/components/icons/chevron-left";
-import { useNotification } from "@/components/notification";
+import useNotification from "@/hooks/useNotification";
 import { useProfile } from "@/hooks/useProfile";
 import { updateProfile } from "@/services/auth";
 

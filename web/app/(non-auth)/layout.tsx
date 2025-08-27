@@ -1,5 +1,5 @@
 import React from "react";
-import { NotificationProvider, Notification } from "@/components/notification";
+import { NotificationProvider, NotificationWidget } from "@/hooks/useNotification";
 import NonAuthGuard from "@/components/non-auth-guard";
 
 export default function LoginLayout({
@@ -9,7 +9,7 @@ export default function LoginLayout({
     <NotificationProvider>
       <NonAuthGuard />
       {children}
-      <Notification />
+      <NotificationWidget />
     </NotificationProvider>
   );
 }

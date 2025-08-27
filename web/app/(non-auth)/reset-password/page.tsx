@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 
 import { resetPassword } from "@/services/auth";
 import Button from "@/components/button";
-import { useNotification } from "@/components/notification";
+import useNotification from "@/hooks/useNotification";
 import TextField from "@/components/text-field";
 import { ROUTES } from "@/constants/routes";
 

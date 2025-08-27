@@ -1,11 +1,17 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  createContext,
+  ReactNode,
+} from "react";
 import clsx from "clsx";
 
-import InfoIcon from "./icons/InfoIcon";
-import ErrorIcon from "./icons/ErrorIcon";
-import WarningIcon from "./icons/WarningIcon";
+import InfoIcon from "@/components/icons/InfoIcon";
+import ErrorIcon from "@/components/icons/ErrorIcon";
+import WarningIcon from "@/components/icons/WarningIcon";
 
 type NotificationType = "error" | "warning" | "info";
 
@@ -60,7 +66,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   );
 };
 
-export const useNotification = (): NotificationContextProps => {
+const useNotification = (): NotificationContextProps => {
   const context = useContext(NotificationContext);
 
   if (context === undefined) {
@@ -70,7 +76,9 @@ export const useNotification = (): NotificationContextProps => {
   return context;
 };
 
-export const Notification: React.FC = () => {
+export default useNotification;
+
+export const NotificationWidget: React.FC = () => {
   const { message, type, visible } = useNotification();
   const [isRendered, setIsRendered] = useState(false);
   const [animationClass, setAnimationClass] = useState("");

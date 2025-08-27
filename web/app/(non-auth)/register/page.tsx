@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { registerUser } from "@/services/auth";
 import GoogleSignInButton from "@/components/google-signin";
 import Button from "@/components/button";
-import { useNotification } from "@/components/notification";
+import useNotification from "@/hooks/useNotification";
 import TextField from "@/components/text-field";
 import LinkText from "@/components/link-text";
 import { ROUTES } from "@/constants/routes";

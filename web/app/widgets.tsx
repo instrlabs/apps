@@ -5,7 +5,7 @@ import OverlayLeft from "@/components/overlay-left";
 import OverlayRight from "@/components/overlay-right";
 import OverlayTop from "@/components/overlay-top";
 import OverlayModal from "@/components/overlay-modal";
-import { Notification } from "@/components/notification";
+import { NotificationWidget } from "@/hooks/useNotification";
 
 export default function Widgets() {
   return (
@@ -14,7 +14,7 @@ export default function Widgets() {
       <OverlayRight />
       <OverlayModal />
       <OverlayTop />
-      <Notification />
+      <NotificationWidget />
     </>
   );
 }
