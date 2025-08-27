@@ -7,17 +7,17 @@ import LinkText from "@/components/link-text";
 import LoginForm from "./LoginForm";
 
 export const metadata: Metadata = {
-  title: "Log in",
-  description: "Log in to your account to access your dashboard and manage your settings.",
+  title: "Sign in",
+  description: "Sign in to your account to access your dashboard and manage your settings.",
   openGraph: {
-    title: "Log in",
-    description: "Log in to your account to access your dashboard and manage your settings.",
+    title: "Sign in",
+    description: "Sign in to your account to access your dashboard and manage your settings.",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Log in",
-    description: "Log in to your account to access your dashboard and manage your settings.",
+    title: "Sign in",
+    description: "Sign in to your account to access your dashboard and manage your settings.",
   },
   robots: {
     index: false,
