@@ -291,7 +291,6 @@ func (c *UserController) HandleGoogleCallback(code string) (map[string]string, e
 
 func (c *UserController) VerifyToken(tokenString string) (*User, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Validate the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid token signing method")
 		}
@@ -324,42 +323,6 @@ func (c *UserController) VerifyToken(tokenString string) (*User, error) {
 	return user, nil
 }
 
-// GetEnvironment returns the current environment (production, development, etc.)
-func (c *UserController) GetEnvironment() string {
-	return c.config.Environment
-}
-
-// GetTokenExpiryHours returns the configured token expiry in hours
-func (c *UserController) GetTokenExpiryHours() int {
-	return c.config.TokenExpiryHours
-}
-
-// GetOAuthRedirectURL returns the frontend URL to redirect to after OAuth
-func (c *UserController) GetOAuthRedirectURL() string {
-	return c.config.FEOAuthRedirect
-}
-
-// GetCookieDomain returns the cookie domain from configuration
-func (c *UserController) GetCookieDomain() string {
-	return c.config.CookieDomain
-}
-
-// UpdateProfile updates a user's profile information (currently only name)
-// Validate input
-if name == "" {
-return errors.New("name cannot be empty")
-}
-
-// Update the user's profile
-err := c.userRepo.UpdateProfile(userID, name)
-if err != nil {
-return err
-}
-
-return nil
-}
-
-// ChangePassword changes a user's password
 func (c *UserController) ChangePassword(userID string, currentPassword string, newPassword string) error {
 	// Validate input
 	if currentPassword == "" || newPassword == "" {
@@ -392,13 +355,22 @@ func (c *UserController) ChangePassword(userID string, currentPassword string, n
 	return nil
 }
 
-// LogoutUser logs out a user by clearing their refresh token
 func (c *UserController) LogoutUser(userID string) error {
-	// Clear the refresh token
 	err := c.userRepo.ClearRefreshToken(userID)
 	if err != nil {
 		return errors.New("failed to logout user")
 	}
 
+	return nil
+}
+
+func (c *UserController) UpdateProfile(userID string, name string) error {
+	if name == "" {
+		return errors.New("name cannot be empty")
+	}
+
+	if err := c.userRepo.UpdateProfile(userID, name); err != nil {
+		return err
+	}
 	return nil
 }

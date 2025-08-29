@@ -11,13 +11,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// UserRepository handles database operations for users
 type UserRepository struct {
 	db         *MongoDB
 	collection *mongo.Collection
 }
 
-// NewUserRepository creates a new UserRepository
 func NewUserRepository(db *MongoDB) *UserRepository {
 	return &UserRepository{
 		db:         db,
@@ -25,12 +23,10 @@ func NewUserRepository(db *MongoDB) *UserRepository {
 	}
 }
 
-// Create creates a new user in the database
 func (r *UserRepository) Create(user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Check if user with the same email already exists
 	var existingUser User
 	err := r.collection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&existingUser)
 	if err == nil {
@@ -40,12 +36,10 @@ func (r *UserRepository) Create(user *User) error {
 		return err
 	}
 
-	// Insert the new user
 	_, err = r.collection.InsertOne(ctx, user)
 	return err
 }
 
-// FindByEmail finds a user by email
 func (r *UserRepository) FindByEmail(email string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -62,7 +56,6 @@ func (r *UserRepository) FindByEmail(email string) (*User, error) {
 	return &user, nil
 }
 
-// FindByID finds a user by ID
 func (r *UserRepository) FindByID(id string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

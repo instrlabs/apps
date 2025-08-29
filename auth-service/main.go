@@ -41,7 +41,7 @@ func main() {
 
 	userController := internal.NewUserController(userRepo, cfg)
 
-	userHandler := internal.NewUserHandler(userController)
+	userHandler := internal.NewUserHandler(userController, cfg)
 
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{

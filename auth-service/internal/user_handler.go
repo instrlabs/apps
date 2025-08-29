@@ -8,12 +8,14 @@ import (
 
 type UserHandler struct {
 	userController *UserController
+	config         *Config
 	logger         *log.Logger
 }
 
-func NewUserHandler(userController *UserController) *UserHandler {
+func NewUserHandler(userController *UserController, config *Config) *UserHandler {
 	return &UserHandler{
 		userController: userController,
+		config:         config,
 		logger:         log.New(log.Writer(), "[UserHandler] ", log.LstdFlags|log.Lshortfile),
 	}
 }
@@ -186,24 +188,24 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 
 	h.logger.Println("Login: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.userController.GetCookieDomain(),
+		Domain:   h.config.CookieDomain,
 		Name:     "access_token",
 		Value:    tokens["access_token"],
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.userController.GetEnvironment() == "production",
+		Secure:   h.config.Environment == "production",
 		Path:     "/",
-		MaxAge:   h.userController.GetTokenExpiryHours() * 3600,
+		MaxAge:   h.config.TokenExpiryHours * 3600,
 	})
 
 	h.logger.Println("Login: Setting refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.userController.GetCookieDomain(),
+		Domain:   h.config.CookieDomain,
 		Name:     "refresh_token",
 		Value:    tokens["refresh_token"],
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.userController.GetEnvironment() == "production",
+		Secure:   h.config.Environment == "production",
 		Path:     "/",
 		MaxAge:   30 * 24 * 3600, // 30 days
 	})
@@ -252,24 +254,24 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 
 	h.logger.Println("RefreshToken: Setting new access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.userController.GetCookieDomain(),
+		Domain:   h.config.CookieDomain,
 		Name:     "access_token",
 		Value:    tokens["access_token"],
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.userController.GetEnvironment() == "production",
+		Secure:   h.config.Environment == "production",
 		Path:     "/",
-		MaxAge:   h.userController.GetTokenExpiryHours() * 3600,
+		MaxAge:   h.config.TokenExpiryHours * 3600,
 	})
 
 	h.logger.Println("RefreshToken: Setting new refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.userController.GetCookieDomain(),
+		Domain:   h.config.CookieDomain,
 		Name:     "refresh_token",
 		Value:    tokens["refresh_token"],
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.userController.GetEnvironment() == "production",
+		Secure:   h.config.Environment == "production",
 		Path:     "/",
 		MaxAge:   30 * 24 * 3600, // 30 days
 	})
@@ -461,29 +463,29 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 
 	h.logger.Println("GoogleCallback: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.userController.GetCookieDomain(),
+		Domain:   h.config.CookieDomain,
 		Name:     "access_token",
 		Value:    tokens["access_token"],
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.userController.GetEnvironment() == "production",
+		Secure:   h.config.Environment == "production",
 		Path:     "/",
-		MaxAge:   h.userController.GetTokenExpiryHours() * 3600,
+		MaxAge:   h.config.TokenExpiryHours * 3600,
 	})
 
 	h.logger.Println("GoogleCallback: Setting refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.userController.GetCookieDomain(),
+		Domain:   h.config.CookieDomain,
 		Name:     "refresh_token",
 		Value:    tokens["refresh_token"],
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.userController.GetEnvironment() == "production",
+		Secure:   h.config.Environment == "production",
 		Path:     "/",
 		MaxAge:   30 * 24 * 3600, // 30 days
 	})
 
-	redirectURL := h.userController.GetOAuthRedirectURL()
+	redirectURL := h.config.FEOAuthRedirect
 	if redirectURL == "" {
 		redirectURL = "/"
 	}
@@ -794,23 +796,23 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 
 	// Clear cookies
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.userController.GetCookieDomain(),
+		Domain:   h.config.CookieDomain,
 		Name:     "access_token",
 		Value:    "",
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.userController.GetEnvironment() == "production",
+		Secure:   h.config.Environment == "production",
 		Path:     "/",
 		MaxAge:   -1,
 	})
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.userController.GetCookieDomain(),
+		Domain:   h.config.CookieDomain,
 		Name:     "refresh_token",
 		Value:    "",
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.userController.GetEnvironment() == "production",
+		Secure:   h.config.Environment == "production",
 		Path:     "/",
 		MaxAge:   -1,
 	})
