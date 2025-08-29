@@ -29,6 +29,15 @@ services:
 
     volumes:
       - ./mongo/data:/data/db
+      
+  nats:
+    image: nats:2.10.12
+    
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+      
+    command: ["-js", "-m", "8222"]
 
   auth-service:
     build:
@@ -75,3 +84,19 @@ services:
       - "traefik.http.routers.web.rule=Host(`${WEB_HOST}`)"
       - "traefik.http.routers.web.entrypoints=web"
       - "traefik.http.services.web.loadbalancer.server.port=3000"
+      
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+
+    env_file:
+      - ./payment-service/.env.local
+
+    command: [ "./app" ]
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.payment-service.rule=Host(`${PAYMENT_SERVICE_HOST}`)"
+      - "traefik.http.routers.payment-service.entrypoints=web"
+      - "traefik.http.services.payment-service.loadbalancer.server.port=3040"
