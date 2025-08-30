@@ -1,54 +1,24 @@
 services:
-  traefik:
-    image: traefik:v3.5
-    restart: unless-stopped
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--entrypoints.web.address=:80"
-
-    ports:
-      - "80:80"
-
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`${DASHBOARD_HOST}`)"
-      - "traefik.http.routers.dashboard.entrypoints=web"
-      - "traefik.http.routers.dashboard.service=api@internal"
-      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
-
   mongo:
     image: mongo:8.0.12
     restart: unless-stopped
-
-    networks:
-      - default
-
     ports:
       - "27017:27017"
-
+    volumes:
+      - mongo_data:/data/db
     environment:
       MONGO_INITDB_DATABASE: ${MONGO_DB}
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
 
-    volumes:
-      - mongo_data:/data/db
-
   nats:
     image: nats:2.10.12-alpine
     restart: unless-stopped
-    command: ["-js", "-m", "8222"]  # Enable JetStream and monitoring
+    ports:
+      - "8222:8222"
+    command: ["-js", "-m", "8222"]
     volumes:
       - nats_data:/data
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.nats-monitoring.rule=Host(`${NATS_MONITORING_HOST}`)"
-      - "traefik.http.routers.nats-monitoring.entrypoints=web"
-      - "traefik.http.services.nats-monitoring.loadbalancer.server.port=8222"
 
   auth-service:
     build:
@@ -56,56 +26,8 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
-      - ./auth-service/.env.local
+      - ./auth-service/.env
     command: [ "./app" ]
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.auth-service.rule=Host(`${AUTH_SERVICE_HOST}`)"
-      - "traefik.http.routers.auth-service.entrypoints=web"
-      - "traefik.http.services.auth-service.loadbalancer.server.port=3000"
-
-  pdf-service:
-    build:
-      context: ./pdf-service
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    env_file:
-      - ./pdf-service/.env.local
-    command: [ "./app" ]
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.pdf-service.rule=Host(`${PDF_SERVICE_HOST}`)"
-      - "traefik.http.routers.pdf-service.entrypoints=web"
-      - "traefik.http.services.pdf-service.loadbalancer.server.port=3000"
-
-  labs-service:
-    build:
-      context: ./labs-service
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    env_file:
-      - ./labs-service/.env.local
-    environment:
-      - PDF_SERVICE_URL=http://pdf-service:3000
-    command: [ "./app" ]
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.labs-service.rule=Host(`${LABS_SERVICE_HOST}`)"
-      - "traefik.http.routers.labs-service.entrypoints=web"
-      - "traefik.http.services.labs-service.loadbalancer.server.port=3000"
-
-  notification-service:
-    build:
-      context: ./notification-service
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    env_file:
-      - ./notification-service/.env.local
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.notification-service.rule=Host(`${NOTIFICATION_SERVICE_HOST}`)"
-      - "traefik.http.routers.notification-service.entrypoints=web"
-      - "traefik.http.services.notification-service.loadbalancer.server.port=3000"
 
   gateway-service:
     build:
@@ -113,54 +35,10 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
-      - ./gateway-service/.env.local
+      - ./gateway-service/.env
     command: [ "./app" ]
-
-    networks:
-      - default
-
     ports:
       - "3000:3000"
-
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.gateway-service.rule=Host(`${GATEWAY_SERVICE_HOST}`)"
-      - "traefik.http.routers.gateway-service.entrypoints=web"
-      - "traefik.http.services.gateway-service.loadbalancer.server.port=3000"
-
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile.dev
-    restart: unless-stopped
-    depends_on:
-      - gateway-service
-      - notification-service
-
-    env_file:
-      - ./web/.env.local
-
-    networks:
-      - default
-
-    ports:
-      - "8000:3000"
-    
-    develop:
-      watch:
-        - action: sync
-          path: ./web
-          target: /app
-          ignore:
-            - node_modules/
-        - action: rebuild
-          path: ./web/package.json
-
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.web.rule=Host(`${WEB_HOST}`)"
-      - "traefik.http.routers.web.entrypoints=web"
-      - "traefik.http.services.web.loadbalancer.server.port=3000"
 
 volumes:
   mongo_data:

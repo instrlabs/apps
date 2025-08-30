@@ -15,6 +15,10 @@ docker-up-staging:
 docker-down-staging:
 	docker compose -f docker-compose.staging.yaml down
 
+clean-env-local:
+	find . -name ".env" -type f -delete
+	find . -name ".env.local" -type f -exec sh -c 'cp {} $$(dirname {})"/.env"' \;
+
 clean-env-staging:
 	find . -name ".env" -type f -delete
 	find . -name ".env.staging" -type f -exec sh -c 'cp {} $$(dirname {})"/.env"' \;
