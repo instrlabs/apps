@@ -73,6 +73,11 @@ func LoadConfig() Config {
 				Prefix: "/labs",
 			},
 			{
+				Name:   "pdf-service",
+				URL:    pdfServiceURL,
+				Prefix: "/pdf",
+			},
+			{
 				Name:   "notification-service",
 				URL:    notificationServiceURL,
 				Prefix: "/notification",

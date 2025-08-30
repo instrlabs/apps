@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"net/http"
 	"net/url"
 	"time"
 
@@ -19,71 +20,34 @@ func SetupGatewayRoutes(app *fiber.App, config Config) {
 		servicesStatus := health["services"].(map[string]string)
 
 		for _, service := range config.Services {
-			if service.URL == "" {
-				servicesStatus[service.Name] = "not configured"
-				continue
+			status := "ok"
+			resp, err := http.Get(service.URL + "/health")
+			if err != nil || resp.StatusCode != http.StatusOK {
+				status = "error"
 			}
 
-			agent := fiber.AcquireAgent()
-			req := agent.Request()
-			req.SetRequestURI(service.URL + "/health")
-			req.Header.SetMethod(fiber.MethodGet)
-
-			if err := agent.Parse(); err != nil {
-				servicesStatus[service.Name] = "error"
-				fiber.ReleaseAgent(agent)
-				continue
-			}
-
-			code, _, errs := agent.Bytes()
-			fiber.ReleaseAgent(agent)
-
-			if len(errs) > 0 || code != fiber.StatusOK {
-				servicesStatus[service.Name] = "error"
-			} else {
-				servicesStatus[service.Name] = "ok"
-			}
-		}
-
-		for _, status := range servicesStatus {
-			if status == "error" {
-				health["status"] = "partial"
-				break
-			}
+			servicesStatus[service.Name] = status
 		}
 
 		return c.JSON(health)
 	})
 
 	for _, service := range config.Services {
-		targetURL, err := url.Parse(service.URL)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"service": service.Name,
-				"url":     service.URL,
-				"error":   err.Error(),
-			}).Fatal("Failed to parse service URL")
-		}
-
 		prefix := service.Prefix
+		targetURL, _ := url.Parse(service.URL)
 
 		app.All(prefix+"/*", func(c *fiber.Ctx) error {
 			forwardPath := c.Path()[len(prefix):]
 			queryString := string(c.Request().URI().QueryString())
-			cookieHeader := c.Get("Cookie")
 
 			log.WithFields(log.Fields{
 				"service":      service.Name,
 				"method":       c.Method(),
 				"path":         forwardPath,
 				"query":        queryString,
-				"cookies":      cookieHeader,
 				"forwarded_to": targetURL.String(),
 			}).Info("Forwarding request")
 
-			c.Request().Header.Set("X-Gateway", "true")
-			
-			// Forward token from context if available
 			if token, ok := c.Locals("token").(string); ok && token != "" {
 				c.Request().Header.Set("X-Auth-Token", token)
 				log.WithFields(log.Fields{

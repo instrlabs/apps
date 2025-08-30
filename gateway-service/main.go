@@ -19,9 +19,11 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	})
 
-	internal.SetupGatewayRoutes(app, config)
-
+	// Setup middleware (logging, CORS, auth processing)
 	internal.SetupMiddleware(app)
+
+	// Register routes and proxy after middleware so headers/cookies are sanitized before proxying
+	internal.SetupGatewayRoutes(app, config)
 
 	go func() {
 		log.WithFields(log.Fields{
