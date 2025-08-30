@@ -61,6 +61,9 @@ services:
     image: mongo:8.0.12
     restart: unless-stopped
 
+    networks:
+      - proxy
+
     ports:
       - "27017:27017"
 
