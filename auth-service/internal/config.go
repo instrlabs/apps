@@ -29,7 +29,7 @@ type Config struct {
 	CookieDomain          string
 }
 
-func NewConfig() *Config {
+func LoadConfig() *Config {
 	godotenv.Load()
 
 	tokenExpiryHours := 1

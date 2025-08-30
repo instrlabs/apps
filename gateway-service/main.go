@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-	"os/signal"
 	"time"
 
 	"github.com/arthadede/gateway-service/internal"
@@ -19,33 +17,9 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	})
 
-	// Setup middleware (logging, CORS, auth processing)
 	internal.SetupMiddleware(app)
 
-	// Register routes and proxy after middleware so headers/cookies are sanitized before proxying
 	internal.SetupGatewayRoutes(app, config)
 
-	go func() {
-		log.WithFields(log.Fields{
-			"port": config.Port,
-		}).Info("Starting gateway server")
-
-		if err := app.Listen(":" + config.Port); err != nil {
-			log.WithFields(log.Fields{
-				"error": err.Error(),
-			}).Fatal("Could not start server")
-		}
-	}()
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	<-c
-
-	if err := app.ShutdownWithTimeout(15 * time.Second); err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Error during server shutdown")
-	}
-
-	log.Info("Server gracefully stopped")
+	log.Fatal(app.Listen(config.Port))
 }

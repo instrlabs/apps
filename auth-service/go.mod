@@ -4,10 +4,8 @@ go 1.24.4
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.9
-	github.com/gofiber/swagger v1.1.1
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/joho/godotenv v1.5.1
-	github.com/swaggo/swag v1.16.6
 	go.mongodb.org/mongo-driver v1.17.4
 	golang.org/x/crypto v0.41.0
 	golang.org/x/oauth2 v0.30.0

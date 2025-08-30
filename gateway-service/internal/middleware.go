@@ -12,23 +12,9 @@ import (
 )
 
 func SetupMiddleware(app *fiber.App) {
-	// CORS
-	app.Use(cors.New(cors.Config{
-		AllowOrigins:     os.Getenv("CORS_ALLOWED_ORIGINS"),
-		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
-		AllowHeaders:     "Origin, Accept, Content-Type, Authorization, X-Requested-With, X-Authenticated, X-User-Id, X-User-Roles",
-		ExposeHeaders:    "Set-Cookie",
-		AllowCredentials: true,
-	}))
-
 	// INBOUND LOG
 	app.Use(func(c *fiber.Ctx) error {
 		start := time.Now()
-		// Skip heavy processing for preflight
-		if c.Method() == fiber.MethodOptions {
-			return c.Next()
-		}
-
 		err := c.Next()
 		log.WithFields(log.Fields{
 			"method":      c.Method(),
@@ -40,13 +26,16 @@ func SetupMiddleware(app *fiber.App) {
 		return err
 	})
 
+	// CORS
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     os.Getenv("CORS_ALLOWED_ORIGINS"),
+		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
+		AllowHeaders:     "Origin, Accept, Content-Type, X-Authenticated, X-User-Id, X-User-Roles",
+		AllowCredentials: true,
+	}))
+
 	// AUTH
 	app.Use(func(c *fiber.Ctx) error {
-		// Do not process auth on CORS preflight
-		if c.Method() == fiber.MethodOptions {
-			return c.Next()
-		}
-
 		token := c.Cookies("access_token")
 
 		c.Request().Header.Del("Cookie")
