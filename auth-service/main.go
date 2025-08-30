@@ -20,7 +20,10 @@ func main() {
 
 	app := fiber.New(fiber.Config{})
 
-	app.Static("/swagger", "./static/swagger.json")
+	// Serve Swagger JSON explicitly with correct content type
+	app.Get("/swagger", func(c *fiber.Ctx) error {
+		return c.Type("json").SendFile("./static/swagger.json")
+	})
 
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok"})

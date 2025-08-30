@@ -19,7 +19,7 @@ func SetupMiddleware(app *fiber.App) {
 	app.Use(func(c *fiber.Ctx) error {
 		publicPaths := []string{
 			"/health",
-			"/static",
+			"/swagger",
 			"/login",
 			"/register",
 			"/forgot-password",

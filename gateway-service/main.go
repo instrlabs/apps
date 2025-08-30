@@ -19,6 +19,8 @@ func main() {
 
 	internal.SetupMiddleware(app)
 
+	internal.SetupGatewaySwaggerUI(app, config)
+
 	internal.SetupGatewayRoutes(app, config)
 
 	log.Fatal(app.Listen(config.Port))
