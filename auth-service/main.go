@@ -17,7 +17,6 @@ import (
 	"github.com/arthadede/auth-service/internal"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -44,12 +43,7 @@ func main() {
 	userHandler := internal.NewUserHandler(userController, cfg)
 
 	app := fiber.New()
-	app.Use(cors.New(cors.Config{
-		AllowOrigins:     cfg.CORSAllowedOrigins,
-		AllowCredentials: true,
-		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
-		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
-	}))
+
 	app.Use(helmet.New())
 
 	if cfg.Environment == "production" {
@@ -83,7 +77,6 @@ func main() {
 	app.Post("/refresh", userHandler.RefreshToken)
 	app.Post("/forgot-password", userHandler.ForgotPassword)
 	app.Post("/reset-password", userHandler.ResetPassword)
-	app.Post("/verify-token", userHandler.VerifyToken)
 
 	app.Get("/profile", userHandler.GetProfile)
 	app.Put("/profile", userHandler.UpdateProfile)

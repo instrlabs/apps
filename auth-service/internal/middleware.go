@@ -7,20 +7,44 @@ import (
 )
 
 func AuthMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		var token string
+	publicPaths := []string{
+		"/health",
+		"/swagger",
+		"/login",
+		"/register",
+		"/forgot-password",
+		"/reset-password",
+		"/google",
+	}
 
-		token = c.Cookies("access_token")
-
-		if token == "" {
-			auth := c.Get("Authorization")
-			if strings.HasPrefix(auth, "Bearer ") {
-				token = strings.TrimPrefix(auth, "Bearer ")
+	isPublic := func(path string) bool {
+		for _, prefix := range publicPaths {
+			if path == prefix || strings.HasPrefix(path, prefix) {
+				return true
 			}
 		}
 
-		if token != "" {
-			c.Locals("token", token)
+		return false
+	}
+
+	return func(c *fiber.Ctx) error {
+		if c.Get("X-Authenticated") == "true" {
+			userId := c.Get("X-User-Id")
+			if userId != "" {
+				c.Locals("UserID", userId)
+			}
+			roles := c.Get("X-User-Roles")
+			if roles != "" {
+				c.Locals("Roles", roles)
+			}
+		}
+
+		if !isPublic(c.Path()) && c.Get("X-Authenticated") == "false" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"message": "Unauthorized",
+				"errors":  nil,
+				"data":    nil,
+			})
 		}
 
 		return c.Next()

@@ -69,7 +69,8 @@ func (c *UserController) generateRefreshToken() (string, error) {
 
 func (c *UserController) generateAccessToken(userID string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": userID,
+		"userID": userID,
+		"roles":  []string{"user"},
 	})
 
 	tokenString, err := token.SignedString([]byte(c.config.JWTSecret))
@@ -287,40 +288,6 @@ func (c *UserController) HandleGoogleCallback(code string) (map[string]string, e
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 	}, nil
-}
-
-func (c *UserController) VerifyToken(tokenString string) (*User, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("invalid token signing method")
-		}
-		return []byte(c.config.JWTSecret), nil
-	})
-
-	if err != nil {
-		return nil, errors.New("invalid token")
-	}
-
-	if !token.Valid {
-		return nil, errors.New("invalid token")
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, errors.New("invalid token claims")
-	}
-
-	userID, ok := claims["sub"].(string)
-	if !ok {
-		return nil, errors.New("invalid user ID in token")
-	}
-
-	user, err := c.userRepo.FindByID(userID)
-	if err != nil {
-		return nil, errors.New("user not found")
-	}
-
-	return user, nil
 }
 
 func (c *UserController) ChangePassword(userID string, currentPassword string, newPassword string) error {
