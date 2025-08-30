@@ -20,13 +20,13 @@ func main() {
 
 	app := fiber.New(fiber.Config{})
 
-	internal.SetupMiddleware(app)
-
-	internal.SetupSwagger(app)
+	app.Static("/swagger", "./static/swagger.json")
 
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
+
+	internal.SetupMiddleware(app)
 
 	app.Post("/register", userHandler.Register)
 	app.Post("/login", userHandler.Login)
@@ -39,7 +39,6 @@ func main() {
 	app.Put("/profile", userHandler.UpdateProfile)
 	app.Post("/change-password", userHandler.ChangePassword)
 
-	// Google OAuth routes
 	app.Get("/google", userHandler.GoogleLogin)
 	app.Get("/google/callback", userHandler.GoogleCallback)
 

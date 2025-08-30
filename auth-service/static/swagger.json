@@ -17,6 +17,31 @@
     "host": "localhost:3000",
     "basePath": "/auth",
     "paths": {
+        "/health": {
+            "get": {
+                "description": "Health check endpoint",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "Service is healthy",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "status": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/forgot-password": {
             "post": {
                 "description": "Request a password reset link for a registered email",
@@ -496,9 +521,40 @@
                 }
             }
         },
-        "/verify-token": {
-            "post": {
-                "description": "Verify the validity of an authentication token and return user information",
+        "/profile": {
+            "get": {
+                "description": "Get the authenticated user's profile",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get user profile",
+                "responses": {
+                    "200": {
+                        "description": "Profile fetched successfully",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": { "type": "object" },
+                                "message": { "type": "string" }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": { "type": "string" }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update the authenticated user's profile",
                 "consumes": [
                     "application/json"
                 ],
@@ -506,42 +562,26 @@
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "user"
                 ],
-                "summary": "Verify authentication token",
+                "summary": "Update user profile",
                 "parameters": [
                     {
-                        "description": "Authentication token",
+                        "description": "Profile fields to update",
                         "name": "request",
                         "in": "body",
                         "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "token": {
-                                    "type": "string"
-                                }
-                            }
-                        }
+                        "schema": { "type": "object" }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Token verified successfully",
+                        "description": "Profile updated successfully",
                         "schema": {
                             "type": "object",
                             "properties": {
-                                "data": {
-                                    "type": "object",
-                                    "properties": {
-                                        "user": {
-                                            "type": "object"
-                                        }
-                                    }
-                                },
-                                "message": {
-                                    "type": "string"
-                                }
+                                "data": { "type": "object" },
+                                "message": { "type": "string" }
                             }
                         }
                     },
@@ -550,20 +590,75 @@
                         "schema": {
                             "type": "object",
                             "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
+                                "message": { "type": "string" }
                             }
                         }
                     },
                     "401": {
-                        "description": "Invalid token",
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
+                                "message": { "type": "string" }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/change-password": {
+            "post": {
+                "description": "Change the authenticated user's password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Change password",
+                "parameters": [
+                    {
+                        "description": "Current and new password",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "current_password": { "type": "string" },
+                                "new_password": { "type": "string" }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Password changed successfully",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": { "type": "string" }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation error",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": { "type": "string" }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": { "type": "string" }
                             }
                         }
                     }

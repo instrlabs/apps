@@ -12,6 +12,9 @@ FROM alpine:latest AS release
 
 WORKDIR /app
 
+RUN mkdir ./static
+COPY ./static ./static
+
 COPY --from=build /go/src/auth-service/app .
 
 RUN apk -U upgrade \
