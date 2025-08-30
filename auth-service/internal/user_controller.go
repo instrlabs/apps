@@ -69,8 +69,8 @@ func (c *UserController) generateRefreshToken() (string, error) {
 
 func (c *UserController) generateAccessToken(userID string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userID": userID,
-		"roles":  []string{"user"},
+		"user_id": userID,
+		"roles":   []string{"user"},
 	})
 
 	tokenString, err := token.SignedString([]byte(c.config.JWTSecret))
