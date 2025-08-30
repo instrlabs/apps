@@ -214,7 +214,10 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Login successful",
 		"errors":  nil,
-		"data":    nil,
+		"data": map[string]string{
+			"access_token":  tokens["access_token"],
+			"refresh_token": tokens["refresh_token"],
+		},
 	})
 }
 
@@ -280,7 +283,10 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Token refreshed successfully",
 		"errors":  nil,
-		"data":    nil,
+		"data": map[string]string{
+			"access_token":  tokens["access_token"],
+			"refresh_token": tokens["refresh_token"],
+		},
 	})
 }
 

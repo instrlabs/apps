@@ -44,7 +44,6 @@ func SetupMiddleware(app *fiber.App) {
 		c.Request().Header.Del("X-User-Roles")
 
 		if token != "" {
-			c.Request().Header.Set("X-Auth-Token", token)
 			if info, err := ExtractTokenInfo(token); err == nil {
 				c.Request().Header.Set("X-Authenticated", "true")
 				c.Request().Header.Set("X-User-Id", info.UserID)
