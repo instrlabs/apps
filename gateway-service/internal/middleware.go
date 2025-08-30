@@ -30,7 +30,7 @@ func SetupMiddleware(app *fiber.App) {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     os.Getenv("CORS_ALLOWED_ORIGINS"),
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
-		AllowHeaders:     "Content-Type, Authorization, X-Authenticated, X-Auth-Token, X-User-Id, X-User-Roles, X-Token-Expires-At",
+		AllowHeaders:     "Origin, Accept, Content-Type, X-Authenticated, X-User-Id, X-User-Roles",
 		AllowCredentials: true,
 	}))
 
