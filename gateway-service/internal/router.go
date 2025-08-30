@@ -37,6 +37,11 @@ func SetupGatewayRoutes(app *fiber.App, config Config) {
 		targetURL, _ := url.Parse(service.URL)
 
 		app.All(prefix+"/*", func(c *fiber.Ctx) error {
+			// Handle CORS preflight early: just delegate to next (CORS middleware already added)
+			if c.Method() == fiber.MethodOptions {
+				return c.Next()
+			}
+
 			forwardPath := c.Path()[len(prefix):]
 			queryString := string(c.Request().URI().QueryString())
 
