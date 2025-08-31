@@ -16,14 +16,16 @@ const (
 )
 
 type Product struct {
-	ID          string    `bson:"_id,omitempty"`
-	Name        string    `bson:"name"`
-	Price       float64   `bson:"price"`
-	Description string    `bson:"description,omitempty"`
-	Active      bool      `bson:"active"`
-	IsFree      bool      `bson:"isFree"`
-	CreatedAt   time.Time `bson:"createdAt"`
-	UpdatedAt   time.Time `bson:"updatedAt"`
+	ID          string    `bson:"_id,omitempty" json:"id,omitempty"`
+	Name        string    `bson:"name" json:"name"`
+	Price       float64   `bson:"price" json:"price"`
+	Description string    `bson:"description,omitempty" json:"description,omitempty"`
+	Image       string    `bson:"image,omitempty" json:"image,omitempty"`
+	ProductType string    `bson:"productType,omitempty" json:"productType,omitempty"`
+	Active      bool      `bson:"active" json:"active"`
+	IsFree      bool      `bson:"isFree" json:"isFree"`
+	CreatedAt   time.Time `bson:"createdAt" json:"createdAt"`
+	UpdatedAt   time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
 type ProductRepository struct {

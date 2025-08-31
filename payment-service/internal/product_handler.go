@@ -13,22 +13,7 @@ func NewProductHandler(repo *ProductRepository) *ProductHandler {
 	return &ProductHandler{repo: repo}
 }
 
-func (h *ProductHandler) Register(app *fiber.App) {
-	app.Post("/products", h.createProduct)
-	app.Get("/products", h.listProducts)
-	app.Get("/products/:id", h.getProduct)
-	app.Patch("/products/:id", h.updateProduct)
-	app.Delete("/products/:id", h.deleteProduct)
-}
-
-// Exported wrappers to allow route registration outside without using Register
-func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error { return h.createProduct(c) }
-func (h *ProductHandler) ListProducts(c *fiber.Ctx) error  { return h.listProducts(c) }
-func (h *ProductHandler) GetProduct(c *fiber.Ctx) error    { return h.getProduct(c) }
-func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error { return h.updateProduct(c) }
-func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error { return h.deleteProduct(c) }
-
-func (h *ProductHandler) createProduct(c *fiber.Ctx) error {
+func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 	var p Product
 	if err := c.BodyParser(&p); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
@@ -39,7 +24,7 @@ func (h *ProductHandler) createProduct(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(p)
 }
 
-func (h *ProductHandler) listProducts(c *fiber.Ctx) error {
+func (h *ProductHandler) ListProducts(c *fiber.Ctx) error {
 	onlyActive := c.QueryBool("active", false)
 	products, err := h.repo.ListProducts(c.Context(), onlyActive)
 	if err != nil {
@@ -48,7 +33,7 @@ func (h *ProductHandler) listProducts(c *fiber.Ctx) error {
 	return c.JSON(products)
 }
 
-func (h *ProductHandler) getProduct(c *fiber.Ctx) error {
+func (h *ProductHandler) GetProduct(c *fiber.Ctx) error {
 	id := c.Params("id")
 	product, err := h.repo.GetProductByID(c.Context(), id)
 	if err != nil {
@@ -60,7 +45,7 @@ func (h *ProductHandler) getProduct(c *fiber.Ctx) error {
 	return c.JSON(product)
 }
 
-func (h *ProductHandler) updateProduct(c *fiber.Ctx) error {
+func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	id := c.Params("id")
 	var body map[string]interface{}
 	if err := c.BodyParser(&body); err != nil {
@@ -70,6 +55,8 @@ func (h *ProductHandler) updateProduct(c *fiber.Ctx) error {
 		"name":        true,
 		"price":       true,
 		"description": true,
+		"image":       true,
+		"productType": true,
 		"active":      true,
 		"isFree":      true,
 	}
@@ -88,7 +75,7 @@ func (h *ProductHandler) updateProduct(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "updated"})
 }
 
-func (h *ProductHandler) deleteProduct(c *fiber.Ctx) error {
+func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if err := h.repo.DeleteProduct(c.Context(), id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
