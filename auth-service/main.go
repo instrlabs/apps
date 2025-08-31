@@ -20,7 +20,6 @@ func main() {
 
 	app := fiber.New(fiber.Config{})
 
-	// Serve Swagger JSON explicitly with correct content type
 	app.Get("/swagger", func(c *fiber.Ctx) error {
 		return c.Type("json").SendFile("./static/swagger.json")
 	})

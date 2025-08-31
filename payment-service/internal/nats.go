@@ -6,24 +6,14 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	nats "github.com/nats-io/nats.go"
 )
 
 type NatsService struct {
 	conn *nats.Conn
 	cfg  *Config
 }
-
-// PaymentStatus represents the status of a payment
-type PaymentStatus string
-
-const (
-	PaymentStatusPending   PaymentStatus = "pending"
-	PaymentStatusSuccess   PaymentStatus = "success"
-	PaymentStatusFailed    PaymentStatus = "failed"
-	PaymentStatusExpired   PaymentStatus = "expired"
-	PaymentStatusCancelled PaymentStatus = "cancelled"
-	PaymentStatusRefunded  PaymentStatus = "refunded"
-)
 
 // PaymentEventMessage represents a payment event message
 type PaymentEventMessage struct {
@@ -36,23 +26,25 @@ type PaymentEventMessage struct {
 	Status        PaymentStatus `json:"status"`
 	RedirectURL   string        `json:"redirectUrl,omitempty"`
 	Timestamp     time.Time     `json:"timestamp"`
+	Type          PaymentType   `json:"type,omitempty"`
 }
 
 // PaymentRequestMessage represents a payment request message
 type PaymentRequestMessage struct {
-	OrderID       string  `json:"orderId"`
-	UserID        string  `json:"userId"`
-	Amount        float64 `json:"amount"`
-	Currency      string  `json:"currency"`
-	PaymentMethod string  `json:"paymentMethod,omitempty"`
-	Description   string  `json:"description,omitempty"`
-	CallbackURL   string  `json:"callbackUrl,omitempty"`
+	OrderID       string      `json:"orderId"`
+	UserID        string      `json:"userId"`
+	Amount        float64     `json:"amount"`
+	Currency      string      `json:"currency"`
+	PaymentMethod string      `json:"paymentMethod,omitempty"`
+	Description   string      `json:"description,omitempty"`
+	CallbackURL   string      `json:"callbackUrl,omitempty"`
+	Type          PaymentType `json:"type,omitempty"`
 }
 
-func NewNatsService(cfg *Config) (*NatsService, error) {
+func NewNatsService(cfg *Config) *NatsService {
 	conn, err := nats.Connect(cfg.NatsURL, nats.Timeout(10*time.Second))
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to NATS: %w", err)
+		log.Fatalf("Failed to connect to NATS: %v", err)
 	}
 
 	log.Println("Connected to NATS successfully")
@@ -60,7 +52,7 @@ func NewNatsService(cfg *Config) (*NatsService, error) {
 	return &NatsService{
 		conn: conn,
 		cfg:  cfg,
-	}, nil
+	}
 }
 
 func (n *NatsService) Close() {

@@ -4,7 +4,7 @@ A microservice for handling payments integrated with Midtrans payment gateway, b
 
 ## Features
 
-- Create payments with Midtrans
+- Create payments with Midtrans (supports top-up, product purchase, and product subscription)
 - Check payment status
 - Handle payment notifications (webhooks)
 - Process payment requests via NATS
@@ -13,7 +13,7 @@ A microservice for handling payments integrated with Midtrans payment gateway, b
 
 ## API Endpoints
 
-### Create Payment
+### Create Payment (Top-up or Product)
 
 ```
 POST /payments
@@ -22,7 +22,7 @@ POST /payments
 Request body:
 ```json
 {
-  "orderId": "ORDER-123",
+  "orderId": "",
   "userId": "USER-123",
   "amount": 100000,
   "currency": "IDR",
@@ -30,9 +30,15 @@ Request body:
   "description": "Payment for order #123",
   "customerName": "John Doe",
   "customerEmail": "john@example.com",
-  "callbackUrl": "https://example.com/callback"
+  "callbackUrl": "https://example.com/callback",
+  "type": "product"
 }
 ```
+
+Notes:
+- Set `type` to "product" (default) or "topup".
+- If `orderId` is empty, the service will generate one with a prefix according to `type` (TOPUP-, PROD-).
+- Default `type` is `product` if not provided.
 
 Response:
 ```json
@@ -45,6 +51,46 @@ Response:
   "paymentMethod": "gopay",
   "status": "pending",
   "redirectUrl": "https://app.midtrans.com/snap/v2/vtweb/..."
+}
+```
+
+### Create Subscription
+
+```
+POST /payments/subscriptions
+```
+
+Request body:
+```json
+{
+  "name": "Pro Plan Monthly",
+  "userId": "USER-123",
+  "amount": 50000,
+  "currency": "IDR",
+  "token": "snap_credit_card_token",
+  "interval": "month",
+  "intervalCount": 1,
+  "startAt": "", 
+  "description": "Subscription for Pro Plan",
+  "customerName": "John Doe",
+  "customerEmail": "john@example.com"
+}
+```
+
+Notes:
+- Midtrans subscription API requires a credit card token.
+- `startAt` can be empty to start immediately or an RFC3339 timestamp.
+
+Response:
+```json
+{
+  "id": "sub_xxx",
+  "orderId": "sub_xxx",
+  "userId": "USER-123",
+  "amount": 50000,
+  "currency": "IDR",
+  "status": "pending",
+  "type": "subscription"
 }
 ```
 
@@ -86,9 +132,13 @@ Payment request message format:
   "currency": "IDR",
   "paymentMethod": "gopay",
   "description": "Payment for order #123",
-  "callbackUrl": "https://example.com/callback"
+  "callbackUrl": "https://example.com/callback",
+  "type": "product"
 }
 ```
+
+Notes:
+- Set `type` to "product" or "topup". Subscription is created via HTTP at `/payments/subscriptions`. 
 
 The service publishes payment events to the `payment.events` subject.
 
@@ -103,7 +153,8 @@ Payment event message format:
   "paymentMethod": "gopay",
   "status": "pending",
   "redirectUrl": "https://app.midtrans.com/snap/v2/vtweb/...",
-  "timestamp": "2025-08-29T18:11:00Z"
+  "timestamp": "2025-08-29T18:11:00Z",
+  "type": "product"
 }
 ```
 

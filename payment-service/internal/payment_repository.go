@@ -15,31 +15,47 @@ const (
 	paymentCollectionName = "payments"
 )
 
-// Payment represents a payment document in MongoDB
+type PaymentStatus string
+
+const (
+	PaymentStatusPending   PaymentStatus = "pending"
+	PaymentStatusSuccess   PaymentStatus = "success"
+	PaymentStatusFailed    PaymentStatus = "failed"
+	PaymentStatusExpired   PaymentStatus = "expired"
+	PaymentStatusCancelled PaymentStatus = "cancelled"
+	PaymentStatusRefunded  PaymentStatus = "refunded"
+)
+
+type PaymentType string
+
+const (
+	PaymentTypeBalance      PaymentType = "balance"
+	PaymentTypeProduct      PaymentType = "product"
+	PaymentTypeSubscription PaymentType = "subscription"
+)
+
 type Payment struct {
-	ID            string        `bson:"_id,omitempty"`
-	OrderID       string        `bson:"orderId"`
-	UserID        string        `bson:"userId"`
-	Amount        float64       `bson:"amount"`
-	Currency      string        `bson:"currency"`
-	PaymentMethod string        `bson:"paymentMethod"`
-	Status        PaymentStatus `bson:"status"`
-	RedirectURL   string        `bson:"redirectUrl,omitempty"`
-	CreatedAt     time.Time     `bson:"createdAt"`
-	UpdatedAt     time.Time     `bson:"updatedAt"`
+	ID             string        `bson:"_id,omitempty"`
+	ProductID      string        `bson:"productId,omitempty"`
+	SubscriptionID string        `bson:"subscriptionId,omitempty"`
+	UserID         string        `bson:"userId"`
+	Amount         float64       `bson:"amount"`
+	Currency       string        `bson:"currency"`
+	PaymentMethod  string        `bson:"paymentMethod"`
+	Status         PaymentStatus `bson:"status"`
+	Type           PaymentType   `bson:"type,omitempty"`
+	CreatedAt      time.Time     `bson:"createdAt"`
+	UpdatedAt      time.Time     `bson:"updatedAt"`
 }
 
-// PaymentRepository handles payment data operations
 type PaymentRepository struct {
 	db         *MongoDB
 	collection *mongo.Collection
 }
 
-// NewPaymentRepository creates a new payment repository
 func NewPaymentRepository(db *MongoDB) *PaymentRepository {
 	collection := db.GetCollection(paymentCollectionName)
 
-	// Create indexes
 	indexModel := mongo.IndexModel{
 		Keys: bson.D{
 			{Key: "orderId", Value: 1},

@@ -26,7 +26,6 @@ func NewMongoDB(cfg *Config) *MongoDB {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
 
-	// Ping the database to verify connection
 	err = client.Ping(ctx, readpref.Primary())
 	if err != nil {
 		log.Fatalf("Failed to ping MongoDB: %v", err)

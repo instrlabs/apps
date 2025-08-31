@@ -69,6 +69,11 @@ func NewConfig() *Config {
 	}
 }
 
+// LoadConfig mirrors auth-service naming and delegates to NewConfig for compatibility
+func LoadConfig() *Config {
+	return NewConfig()
+}
+
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
