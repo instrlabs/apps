@@ -18,6 +18,10 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 	if err := c.BodyParser(&p); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
 	}
+	// Set userId from authenticated user if available (override any client-sent value)
+	if userID, ok := c.Locals("UserID").(string); ok && userID != "" {
+		p.UserID = userID
+	}
 	if err := h.repo.CreateProduct(c.Context(), &p); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}

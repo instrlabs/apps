@@ -1,29 +1,26 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24 AS build
 
-WORKDIR /app
+WORKDIR /go/src/payment-service
 
-# Copy go.mod and go.sum files
-COPY go.mod go.sum ./
-
-# Download dependencies
-RUN go mod download
-
-# Copy the source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o app .
+RUN go mod download
 
-# Use a minimal alpine image for the final stage
-FROM alpine:3.19
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o app .
+
+FROM alpine:latest AS release
 
 WORKDIR /app
 
-# Copy the binary from the builder stage
-COPY --from=builder /app/app .
+RUN mkdir ./static
+COPY ./static ./static
 
-# Expose the port the app runs on
-EXPOSE 3040
+COPY --from=build /go/src/payment-service/app .
 
-# Command to run the application
-CMD ["./app"]
+RUN apk -U upgrade \
+    && apk add --no-cache dumb-init ca-certificates \
+    && chmod +x /app/app
+
+EXPOSE 3000
+
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]

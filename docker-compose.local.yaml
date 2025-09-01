@@ -29,6 +29,15 @@ services:
       - ./auth-service/.env
     command: [ "./app" ]
 
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./payment-service/.env
+    command: [ "./app" ]
+
   gateway-service:
     build:
       context: ./gateway-service

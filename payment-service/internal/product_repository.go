@@ -22,6 +22,7 @@ type Product struct {
 	Description string    `bson:"description,omitempty" json:"description,omitempty"`
 	Image       string    `bson:"image,omitempty" json:"image,omitempty"`
 	ProductType string    `bson:"productType,omitempty" json:"productType,omitempty"`
+	UserID      string    `bson:"userId,omitempty" json:"userId,omitempty"`
 	Active      bool      `bson:"active" json:"active"`
 	IsFree      bool      `bson:"isFree" json:"isFree"`
 	CreatedAt   time.Time `bson:"createdAt" json:"createdAt"`

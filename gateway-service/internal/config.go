@@ -41,6 +41,12 @@ func LoadConfig() *Config {
 		log.Warn("AUTH_SERVICE_URL not set, using default: ", authServiceURL)
 	}
 
+	paymentServiceURL := os.Getenv("PAYMENT_SERVICE_URL")
+	if paymentServiceURL == "" {
+		paymentServiceURL = "http://payment.localhost"
+		log.Warn("PAYMENT_SERVICE_URL not set, using default: ", paymentServiceURL)
+	}
+
 	return &Config{
 		Port: port,
 		Services: []ServiceConfig{
@@ -48,6 +54,11 @@ func LoadConfig() *Config {
 				Name:   "auth-service",
 				URL:    authServiceURL,
 				Prefix: "/auth",
+			},
+			{
+				Name:   "payment-service",
+				URL:    paymentServiceURL,
+				Prefix: "/payment",
 			},
 		},
 	}
