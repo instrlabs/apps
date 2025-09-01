@@ -165,6 +165,9 @@ services:
   pdf-reader:
     image: histweety/pdf-reader:latest
     restart: unless-stopped
+    environment:
+      OPENAI_API_KEY: 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
+
     networks:
       - proxy
     labels:
