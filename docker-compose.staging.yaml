@@ -169,10 +169,10 @@ services:
       - proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.web.rule=Host(`book.histweetyy.cc`)"
-      - "traefik.http.routers.web.tls=true"
-      - "traefik.http.routers.web.entrypoints=websecure"
-      - "traefik.http.services.web.loadbalancer.server.port=3000"
+      - "traefik.http.routers.pdf-reader.rule=Host(`book.histweetyy.cc`)"
+      - "traefik.http.routers.pdf-reader.tls=true"
+      - "traefik.http.routers.pdf-reader.entrypoints=websecure"
+      - "traefik.http.services.pdf-reader.loadbalancer.server.port=3000"
 
 networks:
   proxy:
