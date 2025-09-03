@@ -30,7 +30,7 @@ export default function ForgotPasswordForm() {
   });
 
   const onSubmit = async (values: ForgotFormValues) => {
-    const { data, error, errorFields } = await requestPasswordReset(values.email);
+    const { data, errors, errorFields } = await requestPasswordReset(values.email);
 
     if (errorFields && errorFields.length > 0) {
       errorFields.forEach((err: FieldError) => {

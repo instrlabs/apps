@@ -53,7 +53,7 @@ export default function ResetPasswordForm() {
       return;
     }
 
-    const { data, error, errorFields } = await resetPassword(token, values.password);
+    const { data, errors, errorFields } = await resetPassword(token, values.password);
 
     if (errorFields && errorFields.length > 0) {
       errorFields.forEach((err: FieldError) => {

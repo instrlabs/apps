@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 import { ROUTES } from "@/constants/routes";
-import { loginUser } from "@/services/auth";
 import useNotification from "@/hooks/useNotification";
 import Button from "@/components/button";
 import TextField from "@/components/text-field";
 import LinkText from "@/components/link-text";
 import type { FieldError } from "@/shared/types";
+import { loginUser } from "@/services/auth";
 
 type LoginFormValues = {
   email: string;
@@ -33,19 +33,22 @@ export default function LoginForm() {
   });
 
   const onSubmit = async (values: LoginFormValues) => {
-    const { data, error, errorFields } = await loginUser(values.email, values.password);
-
-    if (errorFields && errorFields.length > 0) {
-      errorFields.forEach((err: FieldError) => {
-        setError(err.fieldName as keyof LoginFormValues, {
-          type: "server",
-          message: err.errorMessage,
+    try {
+      const { success, message, data, errors } = await loginUser(values.email, values.password);
+      if (errors && errors?.length > 0) {
+        errors.forEach((err: FieldError) => {
+          setError(err.fieldName as keyof LoginFormValues, {
+            type: "server",
+            message: err.errorMessage,
+          });
         });
-      });
-    } else if (error) {
-      showNotification(error, "error", 3000);
-    } else if (data) {
-      router.push(ROUTES.HOME);
+      } else if (!success) {
+        showNotification(message, "error", 3000);
+      } else if(data) {
+        router.push(ROUTES.HOME);
+      }
+    } catch {
+      showNotification("Something went wrong", "error", 3000);
     }
   };
 

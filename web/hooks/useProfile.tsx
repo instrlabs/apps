@@ -25,13 +25,13 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       const res = await fetchProfile();
-      if (res && !res.error && res.data) {
+      if (res && !res.errors && res.data) {
         // services/auth.profile() returns WrapperResponse<ProfileResponse>
         // where ProfileResponse = { message: string; data: { name; email } }
         setProfile(res.data.data.user);
       } else {
         setProfile(null);
-        setError(res?.error ?? "Failed to load profile");
+        setError(res?.errors ?? "Failed to load profile");
       }
     } catch {
       setProfile(null);

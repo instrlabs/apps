@@ -32,65 +32,32 @@
         "/forgot-password": {
             "post": {
                 "description": "Request a password reset link for a registered email",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
+                "tags": ["auth"],
                 "summary": "Request password reset",
-                "parameters": [
-                    {
-                        "description": "User email",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "email": {
-                                    "type": "string"
-                                }
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["email"],
+                                "properties": {"email": {"type": "string", "format": "email"}}
                             }
                         }
                     }
-                ],
+                },
                 "responses": {
                     "200": {
                         "description": "Password reset link sent if email exists",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
+                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
                     },
                     "400": {
                         "description": "Invalid request body or validation error",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
+                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
                     },
                     "500": {
                         "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
+                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
                     }
                 }
             }
@@ -169,54 +136,40 @@
         "/login": {
             "post": {
                 "description": "Authenticate a user with email and password",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
+                "tags": ["auth"],
                 "summary": "Login user",
-                "parameters": [
-                    {
-                        "description": "User login credentials",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "email": {
-                                    "type": "string"
-                                },
-                                "password": {
-                                    "type": "string"
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["email", "password"],
+                                "properties": {
+                                    "email": {"type": "string", "format": "email"},
+                                    "password": {"type": "string", "minLength": 1}
                                 }
                             }
                         }
                     }
-                ],
+                },
                 "responses": {
                     "200": {
                         "description": "Login successful",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "data": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "access_token": {
-                                            "type": "string"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "access_token": {"type": "string"},
+                                                "refresh_token": {"type": "string"}
+                                            }
                                         },
-                                        "refresh_token": {
-                                            "type": "string"
-                                        }
+                                        "message": {"type": "string"}
                                     }
-                                },
-                                "message": {
-                                    "type": "string"
                                 }
                             }
                         }
@@ -288,32 +241,20 @@
         "/refresh": {
             "post": {
                 "description": "Get a new access token using a refresh token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
+                "tags": ["auth"],
                 "summary": "Refresh access token",
-                "parameters": [
-                    {
-                        "description": "Refresh token",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "refresh_token": {
-                                    "type": "string"
-                                }
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["refresh_token"],
+                                "properties": {"refresh_token": {"type": "string"}}
                             }
                         }
                     }
-                ],
+                },
                 "responses": {
                     "200": {
                         "description": "Token refreshed successfully",
@@ -365,35 +306,24 @@
         "/register": {
             "post": {
                 "description": "Register a new user with email and password",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
+                "tags": ["auth"],
                 "summary": "Register a new user",
-                "parameters": [
-                    {
-                        "description": "User registration details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "email": {
-                                    "type": "string"
-                                },
-                                "password": {
-                                    "type": "string"
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["name", "email", "password"],
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "email": {"type": "string", "format": "email"},
+                                    "password": {"type": "string", "minLength": 6}
                                 }
                             }
                         }
                     }
-                ],
+                },
                 "responses": {
                     "201": {
                         "description": "User registered successfully",
@@ -453,35 +383,23 @@
         "/reset-password": {
             "post": {
                 "description": "Reset a user's password using a reset token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
+                "tags": ["auth"],
                 "summary": "Reset user password",
-                "parameters": [
-                    {
-                        "description": "Reset token and new password",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "new_password": {
-                                    "type": "string"
-                                },
-                                "token": {
-                                    "type": "string"
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["token", "new_password"],
+                                "properties": {
+                                    "token": {"type": "string"},
+                                    "new_password": {"type": "string", "minLength": 6}
                                 }
                             }
                         }
                     }
-                ],
+                },
                 "responses": {
                     "200": {
                         "description": "Password has been reset successfully",
@@ -542,25 +460,14 @@
             },
             "put": {
                 "description": "Update the authenticated user's profile",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
+                "tags": ["user"],
                 "summary": "Update user profile",
-                "parameters": [
-                    {
-                        "description": "Profile fields to update",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": { "type": "object" }
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {"schema": {"type": "object"}}
                     }
-                ],
+                },
                 "responses": {
                     "200": {
                         "description": "Profile updated successfully",
@@ -596,31 +503,14 @@
         "/change-password": {
             "post": {
                 "description": "Change the authenticated user's password",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
+                "tags": ["user"],
                 "summary": "Change password",
-                "parameters": [
-                    {
-                        "description": "Current and new password",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "current_password": { "type": "string" },
-                                "new_password": { "type": "string" }
-                            }
-                        }
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {"schema": {"type": "object", "required": ["current_password", "new_password"], "properties": {"current_password": {"type": "string"}, "new_password": {"type": "string", "minLength": 6}}}}
                     }
-                ],
+                },
                 "responses": {
                     "200": {
                         "description": "Password changed successfully",

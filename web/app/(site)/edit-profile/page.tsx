@@ -42,7 +42,7 @@ export default function EditProfilePage() {
   }, [profile, reset]);
 
   const onSubmit = async (values: EditProfileFormValues) => {
-    const { error, errorFields } = await updateProfile(values.name);
+    const { errors, errorFields } = await updateProfile(values.name);
 
     if (errorFields && errorFields.length > 0) {
       errorFields.forEach((err: { fieldName: string; errorMessage: string }) => {
@@ -62,7 +62,7 @@ export default function EditProfilePage() {
       // Lazy import to avoid circular issues
       const { profile: fetchProfile } = await import("@/services/auth");
       const res = await fetchProfile();
-      if (res && !res.error && res.data) {
+      if (res && !res.errors && res.data) {
         setProfile(res.data.data.user);
       }
     } catch {}

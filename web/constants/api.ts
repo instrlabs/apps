@@ -1,17 +1,10 @@
-// Base URL for all API requests
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://gateway-service.localhost";
-
-// Auth API endpoints
-export const AUTH_ENDPOINTS = {
-  LOGIN: `${API_BASE_URL}/auth/login`,
-  REGISTER: `${API_BASE_URL}/auth/register`,
-  GOOGLE: `${API_BASE_URL}/auth/google`,
-  GOOGLE_CALLBACK: `${API_BASE_URL}/auth/google/callback`,
-  FORGOT_PASSWORD: `${API_BASE_URL}/auth/forgot-password`,
-  RESET_PASSWORD: `${API_BASE_URL}/auth/reset-password`,
-  REFRESH_TOKEN: `${API_BASE_URL}/auth/refresh`,
-  VERIFY_TOKEN: `${API_BASE_URL}/auth/verify-token`,
-  PROFILE: `${API_BASE_URL}/auth/profile`,
-  CHANGE_PASSWORD: `${API_BASE_URL}/auth/change-password`,
-  LOGOUT: `${API_BASE_URL}/auth/logout`,
+export const APIs = {
+  AUTH_LOGIN: `/api/auth/login`,
+  AUTH_REFRESH: `/api/auth/refresh`,
+  AUTH_LOGOUT: `/api/auth/logout`,
+  AUTH_REGISTER: `/api/auth/register`,
+  AUTH_FORGOT_PASSWORD: `/api/auth/forgot-password`,
+  AUTH_RESET_PASSWORD: `/api/auth/reset-password`,
+  AUTH_PROFILE: `/api/auth/profile`,
+  AUTH_CHANGE_PASSWORD: `/api/auth/change-password`,
 };

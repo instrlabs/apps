@@ -48,20 +48,12 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 				"forwarded_to": targetURL.String(),
 			}).Info("Forwarding request")
 
-			if token, ok := c.Locals("token").(string); ok && token != "" {
-				c.Request().Header.Set("X-Auth-Token", token)
-				log.WithFields(log.Fields{
-					"service": service.Name,
-					"path":    forwardPath,
-				}).Info("Forwarding token in X-Auth-Token header")
-			}
-
-			url := targetURL.String() + forwardPath
+			parsedUrl := targetURL.String() + forwardPath
 			if queryString != "" {
-				url += "?" + queryString
+				parsedUrl += "?" + queryString
 			}
 
-			if err := proxy.DoTimeout(c, url, 30*time.Second); err != nil {
+			if err := proxy.DoTimeout(c, parsedUrl, 30*time.Second); err != nil {
 				log.WithFields(log.Fields{
 					"service": service.Name,
 					"method":  c.Method(),

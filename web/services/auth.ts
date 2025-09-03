@@ -1,184 +1,210 @@
-import { AUTH_ENDPOINTS } from "@/constants/api";
-import { fetchWithErrorHandling } from "@/utils";
-import type { FieldError } from "@/shared/types";
+"use server"
 
-interface RegisterResponse {
+import { headers } from "next/headers";
+import { APIs } from "@/constants/api";
+
+
+
+export type ApiResponse<TBody> = {
+  success: boolean;
   message: string;
-  data: {
-    email: string;
+  data: TBody | null;
+  errors: FormErrors | null;
+};
+
+export type FormErrors = {
+  errorMessage: string;
+  fieldName: string;
+}[] | null;
+
+interface RegisterBody {
+  email: string
+}
+
+interface ProfileBody {
+  user: {
+    name: string;
+    email: string
   }
 }
 
-interface LoginResponse {
-  message: string;
-}
+type EmptyBody = { message?: string } & Record<string, unknown>;
 
-interface RefreshTokenResponse {
-  message: string;
-}
-
-interface ForgotPasswordResponse {
-  message: string;
-}
-
-interface ResetPasswordResponse {
-  message: string;
-}
-
-interface VerifyTokenResponse {
-  message: string;
-}
-
-interface ProfileResponse {
-  message: string;
-  data: {
-    user: {
-      name: string;
-      email: string;
-    }
-  }
-}
-
-interface UpdateProfileResponse {
-  message: string;
-  data: {
-    user: {
-      name: string;
-      email: string;
-    }
-  }
-}
+type RegisterResponse = ApiResponse<RegisterBody>;
+type LoginResponse = ApiResponse<EmptyBody>;
+type RefreshTokenResponse = ApiResponse<EmptyBody>;
+type ForgotPasswordResponse = ApiResponse<EmptyBody>;
+type ResetPasswordResponse = ApiResponse<EmptyBody>;
+type ProfileResponse = ApiResponse<ProfileBody>;
+type UpdateProfileResponse = ApiResponse<ProfileBody>;
 
 
-interface WrapperResponse<T> {
-  data: T | null;
-  error: string | null;
-  errorFields: FieldError[] | null;
-}
-
-export async function registerUser(email: string, password: string): Promise<WrapperResponse<RegisterResponse>> {
-  return fetchWithErrorHandling(AUTH_ENDPOINTS.REGISTER, {
+export async function registerUser(name: string, email: string, password: string): Promise<RegisterResponse> {
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const h = await headers();
+  const url = `${protocol}://${h.get("host")}${APIs.AUTH_REGISTER}`;
+  const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  });
+
+  const isOK = res.ok;
+  const resBody = await res.json();
+
+  return {
+    success: isOK,
+    message: resBody.message,
+    data: isOK ? resBody.data : null,
+    errors: !isOK ? resBody.errors : null,
+  };
+}
+
+export async function loginUser(email: string, password: string): Promise<LoginResponse> {
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const h = await headers();
+  const url = `${protocol}://${h.get("host")}${APIs.AUTH_LOGIN}`;
+  const res = await fetch(url, {
+    method: "POST",
     body: JSON.stringify({ email, password }),
-    credentials: "include"
-  });
-}
-
-export async function loginUser(email: string, password: string): Promise<WrapperResponse<LoginResponse>> {
-  const response = await fetchWithErrorHandling(AUTH_ENDPOINTS.LOGIN, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-    credentials: "include"
   });
 
-  // If login is successful, store the token in localStorage
-  if (response.data && !response.error) {
-    // For simplicity, we'll use the email as the token
-    // In a real application, you would get the actual token from the response
-    storeAuthToken(email);
-  }
+  const isOK = res.ok;
+  const resBody = await res.json();
 
-  return response;
+  return {
+    success: isOK,
+    message: resBody.message,
+    data: isOK ? resBody.data : null,
+    errors: !isOK ? (resBody.errors as FormErrors) : null,
+  };
 }
 
-// Store the authentication token in localStorage
-export function storeAuthToken(token: string): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('auth_token', token);
-  }
-}
-
-// Clear the authentication token from localStorage
-export function clearAuthToken(): void {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('auth_token');
-  }
-}
-
-export async function refreshToken(): Promise<WrapperResponse<RefreshTokenResponse>> {
-  return fetchWithErrorHandling(AUTH_ENDPOINTS.REFRESH_TOKEN, {
+export async function refreshToken(): Promise<RefreshTokenResponse> {
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const h = await headers();
+  const url = `${protocol}://${h.get("host")}${APIs.AUTH_REFRESH}`;
+  const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include"
   });
+
+  const isOK = res.ok;
+  const resBody = await res.json();
+  return {
+    success: isOK,
+    message: resBody.message,
+    data: isOK ? resBody.data : null,
+    errors: !isOK ? resBody.errors : null,
+  };
 }
 
-export async function requestPasswordReset(email: string): Promise<WrapperResponse<ForgotPasswordResponse>> {
-  return fetchWithErrorHandling(AUTH_ENDPOINTS.FORGOT_PASSWORD, {
+export async function requestPasswordReset(email: string): Promise<ForgotPasswordResponse> {
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const h = await headers();
+  const url = `${protocol}://${h.get("host")}${APIs.AUTH_FORGOT_PASSWORD}`;
+  const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
-    credentials: "include"
   });
+
+  const isOK = res.ok;
+  const resBody = await res.json();
+  return {
+    success: isOK,
+    message: resBody.message,
+    data: isOK ? resBody.data : null,
+    errors: !isOK ? resBody.errors : null,
+  };
 }
 
-export async function resetPassword(token: string, new_password: string): Promise<WrapperResponse<ResetPasswordResponse>> {
-  return fetchWithErrorHandling(AUTH_ENDPOINTS.RESET_PASSWORD, {
+export async function resetPassword(token: string, new_password: string): Promise<ResetPasswordResponse> {
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const h = await headers();
+  const url = `${protocol}://${h.get("host")}${APIs.AUTH_RESET_PASSWORD}`;
+  const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token, new_password }),
-    credentials: "include"
   });
+
+  const isOK = res.ok;
+  const resBody = await res.json();
+  return {
+    success: isOK,
+    message: resBody.message,
+    data: isOK ? resBody.data : null,
+    errors: !isOK ? resBody.errors : null,
+  };
 }
 
-export async function verifyToken(): Promise<WrapperResponse<VerifyTokenResponse>> {
-  return fetchWithErrorHandling(AUTH_ENDPOINTS.VERIFY_TOKEN, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include"
-  });
-}
-
-export async function profile(): Promise<WrapperResponse<ProfileResponse>> {
-  return fetchWithErrorHandling(AUTH_ENDPOINTS.PROFILE, {
+export async function profile(): Promise<ProfileResponse> {
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const h = await headers();
+  const url = `${protocol}://${h.get("host")}${APIs.AUTH_PROFILE}`;
+  const res = await fetch(url, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include"
   });
+
+  const isOK = res.ok;
+  const resBody = await res.json();
+  return {
+    success: isOK,
+    message: resBody.message,
+    data: isOK ? resBody.data : null,
+    errors: !isOK ? resBody.errors : null,
+  };
 }
 
-export async function logoutUser(): Promise<void> {
-  // Attempt to log out on the server (clear httpOnly cookies/session)
-  try {
-    await fetch(AUTH_ENDPOINTS.LOGOUT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-    });
-  } catch {
-    // Best-effort: ignore network/server errors on logout
-  }
+export async function logoutUser(): Promise<LoginResponse> {
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const h = await headers();
+  const url = `${protocol}://${h.get("host")}${APIs.AUTH_LOGOUT}`;
+  const res = await fetch(url, {
+    method: "POST",
+  });
 
-  // Always clear local state/token
-  clearAuthToken();
-
-  // Disconnect SSE client-side if present
-  if (typeof window !== 'undefined') {
-    const sseService = await import('../services/sse').then(module => module.default);
-    sseService.disconnect();
-  }
+  const isOK = res.ok;
+  const resBody = await res.json();
+  return {
+    success: isOK,
+    message: resBody.message,
+    data: isOK ? resBody.data : null,
+    errors: !isOK ? resBody.errors : null,
+  };
 }
 
-export async function updateProfile(name: string): Promise<WrapperResponse<UpdateProfileResponse>> {
-  return fetchWithErrorHandling(AUTH_ENDPOINTS.PROFILE, {
+export async function updateProfile(name: string): Promise<UpdateProfileResponse> {
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const h = await headers();
+  const url = `${protocol}://${h.get("host")}${APIs.AUTH_PROFILE}`;
+  const res = await fetch(url, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
     body: JSON.stringify({ name }),
   });
+
+  const isOK = res.ok;
+  const resBody = await res.json();
+  return {
+    success: isOK,
+    message: resBody.message,
+    data: isOK ? resBody : null,
+    errors: !isOK ? resBody.errors : null,
+  };
 }
 
-interface ChangePasswordResponse {
-  message: string;
-}
-
-export async function changePassword(current_password: string, new_password: string): Promise<WrapperResponse<ChangePasswordResponse>> {
-  return fetchWithErrorHandling(AUTH_ENDPOINTS.CHANGE_PASSWORD, {
+export async function changePassword(current_password: string, new_password: string): Promise<LoginResponse> {
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const h = await headers();
+  const url = `${protocol}://${h.get("host")}${APIs.AUTH_CHANGE_PASSWORD}`;
+  const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
     body: JSON.stringify({ current_password, new_password }),
   });
+
+  const isOK = res.ok;
+  const resBody = await res.json();
+  return {
+    success: isOK,
+    message: resBody.message,
+    data: isOK ? resBody.data : null,
+    errors: !isOK ? resBody.errors : null,
+  };
 }

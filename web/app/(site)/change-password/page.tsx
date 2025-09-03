@@ -37,7 +37,7 @@ export default function ChangePasswordPage() {
       return;
     }
 
-    const { data, error, errorFields } = await changePassword(values.current_password, values.new_password);
+    const { data, errors, errorFields } = await changePassword(values.current_password, values.new_password);
 
     if (errorFields && errorFields.length > 0) {
       const fieldError = errorFields[0];

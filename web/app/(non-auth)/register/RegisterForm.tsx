@@ -12,6 +12,7 @@ import TextField from "@/components/text-field";
 import type { FieldError } from "@/shared/types";
 
 type RegisterFormValues = {
+  name: string;
   email: string;
   password: string;
   verifyPassword: string;
@@ -28,7 +29,7 @@ export default function RegisterForm() {
     getValues,
     formState: { errors },
   } = useForm<RegisterFormValues>({
-    defaultValues: { email: "", password: "", verifyPassword: "" },
+    defaultValues: { name: "", email: "", password: "", verifyPassword: "" },
     mode: "onSubmit",
     reValidateMode: "onChange",
   });
@@ -39,30 +40,33 @@ export default function RegisterForm() {
       return;
     }
 
-    const { data, error, errorFields } = await registerUser(values.email, values.password);
+    const { success, message, data, errors } = await registerUser(values.name, values.email, values.password);
 
-    if (errorFields && errorFields.length > 0) {
-      errorFields.forEach((err: FieldError) => {
+    if (errors && errors.length > 0) {
+      errors.forEach((err: FieldError) => {
         setError(err.fieldName as keyof RegisterFormValues, {
           type: "server",
           message: err.errorMessage,
         });
       });
       return;
-    }
-
-    if (error) {
-      showNotification(error, "error", 3000);
-      return;
-    }
-
-    if (data) {
+    } else if (!success) {
+      showNotification(message, "error", 3000);
+    } else if (data) {
       router.replace(ROUTES.LOGIN);
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7 w-full max-w-sm">
+      <TextField
+        type="name"
+        placeholder="Enter your Name"
+        xIsRounded
+        xIsInvalid={!!errors.name}
+        xErrorMessage={errors.name?.message}
+        {...register("name", { required: "Name is required" })}
+      />
       <TextField
         type="email"
         placeholder="Enter your email"

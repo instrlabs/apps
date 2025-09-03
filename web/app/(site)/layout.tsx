@@ -3,11 +3,13 @@ import Providers from "@/app/providers";
 import Widgets from "@/app/widgets";
 import OverlayContentWrapper from "@/components/overlay-content-wrapper";
 
-export default function SiteLayout({
+export default async function SiteLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const profile = await fetch("http://localhost:8000/api/auth/profile");
+
   return (
     <Providers>
       <OverlayContentWrapper>

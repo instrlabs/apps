@@ -20,18 +20,6 @@ func NewUserHandler(userController *UserController, config *Config) *UserHandler
 	}
 }
 
-// Register godoc
-// @Summary Register a new user
-// @Description Register a new user with email and password
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body object{name=string,email=string,password=string} true "User registration details"
-// @Success 201 {object} object{message=string,data=object{name=string,email=string}} "User registered successfully"
-// @Failure 400 {object} object{message=string} "Invalid request body or validation error"
-// @Failure 409 {object} object{message=string} "Email already exists"
-// @Failure 500 {object} object{message=string} "Internal server error"
-// @Router /register [post]
 func (h *UserHandler) Register(c *fiber.Ctx) error {
 	h.logger.Println("Register: Processing registration request")
 
@@ -124,17 +112,6 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	})
 }
 
-// Login godoc
-// @Summary Login user
-// @Description Authenticate a user with email and password and set HTTP-only cookies for tokens
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body object{email=string,password=string} true "User login credentials"
-// @Success 200 {object} object{message=string} "Login successful with tokens set as HTTP-only cookies"
-// @Failure 400 {object} object{message=string} "Invalid request body or validation error"
-// @Failure 401 {object} object{message=string} "Invalid credentials"
-// @Router /login [post]
 func (h *UserHandler) Login(c *fiber.Ctx) error {
 	h.logger.Println("Login: Processing login request")
 
@@ -214,23 +191,10 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Login successful",
 		"errors":  nil,
-		"data": map[string]string{
-			"access_token":  tokens["access_token"],
-			"refresh_token": tokens["refresh_token"],
-		},
+		"data":    nil,
 	})
 }
 
-// RefreshToken godoc
-// @Summary Refresh access token
-// @Description Get a new access token using the refresh token from HTTP-only cookie
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Success 200 {object} object{message=string} "Token refreshed successfully with new tokens set as HTTP-only cookies"
-// @Failure 400 {object} object{message=string} "Missing refresh token cookie"
-// @Failure 401 {object} object{message=string} "Invalid token"
-// @Router /refresh [post]
 func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	h.logger.Println("RefreshToken: Processing token refresh request")
 
@@ -283,24 +247,10 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Token refreshed successfully",
 		"errors":  nil,
-		"data": map[string]string{
-			"access_token":  tokens["access_token"],
-			"refresh_token": tokens["refresh_token"],
-		},
+		"data":    nil,
 	})
 }
 
-// ForgotPassword godoc
-// @Summary Request password reset
-// @Description Request a password reset link for a registered email
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body object{email=string} true "User email"
-// @Success 200 {object} object{message=string} "Password reset link sent if email exists"
-// @Failure 400 {object} object{message=string} "Invalid request body or validation error"
-// @Failure 500 {object} object{message=string} "Internal server error"
-// @Router /forgot-password [post]
 func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
 	h.logger.Println("ForgotPassword: Processing forgot password request")
 
@@ -348,16 +298,6 @@ func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
 	})
 }
 
-// ResetPassword godoc
-// @Summary Reset user password
-// @Description Reset a user's password using a reset token
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body object{token=string,new_password=string} true "Reset token and new password"
-// @Success 200 {object} object{message=string} "Password has been reset successfully"
-// @Failure 400 {object} object{message=string} "Invalid request body, token, or password validation error"
-// @Router /reset-password [post]
 func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 	h.logger.Println("ResetPassword: Processing password reset request")
 
@@ -417,13 +357,6 @@ func (h *UserHandler) ResetPassword(c *fiber.Ctx) error {
 	})
 }
 
-// GoogleLogin godoc
-// @Summary Initiate Google OAuth login
-// @Description Redirect user to Google OAuth consent screen
-// @Tags auth
-// @Produce json
-// @Success 302 {string} string "Redirect to Google OAuth consent screen"
-// @Router /google [get]
 func (h *UserHandler) GoogleLogin(c *fiber.Ctx) error {
 	h.logger.Println("GoogleLogin: Initiating Google OAuth login")
 
@@ -433,16 +366,6 @@ func (h *UserHandler) GoogleLogin(c *fiber.Ctx) error {
 	return c.Redirect(url)
 }
 
-// GoogleCallback godoc
-// @Summary Handle Google OAuth callback
-// @Description Process the OAuth code from Google, set HTTP-only cookies with tokens, and redirect to frontend
-// @Tags auth
-// @Produce json
-// @Param code query string true "OAuth authorization code"
-// @Success 302 {string} string "Redirect to frontend with tokens set as HTTP-only cookies"
-// @Failure 400 {object} object{message=string} "Invalid or missing code parameter"
-// @Failure 500 {object} object{message=string} "Internal server error"
-// @Router /google/callback [get]
 func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	h.logger.Println("GoogleCallback: Processing Google OAuth callback")
 
@@ -500,15 +423,6 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	return c.Redirect(redirectURL)
 }
 
-// GetProfile godoc
-// @Summary Get user profile
-// @Description Get the user profile information based on the authentication token
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Success 200 {object} object{message=string,data=object{user=User}} "Profile retrieved successfully"
-// @Failure 401 {object} object{message=string} "Missing or invalid access token"
-// @Router /profile [get]
 func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 	h.logger.Println("GetProfile: Processing profile request using Locals UserID")
 
@@ -542,17 +456,6 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 	})
 }
 
-// UpdateProfile godoc
-// @Summary Update user profile
-// @Description Update the user profile information (currently only name)
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body object{name=string} true "Profile update request"
-// @Success 200 {object} object{message=string,data=object{user=User}} "Profile updated successfully"
-// @Failure 400 {object} object{message=string,errors=object} "Invalid request"
-// @Failure 401 {object} object{message=string} "Missing or invalid access token"
-// @Router /profile [put]
 func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 	h.logger.Println("UpdateProfile: Processing profile update request using Locals UserID")
 
@@ -612,17 +515,6 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 	})
 }
 
-// ChangePassword godoc
-// @Summary Change user password
-// @Description Change the user's password
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body object{current_password=string,new_password=string} true "Password change request"
-// @Success 200 {object} object{message=string} "Password changed successfully"
-// @Failure 400 {object} object{message=string,errors=object} "Invalid request"
-// @Failure 401 {object} object{message=string} "Missing or invalid access token"
-// @Router /change-password [post]
 func (h *UserHandler) ChangePassword(c *fiber.Ctx) error {
 	h.logger.Println("ChangePassword: Processing password change request using Locals UserID")
 
@@ -670,15 +562,6 @@ func (h *UserHandler) ChangePassword(c *fiber.Ctx) error {
 	})
 }
 
-// Logout godoc
-// @Summary Logout user
-// @Description Logout a user by clearing their refresh token and cookies
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Success 200 {object} object{message=string} "Logout successful"
-// @Failure 401 {object} object{message=string} "Missing or invalid access token"
-// @Router /logout [post]
 func (h *UserHandler) Logout(c *fiber.Ctx) error {
 	h.logger.Println("Logout: Processing logout request using Locals UserID")
 
