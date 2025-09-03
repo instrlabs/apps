@@ -166,7 +166,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	h.logger.Println("Login: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.config.CookieDomain,
-		Name:     "access_token",
+		Name:     "AccessToken",
 		Value:    tokens["access_token"],
 		HTTPOnly: true,
 		SameSite: "None",
@@ -178,7 +178,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	h.logger.Println("Login: Setting refresh token cookie")
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.config.CookieDomain,
-		Name:     "refresh_token",
+		Name:     "RefreshToken",
 		Value:    tokens["refresh_token"],
 		HTTPOnly: true,
 		SameSite: "None",
@@ -222,7 +222,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	h.logger.Println("RefreshToken: Setting new access token cookie")
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.config.CookieDomain,
-		Name:     "access_token",
+		Name:     "AccessToken",
 		Value:    tokens["access_token"],
 		HTTPOnly: true,
 		SameSite: "None",
@@ -234,7 +234,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	h.logger.Println("RefreshToken: Setting new refresh token cookie")
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.config.CookieDomain,
-		Name:     "refresh_token",
+		Name:     "RefreshToken",
 		Value:    tokens["refresh_token"],
 		HTTPOnly: true,
 		SameSite: "None",

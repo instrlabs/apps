@@ -36,7 +36,7 @@ func SetupMiddleware(app *fiber.App) {
 
 	// AUTH
 	app.Use(func(c *fiber.Ctx) error {
-		token := c.Cookies("access_token")
+		token := c.Cookies("AccessToken")
 
 		c.Request().Header.Del("Cookie")
 		c.Request().Header.Del("X-Authenticated")
