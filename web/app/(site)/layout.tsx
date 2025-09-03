@@ -2,20 +2,30 @@ import React, {Suspense} from "react";
 import Providers from "@/app/providers";
 import Widgets from "@/app/widgets";
 import OverlayContentWrapper from "@/components/overlay-content-wrapper";
+import { profile } from "@/services/auth";
+import {ProfileProvider} from "@/hooks/useProfile";
+import {redirect} from "next/navigation";
 
-export default async function SiteLayout({
-  children,
-}: Readonly<{
+export default async function SiteLayout({ children }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const profile = await fetch("http://localhost:8000/api/auth/profile");
+  const { success: successProfile, data: profileData } = await profile();
+
+  if (!successProfile || !profileData) {
+    return redirect("/login");
+  }
 
   return (
-    <Providers>
-      <OverlayContentWrapper>
-        <Suspense>{children}</Suspense>
-      </OverlayContentWrapper>
-      <Widgets />
-    </Providers>
+    <ProfileProvider data={{
+      email: profileData.user.email,
+      name: profileData.user.name
+    }}>
+      <Providers>
+        <OverlayContentWrapper>
+          <Suspense>{children}</Suspense>
+        </OverlayContentWrapper>
+        <Widgets />
+      </Providers>
+    </ProfileProvider>
   );
 }

@@ -30,19 +30,18 @@ export default function ForgotPasswordForm() {
   });
 
   const onSubmit = async (values: ForgotFormValues) => {
-    const { data, errors, errorFields } = await requestPasswordReset(values.email);
+    const { success, message, errors } = await requestPasswordReset(values.email);
 
-    if (errorFields && errorFields.length > 0) {
-      errorFields.forEach((err: FieldError) => {
+    if (errors && errors.length > 0) {
+      errors.forEach((err: FieldError) => {
         setError(err.fieldName as keyof ForgotFormValues, {
           type: "server",
           message: err.errorMessage || "",
         });
       });
-    } else if (error) {
-      showNotification(error, "error", 3000);
-    } else if (data) {
-      showNotification(data?.message, "info", 3000);
+    } else if (!success) {
+      showNotification(message, "error", 3000);
+    } else {
       router.push(`${ROUTES.FORGOT_PASSWORD}/check`);
     }
   };

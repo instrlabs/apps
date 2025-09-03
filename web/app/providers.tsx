@@ -2,7 +2,6 @@
 
 import React, { useEffect } from "react";
 
-import { ProfileProvider } from "@/hooks/useProfile";
 import { NotificationProvider } from "@/hooks/useNotification";
 import { OverlayProvider, registerOverlays } from "@/hooks/useOverlay";
 
@@ -12,12 +11,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <ProfileProvider>
-      <NotificationProvider>
-        <OverlayProvider>
-          {children}
-        </OverlayProvider>
-      </NotificationProvider>
-    </ProfileProvider>
+    <NotificationProvider>
+      <OverlayProvider>
+        {children}
+      </OverlayProvider>
+    </NotificationProvider>
   );
 }

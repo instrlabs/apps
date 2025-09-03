@@ -1,7 +1,8 @@
 "use server"
 
-import { headers } from "next/headers";
+import {cookies} from "next/headers";
 import { APIs } from "@/constants/api";
+import {ResponseCookie, ResponseCookies} from "next/dist/compiled/@edge-runtime/cookies";
 
 
 
@@ -39,12 +40,16 @@ type ProfileResponse = ApiResponse<ProfileBody>;
 type UpdateProfileResponse = ApiResponse<ProfileBody>;
 
 
-export async function registerUser(name: string, email: string, password: string): Promise<RegisterResponse> {
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  const h = await headers();
-  const url = `${protocol}://${h.get("host")}${APIs.AUTH_REGISTER}`;
+export async function registerUser({ name, email, password }: {
+  name: string,
+  email: string,
+  password: string
+}): Promise<RegisterResponse> {
+  const baseUrl = process.env.API_URL;
+  const url = `${baseUrl}${APIs.AUTH_REGISTER}`;
   const res = await fetch(url, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, email, password })
   });
 
@@ -59,17 +64,26 @@ export async function registerUser(name: string, email: string, password: string
   };
 }
 
-export async function loginUser(email: string, password: string): Promise<LoginResponse> {
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  const h = await headers();
-  const url = `${protocol}://${h.get("host")}${APIs.AUTH_LOGIN}`;
+export async function loginUser({ email, password }: {
+  email: string,
+  password: string
+}): Promise<LoginResponse> {
+  const baseUrl = process.env.API_URL;
+  const url = `${baseUrl}${APIs.AUTH_LOGIN}`;
   const res = await fetch(url, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
 
   const isOK = res.ok;
   const resBody = await res.json();
+  const reqSetCookie = new ResponseCookies(res.headers)
+  const accessToken = reqSetCookie.get("AccessToken");
+  const refreshToken = reqSetCookie.get("RefreshToken");
+  const storeCookie = await cookies();
+  if (accessToken) storeCookie.set(accessToken);
+  if (refreshToken) storeCookie.set(refreshToken);
 
   return {
     success: isOK,
@@ -80,15 +94,23 @@ export async function loginUser(email: string, password: string): Promise<LoginR
 }
 
 export async function refreshToken(): Promise<RefreshTokenResponse> {
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  const h = await headers();
-  const url = `${protocol}://${h.get("host")}${APIs.AUTH_REFRESH}`;
+  const baseUrl = process.env.API_URL;
+  const url = `${baseUrl}${APIs.AUTH_REFRESH}`;
+  const storeCookie = await cookies();
   const res = await fetch(url, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Cookie": storeCookie.toString()
+    },
   });
 
   const isOK = res.ok;
   const resBody = await res.json();
+  const reqSetCookie = new ResponseCookies(res.headers);
+  reqSetCookie.getAll().forEach(
+    (cookie: ResponseCookie) => storeCookie.set(cookie))
+
   return {
     success: isOK,
     message: resBody.message,
@@ -98,11 +120,11 @@ export async function refreshToken(): Promise<RefreshTokenResponse> {
 }
 
 export async function requestPasswordReset(email: string): Promise<ForgotPasswordResponse> {
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  const h = await headers();
-  const url = `${protocol}://${h.get("host")}${APIs.AUTH_FORGOT_PASSWORD}`;
+  const baseUrl = process.env.API_URL;
+  const url = `${baseUrl}${APIs.AUTH_FORGOT_PASSWORD}`;
   const res = await fetch(url, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
   });
 
@@ -117,11 +139,11 @@ export async function requestPasswordReset(email: string): Promise<ForgotPasswor
 }
 
 export async function resetPassword(token: string, new_password: string): Promise<ResetPasswordResponse> {
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  const h = await headers();
-  const url = `${protocol}://${h.get("host")}${APIs.AUTH_RESET_PASSWORD}`;
+  const baseUrl = process.env.API_URL;
+  const url = `${baseUrl}${APIs.AUTH_RESET_PASSWORD}`;
   const res = await fetch(url, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token, new_password }),
   });
 
@@ -136,11 +158,15 @@ export async function resetPassword(token: string, new_password: string): Promis
 }
 
 export async function profile(): Promise<ProfileResponse> {
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  const h = await headers();
-  const url = `${protocol}://${h.get("host")}${APIs.AUTH_PROFILE}`;
+  const baseUrl = process.env.API_URL;
+  const url = `${baseUrl}${APIs.AUTH_PROFILE}`;
+  const storeCookie = await cookies();
   const res = await fetch(url, {
     method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Cookie": storeCookie.toString()
+    },
   });
 
   const isOK = res.ok;
@@ -154,12 +180,19 @@ export async function profile(): Promise<ProfileResponse> {
 }
 
 export async function logoutUser(): Promise<LoginResponse> {
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  const h = await headers();
-  const url = `${protocol}://${h.get("host")}${APIs.AUTH_LOGOUT}`;
+  const baseUrl = process.env.API_URL;
+  const url = `${baseUrl}${APIs.AUTH_LOGOUT}`;
+  const storeCookie = await cookies();
   const res = await fetch(url, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Cookie": storeCookie.toString()
+    },
   });
+
+  storeCookie.delete("AccessToken");
+  storeCookie.delete("RefreshToken");
 
   const isOK = res.ok;
   const resBody = await res.json();
@@ -172,11 +205,15 @@ export async function logoutUser(): Promise<LoginResponse> {
 }
 
 export async function updateProfile(name: string): Promise<UpdateProfileResponse> {
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  const h = await headers();
-  const url = `${protocol}://${h.get("host")}${APIs.AUTH_PROFILE}`;
+  const baseUrl = process.env.API_URL;
+  const url = `${baseUrl}${APIs.AUTH_PROFILE}`;
+  const storeCookie = await cookies();
   const res = await fetch(url, {
     method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Cookie": storeCookie.toString()
+    },
     body: JSON.stringify({ name }),
   });
 
@@ -185,17 +222,21 @@ export async function updateProfile(name: string): Promise<UpdateProfileResponse
   return {
     success: isOK,
     message: resBody.message,
-    data: isOK ? resBody : null,
+    data: isOK ? resBody.data : null,
     errors: !isOK ? resBody.errors : null,
   };
 }
 
 export async function changePassword(current_password: string, new_password: string): Promise<LoginResponse> {
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  const h = await headers();
-  const url = `${protocol}://${h.get("host")}${APIs.AUTH_CHANGE_PASSWORD}`;
+  const baseUrl = process.env.API_URL;
+  const url = `${baseUrl}${APIs.AUTH_CHANGE_PASSWORD}`;
+  const storeCookie = await cookies();
   const res = await fetch(url, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Cookie": storeCookie.toString()
+    },
     body: JSON.stringify({ current_password, new_password }),
   });
 

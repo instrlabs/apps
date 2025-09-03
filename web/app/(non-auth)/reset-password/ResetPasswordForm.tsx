@@ -53,25 +53,19 @@ export default function ResetPasswordForm() {
       return;
     }
 
-    const { data, errors, errorFields } = await resetPassword(token, values.password);
+    const { success, message, errors } = await resetPassword(token, values.password);
 
-    if (errorFields && errorFields.length > 0) {
-      errorFields.forEach((err: FieldError) => {
+    if (errors && errors.length > 0) {
+      errors.forEach((err: FieldError) => {
         setError(err.fieldName as keyof ResetFormValues, {
           type: "server",
           message: err.errorMessage || "",
         });
       });
       return;
-    }
-
-    if (error) {
-      showNotification(error, "error", 3000);
-      return;
-    }
-
-    if (data) {
-      showNotification(data?.message, "info", 3000);
+    } else if (!success) {
+      showNotification(message, "error", 3000);
+    } else {
       router.push(ROUTES.LOGIN);
     }
   };

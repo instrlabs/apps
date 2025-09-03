@@ -40,7 +40,11 @@ export default function RegisterForm() {
       return;
     }
 
-    const { success, message, data, errors } = await registerUser(values.name, values.email, values.password);
+    const { success, message, data, errors } = await registerUser({
+      name: values.name,
+      email: values.email,
+      password: values.password
+    });
 
     if (errors && errors.length > 0) {
       errors.forEach((err: FieldError) => {
@@ -61,7 +65,7 @@ export default function RegisterForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7 w-full max-w-sm">
       <TextField
         type="name"
-        placeholder="Enter your Name"
+        placeholder="Enter your name"
         xIsRounded
         xIsInvalid={!!errors.name}
         xErrorMessage={errors.name?.message}

@@ -9,8 +9,9 @@ import useNotification from "@/hooks/useNotification";
 import Button from "@/components/button";
 import TextField from "@/components/text-field";
 import LinkText from "@/components/link-text";
-import type { FieldError } from "@/shared/types";
 import { loginUser } from "@/services/auth";
+import { SOMETHING_WENT_WRONG } from "@/constants/errors";
+import type { FieldError } from "@/shared/types";
 
 type LoginFormValues = {
   email: string;
@@ -34,7 +35,11 @@ export default function LoginForm() {
 
   const onSubmit = async (values: LoginFormValues) => {
     try {
-      const { success, message, data, errors } = await loginUser(values.email, values.password);
+      const { success, message, errors } = await loginUser({
+        email: values.email,
+        password: values.password,
+      });
+
       if (errors && errors?.length > 0) {
         errors.forEach((err: FieldError) => {
           setError(err.fieldName as keyof LoginFormValues, {
@@ -44,11 +49,11 @@ export default function LoginForm() {
         });
       } else if (!success) {
         showNotification(message, "error", 3000);
-      } else if(data) {
+      } else {
         router.push(ROUTES.HOME);
       }
     } catch {
-      showNotification("Something went wrong", "error", 3000);
+      showNotification(SOMETHING_WENT_WRONG, "error", 3000);
     }
   };
 
