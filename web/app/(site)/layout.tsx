@@ -5,27 +5,29 @@ import OverlayContentWrapper from "@/components/overlay-content-wrapper";
 import { profile } from "@/services/auth";
 import {ProfileProvider} from "@/hooks/useProfile";
 import {redirect} from "next/navigation";
+import {listProducts} from "@/services/products";
+import {ProductProvider} from "@/hooks/useProduct";
 
 export default async function SiteLayout({ children }: Readonly<{
   children: React.ReactNode;
 }>) {
   const { success: successProfile, data: profileData } = await profile();
+  const { data: productData } = await listProducts();
 
   if (!successProfile || !profileData) {
     return redirect("/login");
   }
 
   return (
-    <ProfileProvider data={{
-      email: profileData.user.email,
-      name: profileData.user.name
-    }}>
-      <Providers>
-        <OverlayContentWrapper>
-          <Suspense>{children}</Suspense>
-        </OverlayContentWrapper>
-        <Widgets />
-      </Providers>
+    <ProfileProvider data={{ email: profileData.user.email, name: profileData.user.name }}>
+      <ProductProvider data={productData ?? []} >
+        <Providers>
+          <OverlayContentWrapper>
+            <Suspense>{children}</Suspense>
+          </OverlayContentWrapper>
+          <Widgets />
+        </Providers>
+      </ProductProvider>
     </ProfileProvider>
   );
 }

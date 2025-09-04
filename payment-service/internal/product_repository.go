@@ -17,6 +17,7 @@ const (
 
 type Product struct {
 	ID          string    `bson:"_id,omitempty" json:"id,omitempty"`
+	Key         string    `bson:"key" json:"key"`
 	Name        string    `bson:"name" json:"name"`
 	Price       float64   `bson:"price" json:"price"`
 	Description string    `bson:"description,omitempty" json:"description,omitempty"`
@@ -41,11 +42,18 @@ func NewProductRepository(db *MongoDB) *ProductRepository {
 		Keys:    bson.D{{Key: "name", Value: 1}},
 		Options: options.Index().SetName("idx_products_name"),
 	}
+	keyIndex := mongo.IndexModel{
+		Keys:    bson.D{{Key: "key", Value: 1}},
+		Options: options.Index().SetName("idx_products_key").SetUnique(false),
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if _, err := collection.Indexes().CreateOne(ctx, indexModel); err != nil {
 		fmt.Printf("Error creating index on products: %v\n", err)
+	}
+	if _, err := collection.Indexes().CreateOne(ctx, keyIndex); err != nil {
+		fmt.Printf("Error creating index on products key: %v\n", err)
 	}
 
 	return &ProductRepository{db: db, collection: collection}

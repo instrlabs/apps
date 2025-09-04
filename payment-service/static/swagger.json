@@ -98,6 +98,7 @@
                 "type": "object",
                 "properties": {
                   "name": { "type": "string" },
+                  "key": { "type": "string" },
                   "price": { "type": "number", "format": "double" },
                   "description": { "type": "string" },
                   "image": { "type": "string" },
@@ -133,6 +134,7 @@
         "properties": {
           "id": { "type": "string", "readOnly": true },
           "name": { "type": "string" },
+          "key": { "type": "string" },
           "price": { "type": "number", "format": "double" },
           "description": { "type": "string" },
           "image": { "type": "string" },
@@ -143,7 +145,7 @@
           "createdAt": { "type": "string", "format": "date-time", "readOnly": true },
           "updatedAt": { "type": "string", "format": "date-time", "readOnly": true }
         },
-        "required": [ "name", "price", "active", "isFree" ]
+        "required": [ "name", "key", "price", "active", "isFree" ]
       },
       "Error": {
         "type": "object",

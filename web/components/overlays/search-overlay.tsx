@@ -4,23 +4,17 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import TextField from "@/components/text-field";
 import SearchIcon from "@/components/icons/search";
-import { imageTools, pdfTools } from "@/constants/tools";
 import { useOverlay } from "@/hooks/useOverlay";
 import Chip from "@/components/chip";
 import MenuButton from "@/components/menu-button";
 import HashtagIcon from "@/components/icons/hashtag";
-
-type SearchItem = {
-  key: string;
-  title: string;
-  desc: string;
-  href: string;
-};
+import {useProduct} from "@/hooks/useProduct";
+import {Product} from "@/services/products";
 
 type Section = {
   key: string;
   title: string;
-  items: SearchItem[];
+  items: Product[];
 };
 
 export default function SearchOverlay() {
@@ -29,34 +23,32 @@ export default function SearchOverlay() {
   const [query, setQuery] = useState<string>("");
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  const { productsByType } = useProduct();
+
   const sections: Section[] = useMemo(() => {
     return [
       {
         key: "image",
         title: "Image Tools",
-        items: imageTools,
+        items: productsByType["image"],
       },
       {
         key: "pdf",
         title: "PDF Tools",
-        items: pdfTools,
+        items: productsByType["pdf"],
       },
     ];
-  }, []);
+  }, [productsByType]);
 
-  // Apply search only to items within each section (keep sections markup intact)
   const filteredSections: Section[] = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return sections;
     return sections
       .map((sec) => ({
         ...sec,
-        items: sec.items.filter(
-          (it) =>
-            it.title.toLowerCase().includes(q) ||
-            it.desc.toLowerCase().includes(q) ||
-            it.key.toLowerCase().includes(q)
-        ),
+        items: sec.items.filter((it) =>
+          it.name.toLowerCase().includes(q) ||
+          it.key.toLowerCase().includes(q)),
       }))
       .filter((sec) => sec.items.length > 0);
   }, [sections, query]);
@@ -66,10 +58,7 @@ export default function SearchOverlay() {
     [filteredSections]
   );
 
-  const handleSelect = useCallback((item: SearchItem) => {
-    if (item.href && item.href !== "#") {
-      window.location.href = item.href;
-    }
+  const handleClick = useCallback((item: Product) => {
     closeAll();
   }, [closeAll]);
 
@@ -106,13 +95,13 @@ export default function SearchOverlay() {
               {section.items.map((item) => (
                 <MenuButton
                   key={`${section.key}:${item.key}`}
-                  onClick={() => handleSelect(item)}
+                  onClick={() => handleClick(item)}
                 >
                   <div className="flex items-center gap-3">
                     <HashtagIcon className="w-5 h-5" />
                     <div className="flex flex-col items-start">
-                      <span className="text-sm font-medium">{item.title}</span>
-                      <span className="text-xs font-light">{item.desc}</span>
+                      <span className="text-sm font-medium">{item.name}</span>
+                      <span className="text-xs font-light">{item.description}</span>
                     </div>
                   </div>
                 </MenuButton>

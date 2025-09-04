@@ -7,4 +7,6 @@ export const APIs = {
   AUTH_RESET_PASSWORD: `/auth/reset-password`,
   AUTH_PROFILE: `/auth/profile`,
   AUTH_CHANGE_PASSWORD: `/auth/change-password`,
+
+  PRODUCTS: `/payment/products`,
 };
