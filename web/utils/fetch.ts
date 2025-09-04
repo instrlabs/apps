@@ -1,3 +1,5 @@
+"use server"
+
 import {cookies} from "next/headers";
 
 export type ApiResponse<TBody> = {
@@ -18,21 +20,23 @@ export async function fetchGET<T>(
   path: string,
   queries: Record<string, string> = {}
 ): Promise<ApiResponse<T>> {
-  const params = new URLSearchParams(queries);
   let url = process.env.API_URL + path;
+
+  const params = new URLSearchParams(queries);
   if (queries) url += "?" + params.toString();
+
+  const storeCookie = await cookies()
 
   const res = await fetch(url, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      "Cookie": (await cookies()).toString()
+      "Cookie": storeCookie.toString()
     },
   });
 
   const isOK = res.ok;
   const resBody = await res.json();
-
   return {
     success: isOK,
     message: resBody.message,

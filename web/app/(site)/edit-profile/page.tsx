@@ -60,7 +60,7 @@ export default function EditProfilePage() {
     // Regardless of whether update returns user data, refresh the profile to stay in sync with auth-service
     try {
       // Lazy import to avoid circular issues
-      const { profile: fetchProfile } = await import("@/services/auth");
+      const { getProfile: fetchProfile } = await import("@/services/auth");
       const res = await fetchProfile();
       if (res && !res.errors && res.data) {
         setProfile(res.data.data.user);

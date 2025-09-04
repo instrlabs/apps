@@ -4,12 +4,13 @@ import {cookies} from "next/headers";
 import { APIs } from "@/constants/api";
 import { ResponseCookie, ResponseCookies } from "next/dist/compiled/@edge-runtime/cookies";
 import { ApiResponse, EmptyBody, FormErrors, fetchGET, fetchPOST, fetchPUT } from "@/utils/fetch";
+import {redirect} from "next/navigation";
 
 interface RegisterResponse {
   email: string
 }
 
-interface ProfileResponse {
+export interface ProfileResponse {
   name: string;
   email: string
 }
@@ -40,7 +41,8 @@ export async function loginUser({ email, password }: {
   const resBody = await res.json();
   const reqSetCookie = new ResponseCookies(res.headers);
   const storeCookie = await cookies();
-  reqSetCookie.getAll().forEach((cookie: ResponseCookie) => storeCookie.set(cookie));
+  storeCookie.set(reqSetCookie.get("AccessToken") as ResponseCookie);
+  storeCookie.set(reqSetCookie.get("RefreshToken") as ResponseCookie);
 
   return {
     success: isOK,
@@ -52,19 +54,20 @@ export async function loginUser({ email, password }: {
 
 export async function refreshToken(): Promise<ApiResponse<EmptyBody>> {
   const url = process.env.API_URL + APIs.AUTH_REFRESH;
-  const storeCookie = await cookies();
+  const refreshToken = (await cookies()).get("RefreshToken")?.value;
+
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Cookie": storeCookie.toString()
-    },
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
   });
 
   const isOK = res.ok;
   const resBody = await res.json();
   const reqSetCookie = new ResponseCookies(res.headers);
-  reqSetCookie.getAll().forEach((cookie: ResponseCookie) => storeCookie.set(cookie));
+  const storeCookie = await cookies();
+  storeCookie.set(reqSetCookie.get("AccessToken") as ResponseCookie);
+  storeCookie.set(reqSetCookie.get("RefreshToken") as ResponseCookie);
 
   return {
     success: isOK,
@@ -82,16 +85,16 @@ export async function resetPassword(token: string, new_password: string): Promis
   return await fetchPOST(APIs.AUTH_RESET_PASSWORD, { token, new_password });
 }
 
-export async function profile(): Promise<ApiResponse<ProfileResponse>> {
+export async function getProfile(): Promise<ApiResponse<ProfileResponse>> {
   return await fetchGET(APIs.AUTH_PROFILE);
 }
 
 export async function logoutUser(): Promise<ApiResponse<EmptyBody>> {
-  const res = await fetchPOST<EmptyBody>(APIs.AUTH_LOGOUT, {});
+  await fetchPOST<EmptyBody>(APIs.AUTH_LOGOUT, {});
   const storeCookie = await cookies();
   storeCookie.delete("AccessToken");
   storeCookie.delete("RefreshToken");
-  return res;
+  redirect("/login?message=You have been logged out.")
 }
 
 export async function updateProfile(name: string): Promise<ApiResponse<EmptyBody>> {

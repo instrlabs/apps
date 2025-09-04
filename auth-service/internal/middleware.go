@@ -21,6 +21,7 @@ func SetupMiddleware(app *fiber.App) {
 			"/health",
 			"/swagger",
 			"/login",
+			"/refresh",
 			"/register",
 			"/forgot-password",
 			"/reset-password",

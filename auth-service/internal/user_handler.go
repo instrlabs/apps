@@ -198,8 +198,20 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	h.logger.Println("RefreshToken: Processing token refresh request")
 
-	refreshToken := c.Cookies("refresh_token")
-	if refreshToken == "" {
+	var input struct {
+		RefreshToken string `json:"refresh_token" validate:"required"`
+	}
+
+	if err := c.BodyParser(&input); err != nil {
+		h.logger.Printf("RefreshToken: Invalid request body: %v", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": ErrInvalidRequestBody,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	if input.RefreshToken == "" {
 		h.logger.Println("RefreshToken: Refresh token cookie is missing")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrRefreshTokenRequired,
@@ -209,7 +221,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	}
 
 	h.logger.Println("RefreshToken: Attempting to refresh token")
-	tokens, err := h.userController.RefreshToken(refreshToken)
+	tokens, err := h.userController.RefreshToken(input.RefreshToken)
 	if err != nil {
 		h.logger.Printf("RefreshToken: Invalid token error: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

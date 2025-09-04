@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
+
 import Avatar from "@/components/avatar";
 import EditIcon from "@/components/icons/edit";
 import LockIcon from "@/components/icons/lock";
@@ -8,20 +10,13 @@ import LogoutIcon from "@/components/icons/logout";
 import MenuButton from "@/components/menu-button";
 import { useProfile } from "@/hooks/useProfile";
 import { logoutUser } from "@/services/auth";
-import { useRouter } from "next/navigation";
 
 export default function ProfileOverlay() {
-  const { profile, setProfile } = useProfile();
   const router = useRouter();
+  const { profile } = useProfile();
 
   const name = profile?.name || "Guest";
   const email = profile?.email || "";
-
-  const handleLogout = async () => {
-    await logoutUser();
-    setProfile(null);
-    router.replace("/login");
-  };
 
   return (
     <div className="w-[400px] h-full bg-card shadow-primary rounded-xl">
@@ -41,7 +36,7 @@ export default function ProfileOverlay() {
         <MenuButton onClick={() => router.push("/change-password")} icon={<LockIcon className="h-5 w-5" aria-hidden="true" />}>
           Change Password
         </MenuButton>
-        <MenuButton onClick={handleLogout} icon={<LogoutIcon className="h-5 w-5" aria-hidden="true" />}>
+        <MenuButton onClick={() => logoutUser()} icon={<LogoutIcon className="h-5 w-5" aria-hidden="true" />}>
           Logout
         </MenuButton>
       </div>

@@ -155,22 +155,23 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Login successful",
+                        "description": "Login successful. Tokens are set as HTTP-only cookies: AccessToken and RefreshToken.",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "data": {
-                                            "type": "object",
-                                            "properties": {
-                                                "access_token": {"type": "string"},
-                                                "refresh_token": {"type": "string"}
-                                            }
-                                        },
-                                        "message": {"type": "string"}
+                                        "message": { "type": "string", "example": "Login successful" },
+                                        "errors": { "type": ["null", "array"], "items": { "type": "object" } },
+                                        "data": { "type": ["null", "object"], "nullable": true }
                                     }
                                 }
+                            }
+                        },
+                        "headers": {
+                            "Set-Cookie": {
+                                "description": "HTTP-only cookies set by the server: AccessToken and RefreshToken.",
+                                "schema": { "type": "string" }
                             }
                         }
                     },
@@ -257,45 +258,37 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Token refreshed successfully",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "data": {
+                        "description": "Token refreshed successfully. New tokens are set as HTTP-only cookies: AccessToken and RefreshToken.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "access_token": {
-                                            "type": "string"
-                                        },
-                                        "refresh_token": {
-                                            "type": "string"
-                                        }
+                                        "message": { "type": "string", "example": "Token refreshed successfully" },
+                                        "errors": { "type": ["null", "array"], "items": { "type": "object" } },
+                                        "data": { "type": ["null", "object"], "nullable": true }
                                     }
-                                },
-                                "message": {
-                                    "type": "string"
                                 }
+                            }
+                        },
+                        "headers": {
+                            "Set-Cookie": {
+                                "description": "HTTP-only cookies set by the server: AccessToken and RefreshToken.",
+                                "schema": { "type": "string" }
                             }
                         }
                     },
                     "400": {
-                        "description": "Invalid request body or validation error",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid token",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
+                        "description": "Invalid request body, missing refresh_token, or validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": { "type": "string" },
+                                        "errors": { "type": ["null", "array"], "items": { "type": "object" } },
+                                        "data": { "type": ["null", "object"], "nullable": true }
+                                    }
                                 }
                             }
                         }
