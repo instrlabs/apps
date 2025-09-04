@@ -10,10 +10,8 @@ interface RegisterResponse {
 }
 
 interface ProfileResponse {
-  user: {
-    name: string;
-    email: string
-  }
+  name: string;
+  email: string
 }
 
 export async function registerUser({ name, email, password }: {

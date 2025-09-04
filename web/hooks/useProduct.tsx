@@ -13,9 +13,9 @@ const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
 export function ProductProvider({ children, data }: {
   children: React.ReactNode,
-  data: Product[]
+  data: Product[] | null
 }) {
-  const [products, setProducts] = useState<Product[]>(data);
+  const [products, setProducts] = useState<Product[]>(data ?? []);
   const [loading, setLoading] = useState<boolean>(false);
 
   const productsByType = useMemo(() => {

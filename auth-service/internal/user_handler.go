@@ -450,9 +450,7 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Profile retrieved successfully",
 		"errors":  nil,
-		"data": fiber.Map{
-			"user": user,
-		},
+		"data":    user,
 	})
 }
 

@@ -19,8 +19,8 @@ export default async function SiteLayout({ children }: Readonly<{
   }
 
   return (
-    <ProfileProvider data={{ email: profileData.user.email, name: profileData.user.name }}>
-      <ProductProvider data={productData ?? []} >
+    <ProfileProvider data={profileData}>
+      <ProductProvider data={productData} >
         <Providers>
           <OverlayContentWrapper>
             <Suspense>{children}</Suspense>
