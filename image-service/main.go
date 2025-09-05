@@ -16,8 +16,9 @@ func main() {
 	defer mongo.Close()
 
 	fileRepo := internal.NewFileRepository(mongo)
-	_ = internal.NewInstructionRepository(mongo)
-	instructionHandler := internal.NewInstructionHandler(s3Service, fileRepo)
+	instrRepo := internal.NewInstructionRepository(mongo)
+	productSvc := internal.NewProductService()
+	instructionHandler := internal.NewInstructionHandler(s3Service, fileRepo, instrRepo, productSvc)
 
 	app := fiber.New(fiber.Config{})
 

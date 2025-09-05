@@ -52,7 +52,7 @@ func NewS3Service(cfg *Config) *S3Service {
 	}
 }
 
-func (s *S3Service) Upload(fileHeader *multipart.FileHeader, jobID string) error {
+func (s *S3Service) Upload(fileHeader *multipart.FileHeader, fileName string) error {
 	file, _ := fileHeader.Open()
 	defer file.Close()
 
@@ -63,7 +63,7 @@ func (s *S3Service) Upload(fileHeader *multipart.FileHeader, jobID string) error
 	_, err := s.client.PutObject(
 		ctx,
 		s.cfg.S3Bucket,
-		fmt.Sprintf("images/%s%s", jobID, ext),
+		fmt.Sprintf("images/%s%s", fileName, ext),
 		bytes.NewReader(fileBytes),
 		fileHeader.Size,
 		minio.PutObjectOptions{})

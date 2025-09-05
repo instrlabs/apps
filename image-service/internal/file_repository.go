@@ -19,8 +19,8 @@ func NewFileRepository(db *MongoDB) *FileRepository {
 	}
 }
 
-func (r *FileRepository) Create(ctx context.Context, f *File) (primitive.ObjectID, error) {
-	res, err := r.collection.InsertOne(ctx, f)
+func (r *FileRepository) Create(f *File) (primitive.ObjectID, error) {
+	res, err := r.collection.InsertOne(context.Background(), f)
 	if err != nil {
 		return primitive.NilObjectID, err
 	}

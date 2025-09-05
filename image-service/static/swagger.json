@@ -1,0 +1,98 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Image Service API",
+    "version": "1.0.0",
+    "description": "Image processing service API documentation"
+  },
+  "servers": [
+    { "url": "http://localhost:3000/image", "description": "Local" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compress": {
+      "post": {
+        "description": "Compress an image file and upload it to S3, returning metadata or download URL.",
+        "tags": ["image"],
+        "summary": "Compress image",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "description": "Multiple image files to compress",
+                    "items": { "type": "string", "format": "binary" },
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Upload accepted and job created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "upload accepted" },
+                    "data": {
+                      "type": ["object", "null"],
+                      "nullable": true,
+                      "properties": {
+                        "instruction_id": { "type": "string", "description": "Identifier of the created instruction" }
+                      }
+                    },
+                    "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or file missing",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "message": { "type": "string" } } }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "message": { "type": "string" } } }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

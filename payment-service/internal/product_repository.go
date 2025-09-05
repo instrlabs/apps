@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -74,9 +75,10 @@ func (r *ProductRepository) CreateProduct(ctx context.Context, p *Product) error
 
 func (r *ProductRepository) GetProductByID(ctx context.Context, id string) (*Product, error) {
 	var p Product
-	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&p)
+	objectID, _ := primitive.ObjectIDFromHex(id)
+	err := r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&p)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to get product by id: %w", err)
@@ -123,4 +125,17 @@ func (r *ProductRepository) ListProducts(ctx context.Context, onlyActive bool) (
 		return nil, fmt.Errorf("failed to decode products: %w", err)
 	}
 	return products, nil
+}
+
+// GetProductByKey returns a product by its unique key
+func (r *ProductRepository) GetProductByKey(ctx context.Context, key string) (*Product, error) {
+	var p Product
+	err := r.collection.FindOne(ctx, bson.M{"key": key}).Decode(&p)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get product by key: %w", err)
+	}
+	return &p, nil
 }

@@ -75,6 +75,19 @@
         }
       }
     },
+    "/products/key/{key}": {
+      "get": {
+        "summary": "Get product by key",
+        "parameters": [
+          { "$ref": "#/components/parameters/KeyParam" }
+        ],
+        "responses": {
+          "200": { "description": "Product found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
     "/products/{id}": {
       "get": {
         "summary": "Get product by ID",
@@ -161,6 +174,13 @@
         "required": true,
         "schema": { "type": "string" },
         "description": "Product ID"
+      },
+      "KeyParam": {
+        "name": "key",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Product key"
       }
     },
     "responses": {

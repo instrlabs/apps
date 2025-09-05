@@ -89,6 +89,30 @@ func (h *ProductHandler) GetProduct(c *fiber.Ctx) error {
 	})
 }
 
+func (h *ProductHandler) GetProductByKey(c *fiber.Ctx) error {
+	key := c.Params("key")
+	product, err := h.repo.GetProductByKey(c.Context(), key)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Internal server error",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+	if product == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Product not found",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Product retrieved successfully",
+		"errors":  nil,
+		"data":    product,
+	})
+}
+
 func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	id := c.Params("id")
 	var body map[string]interface{}

@@ -12,8 +12,6 @@ func main() {
 
 	mongo := internal.NewMongoDB(config)
 	defer mongo.Close()
-	natsService := internal.NewNatsService(config)
-	defer natsService.Close()
 
 	productRepo := internal.NewProductRepository(mongo)
 	productHandler := internal.NewProductHandler(productRepo)
@@ -32,7 +30,8 @@ func main() {
 
 	app.Post("/products", productHandler.CreateProduct)
 	app.Get("/products", productHandler.ListProducts)
-	app.Get("/products/:id", productHandler.GetProduct)
+	//app.Get("/products/:id", productHandler.GetProduct)
+	app.Get("/products/:key", productHandler.GetProductByKey)
 	app.Patch("/products/:id", productHandler.UpdateProduct)
 	app.Delete("/products/:id", productHandler.DeleteProduct)
 
