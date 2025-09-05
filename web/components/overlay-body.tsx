@@ -4,7 +4,7 @@ import React from "react";
 import clsx from "clsx";
 import {useOverlay} from "@/hooks/useOverlay";
 
-export default function OverlayContentWrapper({ children }: {
+export default function OverlayBody({ children }: {
   children: React.ReactNode;
 }) {
   const { isLeftOpen, isRightOpen, leftWidth, rightWidth } = useOverlay();

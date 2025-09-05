@@ -13,28 +13,26 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-// S3Service handles interactions with S3-compatible storage
 type S3Service struct {
 	client *minio.Client
 	cfg    *Config
 }
 
-// NewS3Service creates a new S3Service
-func NewS3Service(cfg *Config) (*S3Service, error) {
-	// Initialize minio client
+func NewS3Service(cfg *Config) *S3Service {
 	client, err := minio.New(cfg.S3Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.S3AccessKey, cfg.S3SecretKey, ""),
 		Secure: cfg.S3UseSSL,
 		Region: cfg.S3Region,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create S3 client: %w", err)
+		log.Printf("failed to create S3 client: %v", err)
+		return &S3Service{client: nil, cfg: cfg}
 	}
 
-	// Check if bucket exists, create if it doesn't
 	exists, err := client.BucketExists(context.Background(), cfg.S3Bucket)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check if bucket exists: %w", err)
+		log.Printf("failed to check if bucket exists: %v", err)
+		return &S3Service{client: client, cfg: cfg}
 	}
 
 	if !exists {
@@ -42,7 +40,8 @@ func NewS3Service(cfg *Config) (*S3Service, error) {
 			Region: cfg.S3Region,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to create bucket: %w", err)
+			log.Printf("failed to create bucket: %v", err)
+			return &S3Service{client: client, cfg: cfg}
 		}
 		log.Printf("Created bucket %s\n", cfg.S3Bucket)
 	}
@@ -50,38 +49,43 @@ func NewS3Service(cfg *Config) (*S3Service, error) {
 	return &S3Service{
 		client: client,
 		cfg:    cfg,
-	}, nil
+	}
 }
 
-// UploadPDF uploads a PDF file to S3
 func (s *S3Service) UploadPDF(ctx context.Context, fileHeader *multipart.FileHeader, jobID string) (string, error) {
 	// Open the uploaded file
 	file, err := fileHeader.Open()
 	if err != nil {
-		return "", fmt.Errorf("failed to open file: %w", err)
+		log.Printf("failed to open file: %v", err)
+		return "", nil
 	}
 	defer file.Close()
 
-	// Read the file content
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
-		return "", fmt.Errorf("failed to read file: %w", err)
+		log.Printf("failed to read file: %v", err)
+		return "", nil
 	}
 
 	// Get the file extension
 	ext := filepath.Ext(fileHeader.Filename)
 	if ext != ".pdf" {
-		return "", fmt.Errorf("invalid file type: %s, expected .pdf", ext)
+		log.Printf("invalid file type: %s, expected .pdf", ext)
+		return "", nil
 	}
 
-	// Create the object name (path in the bucket)
 	objectName := fmt.Sprintf("pdfs/%s%s", jobID, ext)
 
-	// Upload the file
+	if s.client == nil {
+		log.Printf("S3 client is not initialized; skipping upload for %s", objectName)
+		return "", nil
+	}
+
 	_, err = s.client.PutObject(ctx, s.cfg.S3Bucket, objectName, bytes.NewReader(fileBytes), fileHeader.Size,
 		minio.PutObjectOptions{ContentType: "application/pdf"})
 	if err != nil {
-		return "", fmt.Errorf("failed to upload file: %w", err)
+		log.Printf("failed to upload file: %v", err)
+		return "", nil
 	}
 
 	return objectName, nil

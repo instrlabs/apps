@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from "react";
 
 import NavigationOverlay from "@/components/overlays/navigation-overlay";
 import NotificationOverlay from "@/components/overlays/notification-overlay";
@@ -48,7 +48,7 @@ function registerOverlay(key: string, config: OverlayOpts): void {
   });
 }
 
-export function registerOverlays() {
+function registerOverlays() {
   // Left navigation rail
   registerOverlay("left:navigation", {
     side: "left",
@@ -83,6 +83,10 @@ const OverlayContext = createContext<OverlayActions | undefined>(undefined);
 export function OverlayProvider({ children }: {
   children: React.ReactNode;
 }) {
+  useEffect(() => {
+    registerOverlays();
+  }, []);
+
   // left
   const [isLeftOpen, setIsLeftOpen] = useState<boolean>(false);
   const [leftNode, setLeftNodeState] = useState<React.ReactNode>(<div />);

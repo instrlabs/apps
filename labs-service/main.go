@@ -1,69 +1,34 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/helmet"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"log"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	"github.com/arthadede/labs-service/internal"
 )
 
 func main() {
-	cfg := internal.NewConfig()
+	config := internal.LoadConfig()
 
-	mongo, err := internal.NewMongoService(cfg)
-	if err != nil {
-		log.Fatalf("Failed to initialize MongoDB service: %v", err)
-	}
+	mongo := internal.NewMongoDB(config)
 	defer mongo.Close()
+	s3Service := internal.NewS3Service(config)
 
-	jobRepo := internal.NewJobRepository(mongo)
+	app := fiber.New(fiber.Config{})
 
-	s3Service, err := internal.NewS3Service(cfg)
-	if err != nil {
-		log.Fatalf("Failed to initialize S3 service: %v", err)
-	}
-
-	natsService, err := internal.NewNatsService(cfg)
-	if err != nil {
-		log.Fatalf("Failed to initialize NATS service: %v", err)
-	}
-	defer natsService.Close()
-
-	app := fiber.New()
-	app.Use(cors.New())
-	app.Use(helmet.New())
-
-	if cfg.Environment == "production" {
-		app.Use(limiter.New())
-	}
-
-	app.Use(logger.New(logger.Config{
-		Format:     "[${time}] ${status} | ${latency} | ${ip} | ${method} ${path}${query} | ${ua}\n",
-		TimeFormat: "2006-01-02 15:04:05",
-		TimeZone:   "UTC",
-	}))
-
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status":  "ok",
-			"service": "labs",
-		})
+	app.Get("/swagger", func(c *fiber.Ctx) error {
+		return c.Type("json").SendFile("./static/swagger.json")
 	})
 
-	pdfService := internal.NewPDFService(cfg)
-	pdfJobController := internal.NewPDFJobHandler(jobRepo, pdfService, s3Service, natsService, cfg)
-	pdfNotificationProcessor := internal.NewPDFNotificationProcessor(jobRepo, s3Service)
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{"status": "ok"})
+	})
 
-	err = natsService.SubscribeToPDFNotification(pdfNotificationProcessor.ProcessJob)
-	if err != nil {
-		log.Fatalf("Failed to subscribe to jobs: %v", err)
-	}
+	internal.SetupMiddleware(app)
 
-	app.Post("/pdf/compress", pdfJobController.CompressPDF)
+	app.Post("/image/compress", imageHandler.ImageCompress)
 
-	log.Fatal(app.Listen(cfg.Port))
+	log.Fatal(app.Listen(config.Port))
 }
