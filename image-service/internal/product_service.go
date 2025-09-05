@@ -36,8 +36,8 @@ func NewProductService() *ProductService {
 	}
 }
 
-func (s *ProductService) GetProductByKey(key string) *Product {
-	url := fmt.Sprintf("%s/products/%s", s.baseURL, key)
+func (s *ProductService) GetProduct(id string) *Product {
+	url := fmt.Sprintf("%s/products/%s", s.baseURL, id)
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	resp, _ := s.httpClient.Do(req)
 	defer resp.Body.Close()

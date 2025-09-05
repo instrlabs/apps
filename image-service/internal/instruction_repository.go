@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2/log"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -36,4 +38,20 @@ func (r *InstructionRepository) Create(i *Instruction) interface{} {
 	}
 
 	return res.InsertedID
+}
+
+func (r *InstructionRepository) GetByID(id primitive.ObjectID) *Instruction {
+	var instr Instruction
+	_ = r.collection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&instr)
+	return &instr
+}
+
+func (r *InstructionRepository) UpdateStatus(ctx context.Context, id primitive.ObjectID, status InstructionStatus) error {
+	_, err := r.collection.UpdateByID(ctx, id, bson.M{
+		"$set": bson.M{
+			"status":     status,
+			"updated_at": time.Now().UTC(),
+		},
+	})
+	return err
 }

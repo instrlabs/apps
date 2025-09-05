@@ -74,3 +74,46 @@ func (s *S3Service) Upload(fileHeader *multipart.FileHeader, fileName string) er
 
 	return nil
 }
+
+// UploadBytes uploads in-memory data to S3 under the provided objectName and contentType.
+func (s *S3Service) UploadBytes(data []byte, objectName, contentType string) error {
+	ctx := context.Background()
+	_, err := s.client.PutObject(
+		ctx,
+		s.cfg.S3Bucket,
+		objectName,
+		bytes.NewReader(data),
+		int64(len(data)),
+		minio.PutObjectOptions{ContentType: contentType},
+	)
+	return err
+}
+
+func (s *S3Service) DownloadAllForInstruction(instructionID string) ([][]byte, []string, error) {
+	ctx := context.Background()
+	prefix := fmt.Sprintf("images/%s-", instructionID)
+	objCh := s.client.ListObjects(ctx, s.cfg.S3Bucket, minio.ListObjectsOptions{Prefix: prefix, Recursive: true})
+
+	var datas [][]byte
+	var keys []string
+	for obj := range objCh {
+		if obj.Err != nil {
+			return nil, nil, obj.Err
+		}
+		reader, err := s.client.GetObject(ctx, s.cfg.S3Bucket, obj.Key, minio.GetObjectOptions{})
+		if err != nil {
+			return nil, nil, err
+		}
+		b, err := io.ReadAll(reader)
+		reader.Close()
+		if err != nil {
+			return nil, nil, err
+		}
+		datas = append(datas, b)
+		keys = append(keys, obj.Key)
+	}
+	if len(datas) == 0 {
+		return nil, nil, fmt.Errorf("no request file found for instruction %s", instructionID)
+	}
+	return datas, keys, nil
+}

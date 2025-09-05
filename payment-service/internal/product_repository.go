@@ -127,7 +127,6 @@ func (r *ProductRepository) ListProducts(ctx context.Context, onlyActive bool) (
 	return products, nil
 }
 
-// GetProductByKey returns a product by its unique key
 func (r *ProductRepository) GetProductByKey(ctx context.Context, key string) (*Product, error) {
 	var p Product
 	err := r.collection.FindOne(ctx, bson.M{"key": key}).Decode(&p)

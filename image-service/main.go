@@ -18,7 +18,11 @@ func main() {
 	fileRepo := internal.NewFileRepository(mongo)
 	instrRepo := internal.NewInstructionRepository(mongo)
 	productSvc := internal.NewProductService()
-	instructionHandler := internal.NewInstructionHandler(s3Service, fileRepo, instrRepo, productSvc)
+
+	workers := internal.NewWorkerPool(2, s3Service, instrRepo, fileRepo, productSvc)
+	defer workers.Stop()
+
+	instructionHandler := internal.NewInstructionHandler(s3Service, fileRepo, instrRepo, productSvc, workers)
 
 	app := fiber.New(fiber.Config{})
 

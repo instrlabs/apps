@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ProductHandler struct {
@@ -67,38 +68,15 @@ func (h *ProductHandler) ListProducts(c *fiber.Ctx) error {
 
 func (h *ProductHandler) GetProduct(c *fiber.Ctx) error {
 	id := c.Params("id")
-	product, err := h.repo.GetProductByID(c.Context(), id)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Internal server error",
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-	if product == nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Product not found",
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "Product retrieved successfully",
-		"errors":  nil,
-		"data":    product,
-	})
-}
 
-func (h *ProductHandler) GetProductByKey(c *fiber.Ctx) error {
-	key := c.Params("key")
-	product, err := h.repo.GetProductByKey(c.Context(), key)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Internal server error",
-			"errors":  nil,
-			"data":    nil,
-		})
+	var product *Product
+
+	if _, err := primitive.ObjectIDFromHex(id); err == nil {
+		product, err = h.repo.GetProductByID(c.Context(), id)
+	} else {
+		product, err = h.repo.GetProductByKey(c.Context(), id)
 	}
+
 	if product == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "Product not found",

@@ -14,14 +14,20 @@ type InstructionHandler struct {
 	fileRepo    *FileRepository
 	instrRepo   *InstructionRepository
 	productServ *ProductService
+	workers     *WorkerPool
 }
 
-func NewInstructionHandler(s3 *S3Service, fileRepo *FileRepository, instrRepo *InstructionRepository, productServ *ProductService) *InstructionHandler {
-	return &InstructionHandler{s3: s3, fileRepo: fileRepo, instrRepo: instrRepo, productServ: productServ}
+func NewInstructionHandler(
+	s3 *S3Service,
+	fileRepo *FileRepository,
+	instrRepo *InstructionRepository,
+	productServ *ProductService,
+	workers *WorkerPool) *InstructionHandler {
+	return &InstructionHandler{s3: s3, fileRepo: fileRepo, instrRepo: instrRepo, productServ: productServ, workers: workers}
 }
 
 func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
-	product := h.productServ.GetProductByKey("image-compress")
+	product := h.productServ.GetProduct("image-compress")
 	if product == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "product not found",
@@ -55,7 +61,7 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 	}
 
 	for idx, fh := range headers {
-		if err := h.s3.Upload(fh, fmt.Sprintf("%s-%d", instructionID, idx)); err != nil {
+		if err := h.s3.Upload(fh, fmt.Sprintf("%s-%d", instructionID.Hex(), idx)); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "upload failed",
 				"errors":  nil,
@@ -71,6 +77,8 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 			})
 		}
 	}
+
+	h.workers.Enqueue(instructionID.Hex())
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "upload accepted",
