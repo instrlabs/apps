@@ -4,17 +4,20 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 
-	"github.com/arthadede/labs-service/internal"
+	"github.com/arthadede/image-service/internal"
 )
 
 func main() {
 	config := internal.LoadConfig()
 
+	s3Service := internal.NewS3Service(config)
 	mongo := internal.NewMongoDB(config)
 	defer mongo.Close()
-	s3Service := internal.NewS3Service(config)
+
+	fileRepo := internal.NewFileRepository(mongo)
+	_ = internal.NewInstructionRepository(mongo)
+	instructionHandler := internal.NewInstructionHandler(s3Service, fileRepo)
 
 	app := fiber.New(fiber.Config{})
 
@@ -28,7 +31,7 @@ func main() {
 
 	internal.SetupMiddleware(app)
 
-	app.Post("/image/compress", imageHandler.ImageCompress)
+	app.Post("/compress", instructionHandler.ImageCompress)
 
 	log.Fatal(app.Listen(config.Port))
 }

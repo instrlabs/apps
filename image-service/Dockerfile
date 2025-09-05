@@ -1,6 +1,6 @@
 FROM golang:1.24 AS build
 
-WORKDIR /go/src/labs-service
+WORKDIR /go/src/image-service
 
 COPY . .
 
@@ -12,7 +12,7 @@ FROM alpine:latest AS release
 
 WORKDIR /app
 
-COPY --from=build /go/src/labs-service/app .
+COPY --from=build /go/src/image-service/app .
 
 RUN apk -U upgrade \
     && apk add --no-cache dumb-init ca-certificates \

@@ -52,41 +52,25 @@ func NewS3Service(cfg *Config) *S3Service {
 	}
 }
 
-func (s *S3Service) UploadPDF(ctx context.Context, fileHeader *multipart.FileHeader, jobID string) (string, error) {
-	// Open the uploaded file
-	file, err := fileHeader.Open()
-	if err != nil {
-		log.Printf("failed to open file: %v", err)
-		return "", nil
-	}
+func (s *S3Service) Upload(fileHeader *multipart.FileHeader, jobID string) error {
+	file, _ := fileHeader.Open()
 	defer file.Close()
 
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		log.Printf("failed to read file: %v", err)
-		return "", nil
-	}
+	fileBytes, _ := io.ReadAll(file)
 
-	// Get the file extension
 	ext := filepath.Ext(fileHeader.Filename)
-	if ext != ".pdf" {
-		log.Printf("invalid file type: %s, expected .pdf", ext)
-		return "", nil
-	}
+	ctx := context.Background()
+	_, err := s.client.PutObject(
+		ctx,
+		s.cfg.S3Bucket,
+		fmt.Sprintf("images/%s%s", jobID, ext),
+		bytes.NewReader(fileBytes),
+		fileHeader.Size,
+		minio.PutObjectOptions{})
 
-	objectName := fmt.Sprintf("pdfs/%s%s", jobID, ext)
-
-	if s.client == nil {
-		log.Printf("S3 client is not initialized; skipping upload for %s", objectName)
-		return "", nil
-	}
-
-	_, err = s.client.PutObject(ctx, s.cfg.S3Bucket, objectName, bytes.NewReader(fileBytes), fileHeader.Size,
-		minio.PutObjectOptions{ContentType: "application/pdf"})
 	if err != nil {
-		log.Printf("failed to upload file: %v", err)
-		return "", nil
+		return err
 	}
 
-	return objectName, nil
+	return nil
 }
