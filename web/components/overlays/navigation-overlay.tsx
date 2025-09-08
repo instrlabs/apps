@@ -27,7 +27,7 @@ export default function NavigationOverlay({
   const pathname = usePathname();
 
   const keyToPath: Record<string, string> = {
-    apps: "/apps",
+    apps: "/",
     histories: "/histories",
     storage: "/storage",
   };

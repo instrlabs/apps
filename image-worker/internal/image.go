@@ -10,8 +10,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func CompressJPEG(instructionHex string) error {
-	files, _, err := w.s3.DownloadAllForInstruction(instructionHex)
+// CompressJPEG downloads all request files for an instruction, compresses them, uploads the
+// compressed versions, and records response file entries if a fileRepo is provided.
+func CompressJPEG(s3 *S3Service, fileRepo *FileRepository, instructionHex string) error {
+	files, _, err := s3.DownloadAllForInstruction(instructionHex)
 	if err != nil {
 		return err
 	}
@@ -23,13 +25,13 @@ func CompressJPEG(instructionHex string) error {
 		}
 
 		objectName := fmt.Sprintf("images/%s-%d-compressed.jpg", instructionHex, idx)
-		if err := w.s3.UploadBytes(compressed, objectName, "image/jpeg"); err != nil {
+		if err := s3.UploadBytes(compressed, objectName, "image/jpeg"); err != nil {
 			return err
 		}
 
-		if w.fileRepo != nil {
+		if fileRepo != nil {
 			if id, e := primitive.ObjectIDFromHex(instructionHex); e == nil {
-				_, _ = w.fileRepo.Create(&File{InstructionID: id, Type: FileTypeResponse})
+				_, _ = fileRepo.Create(&File{InstructionID: id, Type: FileTypeResponse})
 			}
 		}
 	}

@@ -11,8 +11,7 @@ class SSEService {
   constructor() {
     this.baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/notification/jobs`;
   }
-  
-  // Get the authentication token from localStorage
+
   private getAuthToken(): string | null {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('auth_token');
@@ -20,7 +19,6 @@ class SSEService {
     return null;
   }
 
-  // Connect to the SSE server
   connect(): void {
     if (this.eventSource || this.isConnecting) {
       return;
@@ -38,14 +36,14 @@ class SSEService {
       }
 
       const url = `${this.baseUrl}?token=${token}`;
-      
+
       this.eventSource = new EventSource(url);
 
       this.eventSource.onopen = () => {
         console.log('SSE connected');
         this.reconnectAttempts = 0;
         this.isConnecting = false;
-        
+
         // Dispatch a custom event for connection status
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('sse:connected'));
@@ -87,7 +85,7 @@ class SSEService {
 
     this.reconnectAttempts++;
     console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-    
+
     setTimeout(() => {
       this.connect();
     }, this.reconnectInterval);
@@ -98,7 +96,7 @@ class SSEService {
     if (this.eventSource) {
       this.eventSource.close();
       this.eventSource = null;
-      
+
       // Dispatch a custom event for disconnection status
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('sse:disconnected'));
@@ -111,7 +109,7 @@ class SSEService {
     if (!this.listeners.has(eventType)) {
       this.listeners.set(eventType, []);
     }
-    
+
     this.listeners.get(eventType)?.push(callback);
   }
 
@@ -120,10 +118,10 @@ class SSEService {
     if (!this.listeners.has(eventType)) {
       return;
     }
-    
+
     const listeners = this.listeners.get(eventType) || [];
     const index = listeners.indexOf(callback);
-    
+
     if (index !== -1) {
       listeners.splice(index, 1);
     }
@@ -136,7 +134,7 @@ class SSEService {
       // Dispatch to all listeners for the specific status
       const statusListeners = this.listeners.get(data.status) || [];
       statusListeners.forEach(callback => callback(data));
-      
+
       // Also dispatch to general job notification listeners
       const generalListeners = this.listeners.get('job_notification') || [];
       generalListeners.forEach(callback => callback(data));

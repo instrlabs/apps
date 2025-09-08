@@ -11,6 +11,16 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
 
+  nats:
+    image: nats:2.10
+    restart: unless-stopped
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-js"]
+    volumes:
+      - nats_data:/data
+
   auth-service:
     build:
       context: ./auth-service
@@ -39,6 +49,23 @@ services:
     command: [ "./app" ]
     dns:
       - 8.8.8.8
+
+  image-worker:
+    build:
+      context: ./image-worker
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./image-worker/.env
+    command: ["./app"]
+
+  notification-service:
+    build:
+      context: ./notification-service
+    restart: unless-stopped
+    env_file:
+      - ./notification-service/.env
+    command: ["./notification-service"]
 
   gateway-service:
     build:

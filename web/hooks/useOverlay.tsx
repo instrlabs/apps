@@ -80,24 +80,29 @@ function registerOverlays() {
 
 const OverlayContext = createContext<OverlayActions | undefined>(undefined);
 
-export function OverlayProvider({ children }: {
+export function OverlayProvider({ children, defaultLeft, defaultRight }: {
   children: React.ReactNode;
+  defaultLeft?: string;
+  defaultRight?: string;
 }) {
-  useEffect(() => {
-    registerOverlays();
-  }, []);
+  registerOverlays();
+
+  let defaultLeftOverlay;
+  if (defaultLeft) defaultLeftOverlay = overlay.get(defaultLeft);
+  let defaultRightOverlay;
+  if (defaultRight) defaultRightOverlay = overlay.get(defaultRight);
 
   // left
-  const [isLeftOpen, setIsLeftOpen] = useState<boolean>(false);
-  const [leftNode, setLeftNodeState] = useState<React.ReactNode>(<div />);
-  const [leftKey, setLeftKey] = useState<string>("");
-  const [leftWidth, setLeftWidth] = useState<number>(0);
+  const [isLeftOpen, setIsLeftOpen] = useState<boolean>(!!defaultLeftOverlay);
+  const [leftNode, setLeftNodeState] = useState<React.ReactNode>(!!defaultLeftOverlay ? defaultLeftOverlay.render() : <div />);
+  const [leftKey, setLeftKey] = useState<string>(defaultLeft ?? "");
+  const [leftWidth, setLeftWidth] = useState<number>(!!defaultLeftOverlay ? defaultLeftOverlay.width : 0);
 
   // right
-  const [isRightOpen, setIsRightOpen] = useState<boolean>(false);
-  const [rightNode, setRightNodeState] = useState<React.ReactNode>(<div />);
-  const [rightKey, setRightKey] = useState<string>("");
-  const [rightWidth, setRightWidth] = useState<number>(0);
+  const [isRightOpen, setIsRightOpen] = useState<boolean>(!!defaultRightOverlay);
+  const [rightNode, setRightNodeState] = useState<React.ReactNode>(!!defaultRightOverlay ? defaultRightOverlay.render() : <div/>);
+  const [rightKey, setRightKey] = useState<string>(defaultRight ?? "");
+  const [rightWidth, setRightWidth] = useState<number>(!!defaultRightOverlay ? defaultRightOverlay.width : 0);
 
   // modal
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);

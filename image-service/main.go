@@ -9,20 +9,19 @@ import (
 )
 
 func main() {
-	config := internal.LoadConfig()
+	cfg := internal.LoadConfig()
 
-	s3Service := internal.NewS3Service(config)
-	mongo := internal.NewMongoDB(config)
+	s3Service := internal.NewS3Service(cfg)
+	mongo := internal.NewMongoDB(cfg)
 	defer mongo.Close()
+	natsSvc := internal.NewNatsService(cfg)
+	defer natsSvc.Close()
 
 	fileRepo := internal.NewFileRepository(mongo)
 	instrRepo := internal.NewInstructionRepository(mongo)
 	productSvc := internal.NewProductService()
 
-	workers := internal.NewWorkerPool(2, s3Service, instrRepo, fileRepo, productSvc)
-	defer workers.Stop()
-
-	instructionHandler := internal.NewInstructionHandler(s3Service, fileRepo, instrRepo, productSvc, workers)
+	instructionHandler := internal.NewInstructionHandler(s3Service, fileRepo, instrRepo, productSvc, natsSvc)
 
 	app := fiber.New(fiber.Config{})
 
@@ -38,5 +37,5 @@ func main() {
 
 	app.Post("/compress", instructionHandler.ImageCompress)
 
-	log.Fatal(app.Listen(config.Port))
+	log.Fatal(app.Listen(cfg.Port))
 }

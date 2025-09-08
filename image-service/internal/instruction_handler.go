@@ -14,7 +14,7 @@ type InstructionHandler struct {
 	fileRepo    *FileRepository
 	instrRepo   *InstructionRepository
 	productServ *ProductService
-	workers     *WorkerPool
+	nats        *NatsService
 }
 
 func NewInstructionHandler(
@@ -22,8 +22,8 @@ func NewInstructionHandler(
 	fileRepo *FileRepository,
 	instrRepo *InstructionRepository,
 	productServ *ProductService,
-	workers *WorkerPool) *InstructionHandler {
-	return &InstructionHandler{s3: s3, fileRepo: fileRepo, instrRepo: instrRepo, productServ: productServ, workers: workers}
+	nats *NatsService) *InstructionHandler {
+	return &InstructionHandler{s3: s3, fileRepo: fileRepo, instrRepo: instrRepo, productServ: productServ, nats: nats}
 }
 
 func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
@@ -78,7 +78,8 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 		}
 	}
 
-	h.workers.Enqueue(instructionID.Hex())
+	// send job request to image-worker via NATS
+	_ = h.nats.PublishJobRequest(instructionID.Hex(), userID.Hex())
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "upload accepted",

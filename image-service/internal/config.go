@@ -19,6 +19,10 @@ type Config struct {
 	S3Bucket    string
 	S3UseSSL    bool
 
+	NatsURL                  string
+	NatsSubjectRequests      string
+	NatsSubjectNotifications string
+
 	IMAGEServiceURL string
 }
 
@@ -37,6 +41,10 @@ func LoadConfig() *Config {
 		S3SecretKey: os.Getenv("S3_SECRET_KEY"),
 		S3Bucket:    os.Getenv("S3_BUCKET"),
 		S3UseSSL:    getEnvBool("S3_USE_SSL", false),
+
+		NatsURL:                  os.Getenv("NATS_URL"),
+		NatsSubjectRequests:      os.Getenv("NATS_SUBJECT_REQUESTS"),
+		NatsSubjectNotifications: os.Getenv("NATS_SUBJECT_NOTIFICATIONS"),
 
 		IMAGEServiceURL: os.Getenv("IMAGE_SERVICE_URL"),
 	}

@@ -80,7 +80,7 @@ export default function SearchOverlay() {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="What are you looking for?"
-          className="p-0! rounded-none! border-none shadow-none bg-transparent focus:shadow-none"
+          className="p-0! rounded-none! border-none !shadow-none focus:shadow-none"
           autoComplete="off"
         />
         <Chip xVariant="outlined" xSize="sm">esc</Chip>
