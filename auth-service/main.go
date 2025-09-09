@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/arthadede/auth-service/internal"
-	initx "github.com/arthadede/shared/init"
+	initx "github.com/histweety-labs/shared/init"
 
 	"github.com/gofiber/fiber/v2"
 )

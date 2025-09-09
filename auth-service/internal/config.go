@@ -1,7 +1,7 @@
 package internal
 
 import (
-	initx "github.com/arthadede/shared/init"
+	initx "github.com/histweety-labs/shared/init"
 	"github.com/joho/godotenv"
 )
 

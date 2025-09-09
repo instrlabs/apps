@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	initx "github.com/arthadede/shared/init"
+	initx "github.com/histweety-labs/shared/init"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go.mongodb.org/mongo-driver/bson"
