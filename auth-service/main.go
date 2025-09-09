@@ -16,14 +16,13 @@ func main() {
 	defer mongo.Close()
 
 	userRepo := internal.NewUserRepository(mongo)
-	userController := internal.NewUserController(userRepo, config)
-	userHandler := internal.NewUserHandler(userController, config)
+	userHandler := internal.NewUserHandler(config, userRepo)
 
 	app := fiber.New(fiber.Config{})
 
+	initx.SetupLogger(app)
 	initx.SetupServiceSwagger(app)
 	initx.SetupServiceHealth(app)
-
 	internal.SetupMiddleware(app)
 
 	app.Post("/register", userHandler.Register)
