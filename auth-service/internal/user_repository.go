@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	initx "github.com/arthadede/shared/init"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,11 +13,11 @@ import (
 )
 
 type UserRepository struct {
-	db         *MongoDB
+	db         *initx.Mongo
 	collection *mongo.Collection
 }
 
-func NewUserRepository(db *MongoDB) *UserRepository {
+func NewUserRepository(db *initx.Mongo) *UserRepository {
 	return &UserRepository{
 		db:         db,
 		collection: db.DB.Collection("users"),

@@ -3,6 +3,7 @@ module github.com/arthadede/auth-service
 go 1.24.4
 
 require (
+	github.com/arthadede/shared v0.0.0-00010101000000-000000000000
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/joho/godotenv v1.5.1
@@ -10,6 +11,8 @@ require (
 	golang.org/x/crypto v0.41.0
 	golang.org/x/oauth2 v0.30.0
 )
+
+replace github.com/arthadede/shared => ../shared
 
 require (
 	cloud.google.com/go/compute/metadata v0.8.0 // indirect

@@ -1,9 +1,7 @@
 package internal
 
 import (
-	"os"
-	"strconv"
-
+	initx "github.com/arthadede/shared/init"
 	"github.com/joho/godotenv"
 )
 
@@ -30,45 +28,27 @@ type Config struct {
 }
 
 func LoadConfig() *Config {
-	godotenv.Load()
-
-	tokenExpiryHours := 1
-	expiryStr := os.Getenv("TOKEN_EXPIRY_HOURS")
-	tokenExpiryHours, _ = strconv.Atoi(expiryStr)
-
-	resetTokenExpiryHours := 24
-	resetExpiryStr := os.Getenv("RESET_TOKEN_EXPIRY_HOURS")
-	resetTokenExpiryHours, _ = strconv.Atoi(resetExpiryStr)
-
-	corsOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
-	if corsOrigins == "" {
-		corsOrigins = "http://web.localhost" // Default value if not set
-	}
-
-	cookieDomain := os.Getenv("COOKIE_DOMAIN")
-	if cookieDomain == "" {
-		cookieDomain = ".localhost" // Default value if not set
-	}
+	_ = godotenv.Load()
 
 	return &Config{
-		Environment:           os.Getenv("ENVIRONMENT"),
-		Port:                  os.Getenv("PORT"),
-		MongoURI:              os.Getenv("MONGO_URI"),
-		MongoDB:               os.Getenv("MONGO_DB"),
-		JWTSecret:             os.Getenv("JWT_SECRET"),
-		TokenExpiryHours:      tokenExpiryHours,
-		SMTPHost:              os.Getenv("SMTP_HOST"),
-		SMTPPort:              os.Getenv("SMTP_PORT"),
-		SMTPUsername:          os.Getenv("SMTP_USERNAME"),
-		SMTPPassword:          os.Getenv("SMTP_PASSWORD"),
-		EmailFrom:             os.Getenv("EMAIL_FROM"),
-		ResetTokenExpiryHours: resetTokenExpiryHours,
-		GoogleClientID:        os.Getenv("GOOGLE_CLIENT_ID"),
-		GoogleClientSecret:    os.Getenv("GOOGLE_CLIENT_SECRET"),
-		GoogleRedirectUrl:     os.Getenv("GOOGLE_REDIRECT_URL"),
-		FEResetPassword:       os.Getenv("FE_RESET_PASSWORD"),
-		FEOAuthRedirect:       os.Getenv("FE_OAUTH_REDIRECT"),
-		CORSAllowedOrigins:    corsOrigins,
-		CookieDomain:          cookieDomain,
+		Environment:           initx.GetEnv("ENVIRONMENT", ""),
+		Port:                  initx.GetEnv("PORT", ""),
+		MongoURI:              initx.GetEnv("MONGO_URI", ""),
+		MongoDB:               initx.GetEnv("MONGO_DB", ""),
+		JWTSecret:             initx.GetEnv("JWT_SECRET", ""),
+		TokenExpiryHours:      initx.GetEnvInt("TOKEN_EXPIRY_HOURS", 1),
+		SMTPHost:              initx.GetEnv("SMTP_HOST", ""),
+		SMTPPort:              initx.GetEnv("SMTP_PORT", ""),
+		SMTPUsername:          initx.GetEnv("SMTP_USERNAME", ""),
+		SMTPPassword:          initx.GetEnv("SMTP_PASSWORD", ""),
+		EmailFrom:             initx.GetEnv("EMAIL_FROM", ""),
+		ResetTokenExpiryHours: initx.GetEnvInt("RESET_TOKEN_EXPIRY_HOURS", 24),
+		GoogleClientID:        initx.GetEnv("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret:    initx.GetEnv("GOOGLE_CLIENT_SECRET", ""),
+		GoogleRedirectUrl:     initx.GetEnv("GOOGLE_REDIRECT_URL", ""),
+		FEResetPassword:       initx.GetEnv("FE_RESET_PASSWORD", ""),
+		FEOAuthRedirect:       initx.GetEnv("FE_OAUTH_REDIRECT", ""),
+		CORSAllowedOrigins:    initx.GetEnv("CORS_ALLOWED_ORIGINS", "http://web.localhost"),
+		CookieDomain:          initx.GetEnv("COOKIE_DOMAIN", ".localhost"),
 	}
 }
