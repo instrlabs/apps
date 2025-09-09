@@ -23,17 +23,19 @@ func SetupMiddleware(app *fiber.App) {
 					return true
 				}
 			}
+
 			return false
 		}
 
-		if c.Get("X-Authenticated") == "true" {
+		isAuthenticated := c.Get("X-Authenticated") == "true"
+		if isAuthenticated {
 			userId := c.Get("X-User-Id")
 			c.Locals("UserID", userId)
 			roles := c.Get("X-User-Roles")
 			c.Locals("Roles", roles)
 		}
 
-		if !isPublic(c.Path()) && c.Get("X-Authenticated") == "false" {
+		if !isPublic(c.Path()) && !isAuthenticated {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"message": "Unauthorized",
 				"errors":  nil,

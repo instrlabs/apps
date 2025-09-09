@@ -3,33 +3,12 @@ package internal
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-const (
-	productCollectionName = "products"
-)
-
-type Product struct {
-	ID          string    `bson:"_id,omitempty" json:"id,omitempty"`
-	Key         string    `bson:"key" json:"key"`
-	Name        string    `bson:"name" json:"name"`
-	Price       float64   `bson:"price" json:"price"`
-	Description string    `bson:"description,omitempty" json:"description,omitempty"`
-	Image       string    `bson:"image,omitempty" json:"image,omitempty"`
-	ProductType string    `bson:"productType,omitempty" json:"productType,omitempty"`
-	UserID      string    `bson:"userId,omitempty" json:"userId,omitempty"`
-	Active      bool      `bson:"active" json:"active"`
-	IsFree      bool      `bson:"isFree" json:"isFree"`
-	CreatedAt   time.Time `bson:"createdAt" json:"createdAt"`
-	UpdatedAt   time.Time `bson:"updatedAt" json:"updatedAt"`
-}
 
 type ProductRepository struct {
 	db         *MongoDB
@@ -37,104 +16,111 @@ type ProductRepository struct {
 }
 
 func NewProductRepository(db *MongoDB) *ProductRepository {
-	collection := db.GetCollection(productCollectionName)
-
-	indexModel := mongo.IndexModel{
-		Keys:    bson.D{{Key: "name", Value: 1}},
-		Options: options.Index().SetName("idx_products_name"),
+	return &ProductRepository{
+		db:         db,
+		collection: db.GetCollection("products"),
 	}
-	keyIndex := mongo.IndexModel{
-		Keys:    bson.D{{Key: "key", Value: 1}},
-		Options: options.Index().SetName("idx_products_key").SetUnique(false),
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if _, err := collection.Indexes().CreateOne(ctx, indexModel); err != nil {
-		fmt.Printf("Error creating index on products: %v\n", err)
-	}
-	if _, err := collection.Indexes().CreateOne(ctx, keyIndex); err != nil {
-		fmt.Printf("Error creating index on products key: %v\n", err)
-	}
-
-	return &ProductRepository{db: db, collection: collection}
 }
 
-func (r *ProductRepository) CreateProduct(ctx context.Context, p *Product) error {
-	if p.ID == "" {
-		p.ID = primitive.NewObjectID().Hex()
-	}
+func (r *ProductRepository) Create(p *Product) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	p.CreatedAt = time.Now()
 	p.UpdatedAt = time.Now()
+
 	_, err := r.collection.InsertOne(ctx, p)
-	if err != nil {
-		return fmt.Errorf("failed to create product: %w", err)
-	}
-	return nil
+	return err
 }
 
-func (r *ProductRepository) GetProductByID(ctx context.Context, id string) (*Product, error) {
+// FindByID returns a product by its hex string ID, using ObjectID for the _id filter.
+func (r *ProductRepository) FindByID(id string) (*Product, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, errors.New("invalid product ID")
+	}
+
 	var p Product
-	objectID, _ := primitive.ObjectIDFromHex(id)
-	err := r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&p)
+	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&p)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, nil
+			return nil, errors.New("product not found")
 		}
-		return nil, fmt.Errorf("failed to get product by id: %w", err)
+		return nil, err
 	}
 	return &p, nil
 }
 
-func (r *ProductRepository) UpdateProduct(ctx context.Context, id string, updateFields bson.M) error {
+// FindByKey finds a product by its key.
+func (r *ProductRepository) FindByKey(key string) (*Product, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var p Product
+	err := r.collection.FindOne(ctx, bson.M{"key": key}).Decode(&p)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, errors.New("product not found")
+		}
+		return nil, err
+	}
+	return &p, nil
+}
+
+// Update sets provided fields and touches updatedAt (camelCase to match Product tags).
+func (r *ProductRepository) Update(id string, updateFields bson.M) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return errors.New("invalid product ID")
+	}
 	if updateFields == nil {
 		updateFields = bson.M{}
 	}
 	updateFields["updatedAt"] = time.Now()
+
 	update := bson.M{"$set": updateFields}
-	_, err := r.collection.UpdateOne(ctx, bson.M{"_id": id}, update)
-	if err != nil {
-		return fmt.Errorf("failed to update product: %w", err)
-	}
-	return nil
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	return err
 }
 
-// DeleteProduct removes a product by ID
-func (r *ProductRepository) DeleteProduct(ctx context.Context, id string) error {
-	_, err := r.collection.DeleteOne(ctx, bson.M{"_id": id})
+// Delete removes a product by ID.
+func (r *ProductRepository) Delete(id string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return fmt.Errorf("failed to delete product: %w", err)
+		return errors.New("invalid product ID")
 	}
-	return nil
+
+	_, err = r.collection.DeleteOne(ctx, bson.M{"_id": objectID})
+	return err
 }
 
-// ListProducts returns all products (optionally filter by active)
-func (r *ProductRepository) ListProducts(ctx context.Context, onlyActive bool) ([]*Product, error) {
+// List returns all products, optionally filtering by active=true.
+func (r *ProductRepository) List(onlyActive bool) ([]*Product, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	filter := bson.M{}
 	if onlyActive {
 		filter["active"] = true
 	}
 	cursor, err := r.collection.Find(ctx, filter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list products: %w", err)
+		return nil, err
 	}
 	defer cursor.Close(ctx)
 
 	var products []*Product
 	if err := cursor.All(ctx, &products); err != nil {
-		return nil, fmt.Errorf("failed to decode products: %w", err)
+		return nil, err
 	}
 	return products, nil
-}
-
-func (r *ProductRepository) GetProductByKey(ctx context.Context, key string) (*Product, error) {
-	var p Product
-	err := r.collection.FindOne(ctx, bson.M{"key": key}).Decode(&p)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to get product by key: %w", err)
-	}
-	return &p, nil
 }

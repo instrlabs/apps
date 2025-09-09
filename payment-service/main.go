@@ -5,6 +5,7 @@ import (
 
 	"github.com/arthadede/payment-service/internal"
 	"github.com/gofiber/fiber/v2"
+	initx "github.com/histweety-labs/shared/init"
 )
 
 func main() {
@@ -18,14 +19,9 @@ func main() {
 
 	app := fiber.New(fiber.Config{})
 
-	app.Get("/swagger", func(c *fiber.Ctx) error {
-		return c.Type("json").SendFile("./static/swagger.json")
-	})
-
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"status": "ok"})
-	})
-
+	initx.SetupLogger(app)
+	initx.SetupServiceSwagger(app)
+	initx.SetupServiceHealth(app)
 	internal.SetupMiddleware(app)
 
 	app.Post("/products", productHandler.CreateProduct)

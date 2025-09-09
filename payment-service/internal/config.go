@@ -1,7 +1,8 @@
 package internal
 
 import (
-	"os"
+	initx "github.com/histweety-labs/shared/init"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -28,66 +29,29 @@ type Config struct {
 }
 
 func NewConfig() *Config {
-	env := getEnv("ENVIRONMENT", "development")
-	port := getEnv("PORT", ":3040")
-
-	// Database
-	mongoURI := getEnv("MONGO_URI", "mongodb://localhost:27017")
-	mongoDB := getEnv("MONGO_DB", "payment_service")
-
-	// NATS
-	natsURL := getEnv("NATS_URL", "nats://localhost:4222")
-	natsSubjectPaymentEvents := getEnv("NATS_SUBJECT_PAYMENT_EVENTS", "payment.events")
-	natsSubjectPaymentRequests := getEnv("NATS_SUBJECT_PAYMENT_REQUESTS", "payment.requests")
-
-	// Midtrans
-	midtransServerKey := getEnv("MIDTRANS_SERVER_KEY", "")
-	midtransClientKey := getEnv("MIDTRANS_CLIENT_KEY", "")
-	midtransEnvironment := getEnv("MIDTRANS_ENVIRONMENT", "sandbox")
-	midtransNotificationURL := getEnv("MIDTRANS_NOTIFICATION_URL", "")
-
-	// CORS
-	corsOrigins := getEnv("CORS_ALLOWED_ORIGINS", "http://web.localhost")
+	_ = godotenv.Load()
 
 	return &Config{
-		Environment: env,
-		Port:        port,
+		Environment: initx.GetEnv("ENVIRONMENT", ""),
+		Port:        initx.GetEnv("PORT", ":3040"),
 
-		MongoURI: mongoURI,
-		MongoDB:  mongoDB,
+		MongoURI: initx.GetEnv("MONGO_URI", "mongodb://localhost:27017"),
+		MongoDB:  initx.GetEnv("MONGO_DB", "payment_service"),
 
-		NatsURL:                    natsURL,
-		NatsSubjectPaymentEvents:   natsSubjectPaymentEvents,
-		NatsSubjectPaymentRequests: natsSubjectPaymentRequests,
+		NatsURL:                    initx.GetEnv("NATS_URL", "nats://localhost:4222"),
+		NatsSubjectPaymentEvents:   initx.GetEnv("NATS_SUBJECT_PAYMENT_EVENTS", "payment.events"),
+		NatsSubjectPaymentRequests: initx.GetEnv("NATS_SUBJECT_PAYMENT_REQUESTS", "payment.requests"),
 
-		MidtransServerKey:       midtransServerKey,
-		MidtransClientKey:       midtransClientKey,
-		MidtransEnvironment:     midtransEnvironment,
-		MidtransNotificationURL: midtransNotificationURL,
+		MidtransServerKey:       initx.GetEnv("MIDTRANS_SERVER_KEY", ""),
+		MidtransClientKey:       initx.GetEnv("MIDTRANS_CLIENT_KEY", ""),
+		MidtransEnvironment:     initx.GetEnv("MIDTRANS_ENVIRONMENT", "sandbox"),
+		MidtransNotificationURL: initx.GetEnv("MIDTRANS_NOTIFICATION_URL", ""),
 
-		CORSAllowedOrigins: corsOrigins,
+		CORSAllowedOrigins: initx.GetEnv("CORS_ALLOWED_ORIGINS", "http://web.localhost"),
 	}
 }
 
 // LoadConfig mirrors auth-service naming and delegates to NewConfig for compatibility
 func LoadConfig() *Config {
 	return NewConfig()
-}
-
-func getEnv(key, fallback string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
-	}
-	return fallback
-}
-
-func getEnvBool(key string, fallback bool) bool {
-	if value, exists := os.LookupEnv(key); exists {
-		if value == "true" || value == "1" || value == "yes" {
-			return true
-		} else if value == "false" || value == "0" || value == "no" {
-			return false
-		}
-	}
-	return fallback
 }

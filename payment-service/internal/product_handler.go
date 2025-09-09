@@ -35,7 +35,7 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 	if userID, ok := c.Locals("UserID").(string); ok && userID != "" {
 		p.UserID = userID
 	}
-	if err := h.repo.CreateProduct(c.Context(), &p); err != nil {
+	if err := h.repo.Create(&p); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal server error",
 			"errors":  nil,
@@ -51,7 +51,7 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 
 func (h *ProductHandler) ListProducts(c *fiber.Ctx) error {
 	onlyActive := c.QueryBool("active", false)
-	products, err := h.repo.ListProducts(c.Context(), onlyActive)
+	products, err := h.repo.List(onlyActive)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal server error",
@@ -72,9 +72,9 @@ func (h *ProductHandler) GetProduct(c *fiber.Ctx) error {
 	var product *Product
 
 	if _, err := primitive.ObjectIDFromHex(id); err == nil {
-		product, err = h.repo.GetProductByID(c.Context(), id)
+		product, err = h.repo.FindByID(id)
 	} else {
-		product, err = h.repo.GetProductByKey(c.Context(), id)
+		product, err = h.repo.FindByKey(id)
 	}
 
 	if product == nil {
@@ -124,7 +124,7 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 			"data":    nil,
 		})
 	}
-	if err := h.repo.UpdateProduct(c.Context(), id, updateFields); err != nil {
+	if err := h.repo.Update(id, updateFields); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal server error",
 			"errors":  nil,
@@ -140,7 +140,7 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 
 func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 	id := c.Params("id")
-	if err := h.repo.DeleteProduct(c.Context(), id); err != nil {
+	if err := h.repo.Delete(id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Internal server error",
 			"errors":  nil,
