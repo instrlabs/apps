@@ -5,20 +5,21 @@ import (
 	"errors"
 	"time"
 
+	initx "github.com/histweety-labs/shared/init"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ProductRepository struct {
-	db         *MongoDB
+	db         *initx.Mongo
 	collection *mongo.Collection
 }
 
-func NewProductRepository(db *MongoDB) *ProductRepository {
+func NewProductRepository(db *initx.Mongo) *ProductRepository {
 	return &ProductRepository{
 		db:         db,
-		collection: db.GetCollection("products"),
+		collection: db.DB.Collection("products"),
 	}
 }
 

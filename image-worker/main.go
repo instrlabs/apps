@@ -10,18 +10,25 @@ import (
 
 	"github.com/arthadede/image-worker/internal"
 	"github.com/gofiber/fiber/v2"
+	initx "github.com/histweety-labs/shared/init"
 )
 
 func main() {
 	cfg := internal.NewConfig()
 
-	mongo := internal.NewMongoDB(cfg)
+	mongo := initx.NewMongo(&initx.MongoConfig{MongoURI: cfg.MongoURI, MongoDB: cfg.MongoDB})
 	defer mongo.Close()
+	nats := initx.NewNats(cfg.NatsURL)
+	defer nats.Close()
+
 	s3 := internal.NewS3Service(cfg)
 	natsSvc := internal.NewNatsService(cfg)
 	defer natsSvc.Close()
 
-	processor := internal.NewProcessor(mongo, s3, natsSvc)
+	fileRepo := internal.NewFileRepository(mongo)
+	_ = fileRepo
+	imageServ := internal.NewImageService()
+	processor := internal.NewProcessor(mongo, s3, natsSvc, imageServ)
 
 	if err := natsSvc.Subscribe(processor.Handle); err != nil {
 		log.Fatalf("failed to subscribe: %v", err)

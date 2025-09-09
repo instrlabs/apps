@@ -93,6 +93,33 @@
           }
         }
       }
+    },
+    "/instructions/{id}": {
+      "get": {
+        "summary": "Get instruction by ID",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Found", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "description": "Invalid id" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/instructions/{id}/status": {
+      "patch": {
+        "summary": "Update instruction status",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "enum": ["PENDING","PROCESSING","COMPLETED","FAILED"] } }, "required": ["status"] } } } },
+        "responses": {
+          "200": { "description": "Updated" },
+          "400": { "description": "Invalid" },
+          "404": { "description": "Not found" }
+        }
+      }
     }
   }
 }

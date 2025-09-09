@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	initx "github.com/histweety-labs/shared/init"
 
 	"github.com/arthadede/image-service/internal"
 )
@@ -11,29 +12,35 @@ import (
 func main() {
 	cfg := internal.LoadConfig()
 
-	s3Service := internal.NewS3Service(cfg)
-	mongo := internal.NewMongoDB(cfg)
+	s3 := initx.NewS3(&initx.S3Config{
+		S3Endpoint:  cfg.S3Endpoint,
+		S3AccessKey: cfg.S3AccessKey,
+		S3SecretKey: cfg.S3SecretKey,
+		S3UseSSL:    cfg.S3UseSSL,
+		S3Region:    cfg.S3Region,
+		S3Bucket:    cfg.S3Bucket,
+	})
+	mongo := initx.NewMongo(&initx.MongoConfig{
+		MongoURI: cfg.MongoURI,
+		MongoDB:  cfg.MongoDB,
+	})
 	defer mongo.Close()
-	natsSvc := internal.NewNatsService(cfg)
-	defer natsSvc.Close()
+	nats := initx.NewNats(cfg.NatsURL)
+	defer nats.Close()
+
+	app := fiber.New(fiber.Config{})
+	initx.SetupLogger(app)
+	initx.SetupServiceSwagger(app)
+	initx.SetupServiceHealth(app)
+	initx.SetupAuthenticated(app, []string{})
 
 	fileRepo := internal.NewFileRepository(mongo)
 	instrRepo := internal.NewInstructionRepository(mongo)
 	productSvc := internal.NewProductService()
-
 	instructionHandler := internal.NewInstructionHandler(s3Service, fileRepo, instrRepo, productSvc, natsSvc)
 
-	app := fiber.New(fiber.Config{})
-
-	app.Get("/swagger", func(c *fiber.Ctx) error {
-		return c.Type("json").SendFile("./static/swagger.json")
-	})
-
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"status": "ok"})
-	})
-
-	internal.SetupMiddleware(app)
+	app.Get("/instructions/:id", instructionHandler.GetInstructionByID)
+	app.Patch("/instructions/:id/status", instructionHandler.UpdateInstructionStatus)
 
 	app.Post("/compress", instructionHandler.ImageCompress)
 

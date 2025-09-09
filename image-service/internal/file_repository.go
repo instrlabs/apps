@@ -3,29 +3,28 @@ package internal
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/gofiber/fiber/v2/log"
+	initx "github.com/histweety-labs/shared/init"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type FileRepository struct {
-	db         *MongoDB
+	db         *initx.Mongo
 	collection *mongo.Collection
 }
 
-func NewFileRepository(db *MongoDB) *FileRepository {
+func NewFileRepository(db *initx.Mongo) *FileRepository {
 	return &FileRepository{
 		db:         db,
 		collection: db.DB.Collection("files"),
 	}
 }
 
-func (r *FileRepository) Create(f *File) (primitive.ObjectID, error) {
-	res, err := r.collection.InsertOne(context.Background(), f)
+func (r *FileRepository) Create(f *File) error {
+	_, err := r.collection.InsertOne(context.Background(), f)
 	if err != nil {
-		return primitive.NilObjectID, err
+		log.Errorf("Failed to insert file: %v", err)
+		return err
 	}
-	if oid, ok := res.InsertedID.(primitive.ObjectID); ok {
-		return oid, nil
-	}
-	return primitive.NilObjectID, nil
+	return nil
 }

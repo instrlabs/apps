@@ -11,7 +11,10 @@ import (
 func main() {
 	config := internal.LoadConfig()
 
-	mongo := internal.NewMongoDB(config)
+	mongo := initx.NewMongo(&initx.MongoConfig{
+		MongoURI: config.MongoURI,
+		MongoDB:  config.MongoDB,
+	})
 	defer mongo.Close()
 
 	productRepo := internal.NewProductRepository(mongo)
@@ -22,7 +25,7 @@ func main() {
 	initx.SetupLogger(app)
 	initx.SetupServiceSwagger(app)
 	initx.SetupServiceHealth(app)
-	internal.SetupMiddleware(app)
+	initx.SetupAuthenticated(app, []string{})
 
 	app.Post("/products", productHandler.CreateProduct)
 	app.Get("/products", productHandler.ListProducts)

@@ -12,7 +12,10 @@ import (
 func main() {
 	config := internal.LoadConfig()
 
-	mongo := initx.NewMongo(&initx.MongoConfig{MongoURI: config.MongoURI, MongoDB: config.MongoDB})
+	mongo := initx.NewMongo(&initx.MongoConfig{
+		MongoURI: config.MongoURI,
+		MongoDB:  config.MongoDB,
+	})
 	defer mongo.Close()
 
 	userRepo := internal.NewUserRepository(mongo)
@@ -23,7 +26,14 @@ func main() {
 	initx.SetupLogger(app)
 	initx.SetupServiceSwagger(app)
 	initx.SetupServiceHealth(app)
-	internal.SetupMiddleware(app)
+	initx.SetupAuthenticated(app, []string{
+		"/login",
+		"/refresh",
+		"/register",
+		"/forgot-password",
+		"/reset-password",
+		"/google",
+	})
 
 	app.Post("/register", userHandler.Register)
 	app.Post("/login", userHandler.Login)
