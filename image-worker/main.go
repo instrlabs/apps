@@ -32,8 +32,8 @@ func main() {
 	defer natsSrv.Close()
 
 	imageServ := internal.NewImageService()
-	instrServ := internal.NewInstructionService(cfg)
-	processor := internal.NewProcessor(mongoSrv, s3Srv, natsSrv, imageServ, instrServ)
+	instrRepo := internal.NewInstructionRepository(mongoSrv)
+	processor := internal.NewProcessor(mongoSrv, s3Srv, natsSrv, imageServ, instrRepo)
 
 	app := fiber.New(fiber.Config{})
 	initx.SetupLogger(app)
@@ -56,6 +56,10 @@ func main() {
 			log.Fatalf("failed to subscribe: %v", err)
 		}
 	}
+
+	sched := internal.NewScheduler(instrRepo, natsSrv, cfg)
+	sched.Start()
+	defer sched.Stop()
 
 	go func() {
 		log.Printf("image-worker listening on %s", cfg.Port)

@@ -46,14 +46,17 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 	instructionID := primitive.NewObjectID()
 
 	instr := &Instruction{
-		ID:        instructionID,
-		UserID:    userID,
-		ProductID: productID,
-		Status:    InstructionStatusPending,
-		Inputs:    []File{},
-		Outputs:   []File{},
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
+		ID:             instructionID,
+		UserID:         userID,
+		ProductID:      productID,
+		Status:         InstructionStatusPending,
+		Inputs:         []File{},
+		Outputs:        []File{},
+		CreatedAt:      time.Now().UTC(),
+		UpdatedAt:      time.Now().UTC(),
+		RetryCount:     0,
+		RetryLockUntil: nil,
+		LastRetryAt:    nil,
 	}
 
 	var headers []*multipart.FileHeader
@@ -64,6 +67,14 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 		} else if fs, ok := form.File["file"]; ok && len(fs) > 0 {
 			headers = fs
 		}
+	}
+	// minimal validation: require at least one file
+	if len(headers) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "no file uploaded",
+			"errors":  nil,
+			"data":    nil,
+		})
 	}
 
 	for idx, fh := range headers {
@@ -86,7 +97,6 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 			Size:     int64(len(b)),
 		})
 	}
-	// After successful uploads, persist the instruction with collected inputs
 	if err := h.instrRepo.Create(instr); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "failed to create instruction",

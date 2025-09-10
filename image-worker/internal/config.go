@@ -20,6 +20,13 @@ type Config struct {
 	S3UseSSL    bool
 
 	ImageServiceURL string
+
+	// Scheduler settings
+	SchedulerIntervalMs  int
+	PendingMaxAgeMinutes int
+	RetryMax             int
+	RetryBatchSize       int
+	RetryLockTTLMinutes  int
 }
 
 func NewConfig() *Config {
@@ -41,5 +48,12 @@ func NewConfig() *Config {
 		S3UseSSL:    initx.GetEnvBool("S3_USE_SSL", false),
 
 		ImageServiceURL: initx.GetEnv("IMAGE_SERVICE_URL", "http://localhost:3001"),
+
+		// Scheduler defaults (overrides can be wired later if needed)
+		SchedulerIntervalMs:  initx.GetEnvInt("SCHEDULER_INTERVAL_MS", 60000),
+		PendingMaxAgeMinutes: initx.GetEnvInt("PENDING_MAX_AGE_MINUTES", 30),
+		RetryMax:             initx.GetEnvInt("RETRY_MAX", 3),
+		RetryBatchSize:       initx.GetEnvInt("RETRY_BATCH_SIZE", 50),
+		RetryLockTTLMinutes:  initx.GetEnvInt("RETRY_LOCK_TTL_MINUTES", 5),
 	}
 }
