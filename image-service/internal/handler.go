@@ -45,7 +45,6 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 	productID, _ := primitive.ObjectIDFromHex(product.ID)
 	instructionID := primitive.NewObjectID()
 
-	// We'll upload files to S3 first, then create the instruction once uploads succeed
 	instr := &Instruction{
 		ID:        instructionID,
 		UserID:    userID,
@@ -97,12 +96,10 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 		})
 	}
 
-	// Publish job request
-	payload := map[string]string{
-		"id":     instructionID.Hex(),
-		"userId": userID.Hex(),
-	}
-	if data, err := json.Marshal(payload); err == nil && h.nats != nil && h.nats.Conn != nil {
+	if data, err := json.Marshal(&JobMessage{
+		ID:     instructionID.Hex(),
+		UserID: userID.Hex(),
+	}); err == nil && h.nats != nil && h.nats.Conn != nil {
 		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectRequests, data)
 	}
 
@@ -148,4 +145,28 @@ func (h *InstructionHandler) UpdateInstructionStatus(c *fiber.Ctx) error {
 	}
 	instr := h.instrRepo.GetByID(id)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "updated", "errors": nil, "data": instr})
+}
+
+func (h *InstructionHandler) UpdateInstructionOutputs(c *fiber.Ctx) error {
+	idHex := c.Params("id")
+	id, err := primitive.ObjectIDFromHex(idHex)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid id", "errors": nil, "data": nil})
+	}
+	var body struct {
+		Outputs []File `json:"outputs"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid body", "errors": nil, "data": nil})
+	}
+	for _, f := range body.Outputs {
+		if f.FileName == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "file_name required", "errors": nil, "data": nil})
+		}
+	}
+	if err := h.instrRepo.UpdateOutputs(id, body.Outputs); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to update outputs", "errors": err.Error(), "data": nil})
+	}
+	instr := h.instrRepo.GetByID(id)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "outputs updated", "errors": nil, "data": instr})
 }

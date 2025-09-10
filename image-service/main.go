@@ -42,6 +42,7 @@ func main() {
 
 	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
 	app.Patch("/instructions/:id/status", instrHandler.UpdateInstructionStatus)
+	app.Patch("/instructions/:id/outputs", instrHandler.UpdateInstructionOutputs)
 
 	app.Post("/compress", instrHandler.ImageCompress)
 

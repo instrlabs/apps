@@ -51,3 +51,17 @@ func (r *InstructionRepository) UpdateStatus(id primitive.ObjectID, status Instr
 	}
 	return nil
 }
+
+func (r *InstructionRepository) UpdateOutputs(id primitive.ObjectID, outputs []File) error {
+	_, err := r.collection.UpdateByID(context.Background(), id, bson.M{
+		"$set": bson.M{
+			"outputs":    outputs,
+			"updated_at": time.Now().UTC(),
+		},
+	})
+	if err != nil {
+		log.Errorf("Failed to update instruction outputs: %v", err)
+		return err
+	}
+	return nil
+}

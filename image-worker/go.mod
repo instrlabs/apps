@@ -2,13 +2,14 @@ module github.com/arthadede/image-worker
 
 go 1.24.4
 
+replace github.com/histweety-labs/shared => ../shared
+
 require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/gofiber/fiber/v2 v2.52.9
-	github.com/histweety-labs/shared v0.0.0-20250909092605-c960684103c9
+	github.com/histweety-labs/shared v0.0.0-00010101000000-000000000000
 	github.com/minio/minio-go/v7 v7.0.95
 	github.com/nats-io/nats.go v1.45.0
-	go.mongodb.org/mongo-driver v1.17.4
 )
 
 require (
@@ -35,16 +36,16 @@ require (
 	github.com/tinylib/msgp v1.4.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.65.0 // indirect
-	github.com/valyala/tcplisten v1.0.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
+	go.mongodb.org/mongo-driver v1.17.4 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/image v0.31.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
+	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
-	gopkg.in/ini.v1 v1.67.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -18,6 +18,8 @@ type Config struct {
 	S3SecretKey string
 	S3Bucket    string
 	S3UseSSL    bool
+
+	ImageServiceURL string
 }
 
 func NewConfig() *Config {
@@ -37,5 +39,7 @@ func NewConfig() *Config {
 		S3SecretKey: initx.GetEnv("S3_SECRET_KEY", "minioadmin"),
 		S3Bucket:    initx.GetEnv("S3_BUCKET", "labs"),
 		S3UseSSL:    initx.GetEnvBool("S3_USE_SSL", false),
+
+		ImageServiceURL: initx.GetEnv("IMAGE_SERVICE_URL", "http://localhost:3001"),
 	}
 }
