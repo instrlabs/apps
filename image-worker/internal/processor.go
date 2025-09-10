@@ -30,13 +30,13 @@ func NewProcessor(mongo *initx.Mongo, s3 *initx.S3, nats *initx.Nats, imgServ *I
 func (p *Processor) Handle(ctx context.Context, job *JobMessage) error {
 	log.Printf("jobID: %v, userID: %v", job.ID, job.UserID)
 
-	if err := p.instrServ.UpdateStatus(ctx, job.ID, InstructionStatusProcessing); err != nil {
+	if err := p.instrServ.UpdateStatus(ctx, job, InstructionStatusProcessing); err != nil {
 		log.Printf("failed to set PROCESSING for %s: %v", job.ID, err)
 	}
 
-	instr := p.instrServ.GetInstruction(ctx, job.ID)
+	instr := p.instrServ.GetInstruction(ctx, job)
 	if instr == nil {
-		_ = p.instrServ.UpdateStatus(ctx, job.ID, InstructionStatusFailed)
+		_ = p.instrServ.UpdateStatus(ctx, job, InstructionStatusFailed)
 		return fmt.Errorf("instruction not found")
 	}
 
@@ -44,30 +44,30 @@ func (p *Processor) Handle(ctx context.Context, job *JobMessage) error {
 	for idx, in := range instr.Inputs {
 		data := p.s3.Get(in.FileName)
 		if data == nil {
-			_ = p.instrServ.UpdateStatus(ctx, job.ID, InstructionStatusFailed)
+			_ = p.instrServ.UpdateStatus(ctx, job, InstructionStatusFailed)
 			return fmt.Errorf("missing input: %s", in.FileName)
 		}
 		compressed, err := p.imgServ.Compress(data)
 		if err != nil {
-			_ = p.instrServ.UpdateStatus(ctx, job.ID, InstructionStatusFailed)
+			_ = p.instrServ.UpdateStatus(ctx, job, InstructionStatusFailed)
 			return fmt.Errorf("compress: %w", err)
 		}
 		ext := filepath.Ext(in.FileName)
 		outName := fmt.Sprintf("images/%s-out-%d%s", job.ID, idx, ext)
 		if err := p.s3.Put(outName, compressed); err != nil {
-			_ = p.instrServ.UpdateStatus(ctx, job.ID, InstructionStatusFailed)
+			_ = p.instrServ.UpdateStatus(ctx, job, InstructionStatusFailed)
 			return fmt.Errorf("s3 put: %w", err)
 		}
-		outputs = append(outputs, File{FileName: outName, Type: "result", Size: int64(len(compressed))})
+		outputs = append(outputs, File{FileName: outName, Size: int64(len(compressed))})
 	}
 
-	if err := p.instrServ.UpdateOutputs(ctx, job.ID, outputs); err != nil {
-		_ = p.instrServ.UpdateStatus(ctx, job.ID, InstructionStatusFailed)
+	if err := p.instrServ.UpdateOutputs(ctx, job, outputs); err != nil {
+		_ = p.instrServ.UpdateStatus(ctx, job, InstructionStatusFailed)
 		return fmt.Errorf("update outputs: %w", err)
 	}
 
 	if p.instrServ != nil {
-		if err := p.instrServ.UpdateStatus(ctx, job.ID, InstructionStatusCompleted); err != nil {
+		if err := p.instrServ.UpdateStatus(ctx, job, InstructionStatusCompleted); err != nil {
 			log.Printf("failed to set COMPLETED for %s: %v", job.ID, err)
 		}
 	}

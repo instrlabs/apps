@@ -23,7 +23,7 @@ type Config struct {
 	NatsSubjectRequests      string
 	NatsSubjectNotifications string
 
-	ProductServiceURL string
+	PaymentServiceURL string
 }
 
 func LoadConfig() *Config {
@@ -46,7 +46,7 @@ func LoadConfig() *Config {
 		NatsSubjectRequests:      os.Getenv("NATS_SUBJECT_REQUESTS"),
 		NatsSubjectNotifications: os.Getenv("NATS_SUBJECT_NOTIFICATIONS"),
 
-		ProductServiceURL: os.Getenv("PRODUCT_SERVICE_URL"),
+		PaymentServiceURL: os.Getenv("PAYMENT_SERVICE_URL"),
 	}
 }
 

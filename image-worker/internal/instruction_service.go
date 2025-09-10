@@ -21,9 +21,7 @@ const (
 )
 
 type File struct {
-	ID       string `json:"id" bson:"_id,omitempty"`
 	FileName string `json:"file_name" bson:"file_name"`
-	Type     string `json:"type" bson:"type"`
 	Size     int64  `json:"size" bson:"size"`
 }
 
@@ -52,16 +50,16 @@ func NewInstructionService(cfg *Config) *InstructionService {
 	}
 }
 
-func (s *InstructionService) UpdateStatus(ctx context.Context, id string, status InstructionStatus) error {
-	url := fmt.Sprintf("%s/instructions/%s/status", s.baseURL, id)
+func (s *InstructionService) UpdateStatus(c context.Context, job *JobMessage, status InstructionStatus) error {
+	url := fmt.Sprintf("%s/instructions/%s/status", s.baseURL, job.ID)
 	body := map[string]string{"status": string(status)}
 	b, _ := json.Marshal(body)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewReader(b))
-	if err != nil {
-		return err
-	}
+	req, _ := http.NewRequestWithContext(c, http.MethodPatch, url, bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Authenticated", "true")
+	req.Header.Set("X-User-Id", job.UserID)
+	req.Header.Set("X-User-Roles", "")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -74,16 +72,16 @@ func (s *InstructionService) UpdateStatus(ctx context.Context, id string, status
 	return nil
 }
 
-func (s *InstructionService) UpdateOutputs(ctx context.Context, id string, outputs []File) error {
-	url := fmt.Sprintf("%s/instructions/%s/outputs", s.baseURL, id)
+func (s *InstructionService) UpdateOutputs(ctx context.Context, job *JobMessage, outputs []File) error {
+	url := fmt.Sprintf("%s/instructions/%s/outputs", s.baseURL, job.ID)
 	body := map[string]any{"outputs": outputs}
 	b, _ := json.Marshal(body)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewReader(b))
-	if err != nil {
-		return err
-	}
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Authenticated", "true")
+	req.Header.Set("X-User-Id", job.UserID)
+	req.Header.Set("X-User-Roles", "")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -96,22 +94,22 @@ func (s *InstructionService) UpdateOutputs(ctx context.Context, id string, outpu
 	return nil
 }
 
-func (s *InstructionService) GetInstruction(ctx context.Context, id string) *Instruction {
-	url := fmt.Sprintf("%s/instructions/%s", s.baseURL, id)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		log.Printf("failed to create request for instruction %s: %v", id, err)
-		return nil
-	}
+func (s *InstructionService) GetInstruction(ctx context.Context, job *JobMessage) *Instruction {
+	url := fmt.Sprintf("%s/instructions/%s", s.baseURL, job.ID)
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req.Header.Set("X-Authenticated", "true")
+	req.Header.Set("X-User-Id", job.UserID)
+	req.Header.Set("X-User-Roles", "")
+
 	resp, err := s.client.Do(req)
 	if err != nil {
-		log.Printf("failed to get instruction %s: %v", id, err)
+		log.Printf("failed to get instruction %s: %v", job.ID, err)
 		return nil
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		err := fmt.Errorf("image-service returned status %d", resp.StatusCode)
-		log.Printf("error getting instruction %s: %v", id, err)
+		log.Printf("error getting instruction %s: %v", job.ID, err)
 		return nil
 	}
 	var envelope struct {
@@ -120,7 +118,7 @@ func (s *InstructionService) GetInstruction(ctx context.Context, id string) *Ins
 		Data    *Instruction `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&envelope); err != nil {
-		log.Printf("failed to decode instruction %s: %v", id, err)
+		log.Printf("failed to decode instruction %s: %v", job.ID, err)
 		return nil
 	}
 	return envelope.Data

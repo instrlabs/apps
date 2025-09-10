@@ -16,9 +16,7 @@ const (
 )
 
 type File struct {
-	ID       string `json:"id" bson:"_id,omitempty"`
 	FileName string `json:"file_name" bson:"file_name"`
-	Type     string `json:"type" bson:"type"`
 	Size     int64  `json:"size" bson:"size"`
 }
 

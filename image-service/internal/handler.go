@@ -18,7 +18,7 @@ type InstructionHandler struct {
 	s3          *initx.S3
 	nats        *initx.Nats
 	instrRepo   *InstructionRepository
-	productServ *ProductService
+	productServ *PaymentService
 }
 
 func NewInstructionHandler(
@@ -26,12 +26,12 @@ func NewInstructionHandler(
 	s3 *initx.S3,
 	nats *initx.Nats,
 	instrRepo *InstructionRepository,
-	productServ *ProductService) *InstructionHandler {
+	productServ *PaymentService) *InstructionHandler {
 	return &InstructionHandler{cfg: cfg, s3: s3, nats: nats, instrRepo: instrRepo, productServ: productServ}
 }
 
 func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
-	product := h.productServ.GetProduct("image-compress")
+	product := h.productServ.GetProduct(c, "image-compress")
 	if product == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "product not found",
@@ -83,7 +83,6 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 
 		instr.Inputs = append(instr.Inputs, File{
 			FileName: objectName,
-			Type:     "request",
 			Size:     int64(len(b)),
 		})
 	}

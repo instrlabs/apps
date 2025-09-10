@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 )
 
@@ -16,27 +17,30 @@ type Product struct {
 	Price int64  `json:"price"`
 }
 
-type productResponse struct {
+type apiResponse struct {
 	Message string          `json:"message"`
 	Errors  interface{}     `json:"errors"`
 	Data    json.RawMessage `json:"data"`
 }
 
-type ProductService struct {
+type PaymentService struct {
 	baseURL    string
 	httpClient *http.Client
 }
 
-func NewProductService(cfg *Config) *ProductService {
-	return &ProductService{
-		baseURL:    cfg.ProductServiceURL,
+func NewPaymentService(cfg *Config) *PaymentService {
+	return &PaymentService{
+		baseURL:    cfg.PaymentServiceURL,
 		httpClient: &http.Client{Timeout: 5 * time.Second},
 	}
 }
 
-func (s *ProductService) GetProduct(id string) *Product {
+func (s *PaymentService) GetProduct(c *fiber.Ctx, id string) *Product {
 	url := fmt.Sprintf("%s/products/%s", s.baseURL, id)
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	req.Header.Set("X-Authenticated", "true")
+	req.Header.Set("X-User-Id", c.Locals("UserID").(string))
+	req.Header.Set("X-User-Roles", c.Locals("Roles").(string))
 	resp, _ := s.httpClient.Do(req)
 	defer resp.Body.Close()
 
@@ -49,7 +53,7 @@ func (s *ProductService) GetProduct(id string) *Product {
 		return nil
 	}
 
-	var envelope productResponse
+	var envelope apiResponse
 	if err := json.NewDecoder(resp.Body).Decode(&envelope); err != nil {
 		log.Errorf("Failed to decode response: %v", err)
 		return nil

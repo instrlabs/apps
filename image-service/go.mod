@@ -2,14 +2,10 @@ module github.com/arthadede/image-service
 
 go 1.24.4
 
-replace github.com/histweety-labs/shared => ../shared
-
 require (
 	github.com/gofiber/fiber/v2 v2.52.9
-	github.com/histweety-labs/shared v0.0.0-00010101000000-000000000000
+	github.com/histweety-labs/shared v0.0.0-20250909154448-0d8b369cc5d0
 	github.com/joho/godotenv v1.5.1
-	github.com/minio/minio-go/v7 v7.0.95
-	github.com/nats-io/nats.go v1.45.0
 	go.mongodb.org/mongo-driver v1.17.4
 )
 
@@ -27,7 +23,9 @@ require (
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/minio/crc64nvme v1.1.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
+	github.com/minio/minio-go/v7 v7.0.95 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
+	github.com/nats-io/nats.go v1.45.0 // indirect
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect

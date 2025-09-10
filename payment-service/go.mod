@@ -2,12 +2,10 @@ module github.com/arthadede/payment-service
 
 go 1.24.4
 
-replace github.com/histweety-labs/shared => ../shared
-
 require (
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/google/uuid v1.6.0
-	github.com/histweety-labs/shared v0.0.0-00010101000000-000000000000
+	github.com/histweety-labs/shared v0.0.0-20250909154448-0d8b369cc5d0
 	github.com/joho/godotenv v1.5.1
 	github.com/midtrans/midtrans-go v1.3.8
 	go.mongodb.org/mongo-driver v1.17.4

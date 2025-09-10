@@ -36,9 +36,9 @@ func main() {
 
 	instrRepo := internal.NewInstructionRepository(mongo)
 
-	productSvc := internal.NewProductService(cfg)
+	paymentSvc := internal.NewPaymentService(cfg)
 
-	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, productSvc)
+	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, paymentSvc)
 
 	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
 	app.Patch("/instructions/:id/status", instrHandler.UpdateInstructionStatus)
