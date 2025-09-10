@@ -34,15 +34,16 @@ func main() {
 	initx.SetupServiceHealth(app)
 	initx.SetupAuthenticated(app, []string{})
 
-	fileRepo := internal.NewFileRepository(mongo)
 	instrRepo := internal.NewInstructionRepository(mongo)
-	productSvc := internal.NewProductService()
-	instructionHandler := internal.NewInstructionHandler(s3Service, fileRepo, instrRepo, productSvc, natsSvc)
 
-	app.Get("/instructions/:id", instructionHandler.GetInstructionByID)
-	app.Patch("/instructions/:id/status", instructionHandler.UpdateInstructionStatus)
+	productSvc := internal.NewProductService(cfg)
 
-	app.Post("/compress", instructionHandler.ImageCompress)
+	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, productSvc)
+
+	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
+	app.Patch("/instructions/:id/status", instrHandler.UpdateInstructionStatus)
+
+	app.Post("/compress", instrHandler.ImageCompress)
 
 	log.Fatal(app.Listen(cfg.Port))
 }

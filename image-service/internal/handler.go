@@ -1,30 +1,33 @@
 package internal
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"mime/multipart"
+	"path/filepath"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	initx "github.com/histweety-labs/shared/init"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type InstructionHandler struct {
-	s3          *S3Service
-	fileRepo    *FileRepository
+	cfg         *Config
+	s3          *initx.S3
+	nats        *initx.Nats
 	instrRepo   *InstructionRepository
 	productServ *ProductService
-	nats        *NatsService
 }
 
 func NewInstructionHandler(
-	s3 *S3Service,
-	fileRepo *FileRepository,
+	cfg *Config,
+	s3 *initx.S3,
+	nats *initx.Nats,
 	instrRepo *InstructionRepository,
-	productServ *ProductService,
-	nats *NatsService) *InstructionHandler {
-	return &InstructionHandler{s3: s3, fileRepo: fileRepo, instrRepo: instrRepo, productServ: productServ, nats: nats}
+	productServ *ProductService) *InstructionHandler {
+	return &InstructionHandler{cfg: cfg, s3: s3, nats: nats, instrRepo: instrRepo, productServ: productServ}
 }
 
 func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
@@ -42,14 +45,17 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 	productID, _ := primitive.ObjectIDFromHex(product.ID)
 	instructionID := primitive.NewObjectID()
 
-	_ = h.instrRepo.Create(&Instruction{
+	// We'll upload files to S3 first, then create the instruction once uploads succeed
+	instr := &Instruction{
 		ID:        instructionID,
 		UserID:    userID,
 		ProductID: productID,
 		Status:    InstructionStatusPending,
+		Inputs:    []File{},
+		Outputs:   []File{},
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
-	})
+	}
 
 	var headers []*multipart.FileHeader
 	form, err := c.MultipartForm()
@@ -62,7 +68,13 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 	}
 
 	for idx, fh := range headers {
-		if err := h.s3.Upload(fh, fmt.Sprintf("%s-%d", instructionID.Hex(), idx)); err != nil {
+		f, _ := fh.Open()
+		b, _ := io.ReadAll(f)
+		f.Close()
+
+		ext := filepath.Ext(fh.Filename)
+		objectName := fmt.Sprintf("images/%s-%d%s", instructionID.Hex(), idx, ext)
+		if err := h.s3.Put(objectName, b); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "upload failed",
 				"errors":  nil,
@@ -70,16 +82,29 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 			})
 		}
 
-		if h.fileRepo != nil {
-			_, _ = h.fileRepo.Create(&File{
-				InstructionID: instructionID,
-				Type:          FileTypeRequest,
-				CreatedAt:     time.Now().UTC(),
-			})
-		}
+		instr.Inputs = append(instr.Inputs, File{
+			FileName: objectName,
+			Type:     "request",
+			Size:     int64(len(b)),
+		})
+	}
+	// After successful uploads, persist the instruction with collected inputs
+	if err := h.instrRepo.Create(instr); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "failed to create instruction",
+			"errors":  nil,
+			"data":    nil,
+		})
 	}
 
-	_ = h.nats.PublishJobRequest(instructionID.Hex(), userID.Hex())
+	// Publish job request
+	payload := map[string]string{
+		"id":     instructionID.Hex(),
+		"userId": userID.Hex(),
+	}
+	if data, err := json.Marshal(payload); err == nil && h.nats != nil && h.nats.Conn != nil {
+		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectRequests, data)
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "upload accepted",
@@ -118,7 +143,7 @@ func (h *InstructionHandler) UpdateInstructionStatus(c *fiber.Ctx) error {
 	default:
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid status", "errors": nil, "data": nil})
 	}
-	if err := h.instrRepo.UpdateStatus(context.Background(), id, body.Status); err != nil {
+	if err := h.instrRepo.UpdateStatus(id, body.Status); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to update status", "errors": err.Error(), "data": nil})
 	}
 	instr := h.instrRepo.GetByID(id)

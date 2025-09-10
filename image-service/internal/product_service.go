@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v2/log"
@@ -28,10 +27,9 @@ type ProductService struct {
 	httpClient *http.Client
 }
 
-func NewProductService() *ProductService {
-	base := os.Getenv("PAYMENT_SERVICE_URL")
+func NewProductService(cfg *Config) *ProductService {
 	return &ProductService{
-		baseURL:    base,
+		baseURL:    cfg.ProductServiceURL,
 		httpClient: &http.Client{Timeout: 5 * time.Second},
 	}
 }

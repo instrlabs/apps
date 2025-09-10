@@ -15,10 +15,19 @@ const (
 	InstructionStatusFailed     InstructionStatus = "FAILED"
 )
 
+type File struct {
+	ID       string `json:"id" bson:"_id,omitempty"`
+	FileName string `json:"file_name" bson:"file_name"`
+	Type     string `json:"type" bson:"type"`
+	Size     int64  `json:"size" bson:"size"`
+}
+
 type Instruction struct {
 	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	UserID    primitive.ObjectID `json:"user_id" bson:"user_id"`
 	ProductID primitive.ObjectID `json:"product_id" bson:"product_id"`
+	Inputs    []File             `json:"inputs" bson:"inputs"`
+	Outputs   []File             `json:"outputs" bson:"outputs"`
 	Status    InstructionStatus  `json:"status" bson:"status"`
 	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
