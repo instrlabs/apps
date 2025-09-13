@@ -13,7 +13,6 @@ FROM alpine:latest AS release
 WORKDIR /app
 
 COPY --from=build /go/src/notification-service/app .
-COPY --from=build /go/src/notification-service/static ./static
 
 RUN apk -U upgrade \
     && apk add --no-cache dumb-init ca-certificates \

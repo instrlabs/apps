@@ -21,12 +21,10 @@ func main() {
 
 	app := fiber.New(fiber.Config{})
 	initx.SetupLogger(app)
-	initx.SetupServiceSwagger(app)
 	initx.SetupServiceHealth(app)
-	initx.SetupAuthenticated(app, []string{})
+	internal.SetupMiddleware(app)
 
-	app.Get("/notifications", sseService.HandleSSE)
-	app.Post("/notifications/test", sseService.SendTestNotification)
+	app.Get("/sse", sseService.HandleSSE)
 
 	go func() {
 		log.Printf("Starting notification service on %s", cfg.Port)

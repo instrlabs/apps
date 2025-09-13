@@ -32,16 +32,16 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 		return c.JSON(health)
 	})
 
-	for _, service := range config.Services {
-		prefix := service.Prefix
-		targetURL, _ := url.Parse(service.URL)
+	for _, srv := range config.Services {
+		prefix := srv.Prefix
+		targetURL, _ := url.Parse(srv.URL)
 
 		app.All(prefix+"/*", func(c *fiber.Ctx) error {
 			forwardPath := c.Path()[len(prefix):]
 			queryString := string(c.Request().URI().QueryString())
 
 			log.WithFields(log.Fields{
-				"service":      service.Name,
+				"service":      srv.Name,
 				"method":       c.Method(),
 				"path":         forwardPath,
 				"query":        queryString,
@@ -55,7 +55,7 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 
 			if err := proxy.DoTimeout(c, parsedUrl, 30*time.Second); err != nil {
 				log.WithFields(log.Fields{
-					"service": service.Name,
+					"service": srv.Name,
 					"method":  c.Method(),
 					"path":    forwardPath,
 					"error":   err.Error(),
@@ -63,7 +63,7 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 
 				return c.Status(fiber.StatusBadGateway).JSON(map[string]string{
 					"error":   "Bad Gateway",
-					"message": "The service is currently unavailable",
+					"message": "The srv is currently unavailable",
 				})
 			}
 
@@ -71,9 +71,9 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 		})
 
 		log.WithFields(log.Fields{
-			"service": service.Name,
+			"service": srv.Name,
 			"prefix":  prefix,
-			"target":  service.URL,
+			"target":  srv.URL,
 		}).Info("Registered route")
 	}
 

@@ -2,7 +2,6 @@ package internal
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
@@ -61,8 +60,8 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 	ctx := c.Context()
 
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
-		fmt.Fprintf(w, "event: connected\ndata: %s\n\n", `{"connected": true}`)
-		w.Flush()
+		_, _ = fmt.Fprintf(w, "event: connected\ndata: %s\n\n", `{"connected": true}`)
+		_ = w.Flush()
 
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
@@ -86,63 +85,14 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 				log.Printf("SSE client disconnected for user %s. Total clients: %d", userId, len(s.clients))
 				return
 			case msg := <-client.connection:
-				fmt.Fprintf(w, "event: message\ndata: %s\n\n", msg)
-				w.Flush()
+				_, _ = fmt.Fprintf(w, "event: message\ndata: %s\n\n", msg)
+				_ = w.Flush()
 			case <-ticker.C:
-				fmt.Fprintf(w, ": keepalive %v\n\n", time.Now())
-				w.Flush()
+				_, _ = fmt.Fprintf(w, "event: ping\ndata:  %v\n\n", time.Now())
+				_ = w.Flush()
 			}
 		}
 	})
 
 	return nil
-}
-
-// SendTestNotification handles posting a test notification to a specific user or broadcasting to all.
-func (s *SSEService) SendTestNotification(c *fiber.Ctx) error {
-	type reqBody struct {
-		UserID  string `json:"userId"`
-		Message string `json:"message"`
-	}
-	var body reqBody
-	if err := c.BodyParser(&body); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
-	}
-	if body.Message == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "message is required"})
-	}
-
-	payload := map[string]any{
-		"message":   body.Message,
-		"timestamp": time.Now().UTC().Format(time.RFC3339Nano),
-	}
-	bytes, _ := json.Marshal(payload)
-
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	if body.UserID != "" {
-		client, ok := s.clients[body.UserID]
-		if !ok {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not connected"})
-		}
-		select {
-		case client.connection <- bytes:
-			return c.JSON(fiber.Map{"status": "sent", "userId": body.UserID})
-		default:
-			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"error": "client channel blocked"})
-		}
-	}
-
-	// Broadcast to all clients
-	count := 0
-	for _, client := range s.clients {
-		select {
-		case client.connection <- bytes:
-			count++
-		default:
-			// skip blocked clients
-		}
-	}
-	return c.JSON(fiber.Map{"status": "broadcast", "delivered": count})
 }
