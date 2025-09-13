@@ -62,10 +62,11 @@ services:
   notification-service:
     build:
       context: ./notification-service
+      dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
       - ./notification-service/.env
-    command: ["./notification-service"]
+    command: ["./app"]
 
   gateway-service:
     build:

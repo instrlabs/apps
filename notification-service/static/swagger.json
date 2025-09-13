@@ -1,0 +1,137 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Notification Service API",
+    "version": "1.0.0",
+    "description": "Notification service API documentation"
+  },
+  "servers": [
+    { "url": "http://localhost:3000/notification", "description": "Local" }
+  ],
+  "components": {
+    "schemas": {
+      "TestNotificationRequest": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string", "description": "Optional. Target a specific connected user. If omitted, broadcast to all." },
+          "message": { "type": "string", "description": "Message to deliver", "minLength": 1 }
+        },
+        "required": ["message"]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "summary": "Subscribe to notifications (SSE)",
+        "description": "Opens a long-lived HTTP connection that streams Server-Sent Events for the authenticated user.",
+        "tags": ["notifications"],
+        "responses": {
+          "200": {
+            "description": "SSE stream. Events include 'connected', periodic keepalive comments, and 'message' events.",
+            "headers": {
+              "Content-Type": {
+                "description": "MIME type for Server-Sent Events stream",
+                "schema": { "type": "string", "example": "text/event-stream" }
+              },
+              "Cache-Control": {
+                "description": "Disable caching for SSE stream",
+                "schema": { "type": "string", "example": "no-cache" }
+              },
+              "Connection": {
+                "description": "Keep the HTTP connection alive for SSE",
+                "schema": { "type": "string", "example": "keep-alive" }
+              },
+              "Access-Control-Allow-Origin": {
+                "description": "CORS header allowing any origin (adjust for production)",
+                "schema": { "type": "string", "example": "*" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/notifications/test": {
+      "post": {
+        "summary": "Send a test notification",
+        "description": "Sends a test notification. If userId is provided, sends to that user if connected; otherwise broadcasts to all.",
+        "tags": ["notifications"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TestNotificationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Notification dispatch result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "example": "sent" },
+                        "userId": { "type": "string" }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "example": "broadcast" },
+                        "delivered": { "type": "integer", "minimum": 0 }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body (e.g., missing message)",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "404": {
+            "description": "Target user not connected",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "503": {
+            "description": "Client channel blocked",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    }
+  }
+}

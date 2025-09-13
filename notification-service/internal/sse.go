@@ -33,10 +33,10 @@ func NewSSEService(cfg *Config) *SSEService {
 
 func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 	userId := c.Locals("UserID").(string)
-	//c.Set("Content-Type", "text/event-stream")
-	//c.Set("Cache-Control", "no-cache")
-	//c.Set("Connection", "keep-alive")
-	//c.Set("Access-Control-Allow-Origin", "*")
+	c.Set("Content-Type", "text/event-stream")
+	c.Set("Cache-Control", "no-cache")
+	c.Set("Connection", "keep-alive")
+	c.Set("Access-Control-Allow-Origin", "*")
 
 	messageChan := make(chan []byte)
 	doneChan := make(chan bool)

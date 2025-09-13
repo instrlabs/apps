@@ -1,29 +1,24 @@
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24 AS build
 
-WORKDIR /app
+WORKDIR /go/src/notification-service
 
-# Copy go.mod and go.sum files
-COPY go.mod ./
-
-# Download dependencies
-RUN go mod download
-
-# Copy the source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o notification-service .
+RUN go mod download
 
-# Use a minimal alpine image for the final image
-FROM alpine:latest
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o app .
+
+FROM alpine:latest AS release
 
 WORKDIR /app
 
-# Copy the binary from the builder stage
-COPY --from=builder /app/notification-service .
+COPY --from=build /go/src/notification-service/app .
+COPY --from=build /go/src/notification-service/static ./static
 
-# Expose the port the service runs on
-EXPOSE 3030
+RUN apk -U upgrade \
+    && apk add --no-cache dumb-init ca-certificates \
+    && chmod +x /app/app
 
-# Run the service
-CMD ["./notification-service"]
+EXPOSE 3000
+
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
