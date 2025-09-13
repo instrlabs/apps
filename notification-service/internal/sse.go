@@ -1,13 +1,14 @@
 package internal
 
 import (
-	"context"
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"sync"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type SSEClient struct {
@@ -30,25 +31,12 @@ func NewSSEService(cfg *Config) *SSEService {
 	}
 }
 
-func (s *SSEService) HandleSSE(w http.ResponseWriter, r *http.Request) {
-	token := r.URL.Query().Get("token")
-	if token == "" {
-		log.Printf("SSE connection attempt without token")
-		http.Error(w, "Authentication token required", http.StatusUnauthorized)
-		return
-	}
-
-	userId := extractUserIdFromToken(token)
-	if userId == "" {
-		log.Printf("Invalid token provided: %s", token)
-		http.Error(w, "Invalid authentication token", http.StatusUnauthorized)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
+	userId := c.Locals("UserID").(string)
+	//c.Set("Content-Type", "text/event-stream")
+	//c.Set("Cache-Control", "no-cache")
+	//c.Set("Connection", "keep-alive")
+	//c.Set("Access-Control-Allow-Origin", "*")
 
 	messageChan := make(chan []byte)
 	doneChan := make(chan bool)
@@ -61,7 +49,6 @@ func (s *SSEService) HandleSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.mutex.Lock()
-
 	if existingClient, exists := s.clients[userId]; exists {
 		log.Printf("Closing existing connection for user %s", userId)
 		existingClient.done <- true
@@ -71,95 +58,91 @@ func (s *SSEService) HandleSSE(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("New SSE client connected for user %s. Total clients: %d", userId, len(s.clients))
 
-	ctx := r.Context()
+	ctx := c.Context()
 
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		log.Printf("ResponseWriter does not implement http.Flusher")
-		http.Error(w, "SSE not supported", http.StatusInternalServerError)
-		return
-	}
-	flusher.Flush()
+	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
+		fmt.Fprintf(w, "event: connected\ndata: %s\n\n", `{"connected": true}`)
+		w.Flush()
 
-	fmt.Fprintf(w, "event: connected\ndata: {\"connected\": true}\n\n")
-	flusher.Flush()
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
 
-	go func() {
-		select {
-		case <-ctx.Done():
-			s.mutex.Lock()
-			if s.clients[userId] == client {
-				delete(s.clients, userId)
+		for {
+			select {
+			case <-client.done:
+				s.mutex.Lock()
+				if s.clients[userId] == client {
+					delete(s.clients, userId)
+				}
+				s.mutex.Unlock()
+				return
+			case <-ctx.Done():
+				s.mutex.Lock()
+				if s.clients[userId] == client {
+					delete(s.clients, userId)
+				}
+				s.mutex.Unlock()
+				client.done <- true
+				log.Printf("SSE client disconnected for user %s. Total clients: %d", userId, len(s.clients))
+				return
+			case msg := <-client.connection:
+				fmt.Fprintf(w, "event: message\ndata: %s\n\n", msg)
+				w.Flush()
+			case <-ticker.C:
+				fmt.Fprintf(w, ": keepalive %v\n\n", time.Now())
+				w.Flush()
 			}
-			s.mutex.Unlock()
-			client.done <- true
-			log.Printf("SSE client disconnected for user %s. Total clients: %d", userId, len(s.clients))
-		case <-client.done:
 		}
-	}()
+	})
 
-	ticker := time.NewTicker(30 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-client.done:
-			return
-		case <-ctx.Done():
-			return
-		case msg := <-client.connection:
-			fmt.Fprintf(w, "event: message\ndata: %s\n\n", msg)
-			flusher.Flush()
-		case <-ticker.C:
-			fmt.Fprintf(w, ": keepalive %v\n\n", time.Now())
-			flusher.Flush()
-		}
-	}
+	return nil
 }
 
-func (s *SSEService) BroadcastNotification(ctx context.Context, notification *JobNotificationMessage) error {
-	msgBytes, err := json.Marshal(notification)
-	if err != nil {
-		return err
+// SendTestNotification handles posting a test notification to a specific user or broadcasting to all.
+func (s *SSEService) SendTestNotification(c *fiber.Ctx) error {
+	type reqBody struct {
+		UserID  string `json:"userId"`
+		Message string `json:"message"`
 	}
+	var body reqBody
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
+	}
+	if body.Message == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "message is required"})
+	}
+
+	payload := map[string]any{
+		"message":   body.Message,
+		"timestamp": time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	bytes, _ := json.Marshal(payload)
 
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	if notification.UserID != "" {
-		if client, exists := s.clients[notification.UserID]; exists {
-			select {
-			case client.connection <- msgBytes:
-				log.Printf("Sent notification to user %s", notification.UserID)
-			default:
-				log.Printf("Failed to send notification to user %s: channel full", notification.UserID)
-				client.done <- true
-				delete(s.clients, notification.UserID)
-				return fmt.Errorf("client channel full")
-			}
-		} else {
-			log.Printf("User %s not connected, notification not delivered", notification.UserID)
+	if body.UserID != "" {
+		client, ok := s.clients[body.UserID]
+		if !ok {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not connected"})
 		}
-
-		return nil
-	}
-
-	sentCount := 0
-	for userId, client := range s.clients {
 		select {
-		case client.connection <- msgBytes:
-			sentCount++
+		case client.connection <- bytes:
+			return c.JSON(fiber.Map{"status": "sent", "userId": body.UserID})
 		default:
-			log.Printf("Failed to send message to user %s: channel full", userId)
-			client.done <- true
-			delete(s.clients, userId)
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"error": "client channel blocked"})
 		}
 	}
 
-	log.Printf("Broadcasted notification to %d clients", sentCount)
-	return nil
-}
-
-func extractUserIdFromToken(token string) string {
-	return token
+	// Broadcast to all clients
+	count := 0
+	for _, client := range s.clients {
+		select {
+		case client.connection <- bytes:
+			count++
+		default:
+			// skip blocked clients
+		}
+	}
+	return c.JSON(fiber.Map{"status": "broadcast", "delivered": count})
 }

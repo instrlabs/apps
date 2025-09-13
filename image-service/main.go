@@ -40,7 +40,9 @@ func main() {
 
 	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, paymentSvc)
 
+	app.Get("/instructions", instrHandler.ListInstructions)
 	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
+	app.Get("/instructions/:id/:file_name", instrHandler.GetInstructionFile)
 	app.Patch("/instructions/:id/status", instrHandler.UpdateInstructionStatus)
 	app.Patch("/instructions/:id/outputs", instrHandler.UpdateInstructionOutputs)
 

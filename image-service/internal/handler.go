@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"mime/multipart"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -83,8 +85,8 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 		f.Close()
 
 		ext := filepath.Ext(fh.Filename)
-		objectName := fmt.Sprintf("images/%s-%d%s", instructionID.Hex(), idx, ext)
-		if err := h.s3.Put(objectName, b); err != nil {
+		objectName := fmt.Sprintf("%s-%d%s", instructionID.Hex(), idx, ext)
+		if err := h.s3.Put("images/"+objectName, b); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "upload failed",
 				"errors":  nil,
@@ -117,6 +119,13 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 		"errors":  nil,
 		"data":    fiber.Map{"instruction_id": instructionID},
 	})
+}
+
+func (h *InstructionHandler) ListInstructions(c *fiber.Ctx) error {
+	localUserID, _ := c.Locals("UserID").(string)
+	userID, _ := primitive.ObjectIDFromHex(localUserID)
+	list := h.instrRepo.ListByUser(userID)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "ok", "errors": nil, "data": list})
 }
 
 func (h *InstructionHandler) GetInstructionByID(c *fiber.Ctx) error {
@@ -178,4 +187,90 @@ func (h *InstructionHandler) UpdateInstructionOutputs(c *fiber.Ctx) error {
 	}
 	instr := h.instrRepo.GetByID(id)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "outputs updated", "errors": nil, "data": instr})
+}
+
+// GetInstructionFile streams a specific file for an instruction if owned by the user
+func (h *InstructionHandler) GetInstructionFile(c *fiber.Ctx) error {
+	idHex := c.Params("id")
+	fileName := c.Params("file_name")
+	if idHex == "" || fileName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "id and file_name required", "errors": nil, "data": nil})
+	}
+
+	id, err := primitive.ObjectIDFromHex(idHex)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid id", "errors": nil, "data": nil})
+	}
+
+	instr := h.instrRepo.GetByID(id)
+	if instr == nil || instr.ID.IsZero() {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "instruction not found", "errors": nil, "data": nil})
+	}
+
+	localUserID, _ := c.Locals("UserID").(string)
+	userID, _ := primitive.ObjectIDFromHex(localUserID)
+	if instr.UserID != userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden", "errors": nil, "data": nil})
+	}
+
+	found := false
+	for _, f := range instr.Inputs {
+		if f.FileName == fileName {
+			found = true
+			break
+		}
+	}
+	if !found {
+		for _, f := range instr.Outputs {
+			if f.FileName == fileName {
+				found = true
+				break
+			}
+		}
+	}
+	if !found {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "file not found in instruction", "errors": nil, "data": nil})
+	}
+
+	// Retrieve from S3
+	b := h.s3.Get("images/" + fileName)
+	if b == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "file not found", "errors": nil, "data": nil})
+	}
+
+	ext := filepath.Ext(fileName)
+	ct := mime.TypeByExtension(ext)
+	c.Set("Content-Type", ct)
+	c.Set("Content-Length", strconv.FormatInt(int64(len(b)), 10))
+	c.Attachment(fileName)
+	return c.Status(fiber.StatusOK).Send(b)
+}
+
+// GetInstructionFiles returns all input and output files for a given instruction if owned by the user
+func (h *InstructionHandler) GetInstructionFiles(c *fiber.Ctx) error {
+	idHex := c.Params("id")
+	id, err := primitive.ObjectIDFromHex(idHex)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid id", "errors": nil, "data": nil})
+	}
+
+	instr := h.instrRepo.GetByID(id)
+	if instr == nil || instr.ID.IsZero() {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "instruction not found", "errors": nil, "data": nil})
+	}
+
+	localUserID, _ := c.Locals("UserID").(string)
+	userID, _ := primitive.ObjectIDFromHex(localUserID)
+	if instr.UserID != userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden", "errors": nil, "data": nil})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "ok",
+		"errors":  nil,
+		"data": fiber.Map{
+			"inputs":  instr.Inputs,
+			"outputs": instr.Outputs,
+		},
+	})
 }
