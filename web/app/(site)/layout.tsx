@@ -8,11 +8,11 @@ import {listProducts} from "@/services/products";
 import {ProductProvider} from "@/hooks/useProduct";
 import OverlayLeft from "@/components/overlay-left";
 import OverlayRight from "@/components/overlay-right";
-import OverlayModal from "@/components/overlay-modal";
 import OverlayTop from "@/components/overlay-top";
 
 import { NotificationProvider, NotificationWidget } from "@/hooks/useNotification";
 import { OverlayProvider } from "@/hooks/useOverlay";
+import { ModalProvider } from "@/hooks/useModal";
 
 export default async function SiteLayout({ children }: Readonly<{
   children: React.ReactNode;
@@ -24,16 +24,17 @@ export default async function SiteLayout({ children }: Readonly<{
     <ProfileProvider data={profileData}>
     <ProductProvider data={productData}>
     <NotificationProvider>
+    <ModalProvider>
     <OverlayProvider defaultLeft="left:navigation">
       <Suspense>
         <OverlayBody>{children}</OverlayBody>
         <OverlayLeft />
         <OverlayRight />
-        <OverlayModal />
         <OverlayTop />
         <NotificationWidget />
       </Suspense>
     </OverlayProvider>
+    </ModalProvider>
     </NotificationProvider>
     </ProductProvider>
     </ProfileProvider>

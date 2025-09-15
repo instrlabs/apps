@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
@@ -23,6 +24,17 @@ type SSEService struct {
 	mutex   sync.Mutex
 }
 
+func (s *SSEService) Broadcast(msg []byte) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	for _, client := range s.clients {
+		select {
+		case client.connection <- msg:
+		default:
+		}
+	}
+}
+
 func NewSSEService(cfg *Config) *SSEService {
 	return &SSEService{
 		cfg:     cfg,
@@ -37,7 +49,7 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 	c.Set("Connection", "keep-alive")
 	c.Set("Access-Control-Allow-Origin", "*")
 
-	messageChan := make(chan []byte)
+	messageChan := make(chan []byte, 16)
 	doneChan := make(chan bool)
 
 	client := &SSEClient{
@@ -60,7 +72,9 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 	ctx := c.Context()
 
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
-		_, _ = fmt.Fprintf(w, "event: connected\ndata: %s\n\n", `{"connected": true}`)
+		info := map[string]interface{}{"connected": true}
+		infoJson, _ := json.Marshal(info)
+		_, _ = fmt.Fprintf(w, "event: connected\ndata: %s\n\n", string(infoJson))
 		_ = w.Flush()
 
 		ticker := time.NewTicker(30 * time.Second)
@@ -85,10 +99,13 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 				log.Printf("SSE client disconnected for user %s. Total clients: %d", userId, len(s.clients))
 				return
 			case msg := <-client.connection:
-				_, _ = fmt.Fprintf(w, "event: message\ndata: %s\n\n", msg)
+				msgJson, _ := json.Marshal(msg)
+				_, _ = fmt.Fprintf(w, "event: message\ndata: %s\n\n", string(msgJson))
 				_ = w.Flush()
 			case <-ticker.C:
-				_, _ = fmt.Fprintf(w, "event: ping\ndata:  %v\n\n", time.Now())
+				info := map[string]interface{}{"time": time.Now()}
+				infoJson, _ := json.Marshal(info)
+				_, _ = fmt.Fprintf(w, "event: ping\ndata: %s\n\n", string(infoJson))
 				_ = w.Flush()
 			}
 		}

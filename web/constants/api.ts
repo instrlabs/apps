@@ -9,4 +9,9 @@ export const APIs = {
   AUTH_CHANGE_PASSWORD: `/auth/change-password`,
 
   PRODUCTS: `/payment/products`,
+
+  // Image service endpoints
+  IMAGE_INSTRUCTIONS: `/image/instructions`,
+  IMAGE_COMPRESS: `/image/compress`,
+  JOBS: `/jobs`,
 };

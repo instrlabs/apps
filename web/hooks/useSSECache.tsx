@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NOTIFICATION_JOBS_URL } from "@/constants/notification";
+// import { NOTIFICATION_JOBS_URL } from "@/constants/notification";
 
 export type SSEEvent = any;
 
@@ -55,8 +55,8 @@ function connectIfNeeded(token: string, store: TokenStore) {
   if (store.eventSource) return;
   if (!token) return;
 
-  const url = `${NOTIFICATION_JOBS_URL}?token=${encodeURIComponent(token)}`;
-  const eventSource = new EventSource(url);
+  const url = `/api/sse/jobs?token=${encodeURIComponent(token)}`;
+  const eventSource = new EventSource(url, { withCredentials: true });
   store.eventSource = eventSource;
 
   eventSource.onopen = () => {

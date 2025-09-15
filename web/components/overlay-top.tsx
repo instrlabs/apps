@@ -12,7 +12,6 @@ import TextField from "@/components/text-field";
 import {useProfile} from "@/hooks/useProfile";
 
 export default function OverlayTop() {
-  const { toggleByKey } = useOverlay();
   const { profile } = useProfile();
 
   return (
@@ -22,7 +21,7 @@ export default function OverlayTop() {
           <ButtonIcon
             xSize="lg"
             xColor="secondary"
-            onClick={() => toggleByKey("left:navigation")}
+            // onClick={() => toggleByKey("left:navigation")}
           >
             <MenuIcon className="w-6 h-6" />
           </ButtonIcon>
@@ -32,14 +31,13 @@ export default function OverlayTop() {
           <div className="relative w-96 max-w-full">
             <label htmlFor="topbar-search" className="sr-only">Search</label>
             <TextField
-              id="topbar-search"
               type="text"
               placeholder="Search..."
               className="pr-10 cursor-pointer"
               xIsRounded
               xSize="md"
-              onFocus={() => toggleByKey("modal:search")}
-              onClick={() => toggleByKey("modal:search")}
+              // onFocus={() => toggleByKey("modal:search")}
+              // onClick={() => toggleByKey("modal:search")}
               readOnly
             />
             <SearchIcon
@@ -52,14 +50,14 @@ export default function OverlayTop() {
           <ButtonIcon
              xSize="lg"
              xColor="secondary"
-             onClick={() => toggleByKey("right:notifications")}
+             // onClick={() => toggleByKey("right:notifications")}
            >
             <BellIcon className="w-6 h-6 text-gray-800" />
           </ButtonIcon>
           <Avatar
             name={profile?.name}
             size="md"
-            onClick={() => toggleByKey("right:profile")}
+            // onClick={() => toggleByKey("right:profile")}
           />
         </div>
       </div>

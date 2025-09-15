@@ -1,7 +1,12 @@
 "use client"
 
-import { useCallback, useMemo, useRef, useState } from "react"
+import {useCallback, useEffect, useMemo, useState} from "react"
 import Button from "@/components/button";
+import { useRouter } from "next/navigation";
+import useModal from "@/hooks/useModal";
+import ImagePreviewOverlay from "@/components/image-preview";
+import FileDropzone from "@/components/shared/file-dropzone";
+import { compressImage } from "@/services/image_instructions";
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return "0 B"
@@ -12,9 +17,29 @@ function formatBytes(bytes: number) {
 }
 
 export default function ImageCompressPage() {
+  const router = useRouter();
+  const { openModal } = useModal();
   const [files, setFiles] = useState<File[]>([])
-  const [isDragging, setIsDragging] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [previews, setPreviews] = useState<Record<string, string>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const next: Record<string, string> = {}
+    const urlsToRevoke: string[] = []
+    for (const f of files) {
+      if (f.type.startsWith("image/")) {
+        const url = URL.createObjectURL(f)
+        next[`${f.name}:${f.size}`] = url
+        urlsToRevoke.push(url)
+      }
+    }
+    setPreviews(next)
+    return () => {
+      for (const url of urlsToRevoke) URL.revokeObjectURL(url)
+    }
+  }, [files])
+
 
   const accept = useMemo(
     () => [
@@ -26,47 +51,6 @@ export default function ImageCompressPage() {
     ].join(","),
     []
   )
-
-  const onFilesAdded = useCallback((newFiles: FileList | File[]) => {
-    const list = Array.from(newFiles)
-    // Filter by accepted types
-    const accepted = list.filter((f) => accept.split(",").includes(f.type))
-    setFiles((prev) => {
-      // Avoid duplicates by name+size
-      const map = new Map(prev.map((f) => [f.name + ":" + f.size, f]))
-      for (const f of accepted) {
-        const key = f.name + ":" + f.size
-        if (!map.has(key)) map.set(key, f)
-      }
-      return Array.from(map.values())
-    })
-  }, [accept])
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (!isDragging) setIsDragging(true)
-  }, [isDragging])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-  }, [])
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-      onFilesAdded(e.dataTransfer.files)
-      e.dataTransfer.clearData()
-    }
-  }, [onFilesAdded])
-
-  const openFileDialog = useCallback(() => {
-    inputRef.current?.click()
-  }, [])
 
   const removeFile = useCallback((name: string, size: number) => {
     setFiles((prev) => prev.filter((f) => !(f.name === name && f.size === size)))
@@ -81,69 +65,95 @@ export default function ImageCompressPage() {
 
       <div className="w-full mt-8 flex flex-col items-center">
         {files.length === 0 && (
-          <div
-            role="button"
-            tabIndex={0}
-            aria-label="Upload files by dragging and dropping or by browsing"
-            onClick={openFileDialog}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                openFileDialog();
-              }
-            }}
-            onDragOver={handleDragOver}
-            onDragEnter={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={
-              `w-full max-w-2xl aspect-video flex flex-col items-center justify-center gap-3 ` +
-              `border-1 border-dashed rounded-xl p-10 cursor-pointer `
-            }
-          >
-            <div className="text-center">
-              <p className="text-base font-light">Maximum file size: 50mb</p>
-              <p className="text-base font-light">Supports .PNG, .JPG, .WEBP, .GIF</p>
-            </div>
-            <input
-              ref={inputRef}
-              type="file"
-              accept={accept}
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files) onFilesAdded(e.target.files)
-                e.currentTarget.value = ""
-              }}
-            />
-          </div>
+          <FileDropzone
+            accept={accept}
+            onFilesAdded={setFiles}
+            allowMultiple={true}
+          />
         )}
 
         {files.length > 0 && (
           <div className="w-full max-w-2xl space-y-4">
-            {files.map((f) => (
-              <div key={f.name + f.size} className="w-full flex items-center justify-between border border-dashed rounded-xl p-4">
-                <div className="min-w-0 space-y-1">
-                  <p className="truncate font-medium">{f.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {f.type.split("/")[1].toUpperCase()} • {formatBytes(f.size)}
-                  </p>
+            {files.map((f) => {
+              const key = f.name + ":" + f.size
+              const preview = previews[key]
+              return (
+                <div key={key} className="w-full flex items-center justify-between border border-border border-dashed rounded-xl p-4 gap-4">
+                  {preview ? (
+                    <img
+                      src={preview}
+                      alt={f.name}
+                      className="h-16 w-16 rounded object-contain flex-shrink-0 border cursor-zoom-in bg-white"
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (preview) {
+                          openModal(<ImagePreviewOverlay src={preview} />);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          if (preview) {
+                            openModal(<ImagePreviewOverlay src={preview} />);
+                          }
+                        }
+                      }}
+                      aria-label={`Preview ${f.name}`}
+                    />
+                  ) : (
+                    <div className="h-16 w-16 rounded bg-gray-100 text-gray-400 flex items-center justify-center flex-shrink-0 border">
+                      {f.type.split("/")[1]?.toUpperCase() || "FILE"}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <p className="truncate font-medium">{f.name}</p>
+                    <p className="text-sm text-gray-500">
+                      {f.type.split("/")[1].toUpperCase()} • {formatBytes(f.size)}
+                    </p>
+                  </div>
+                  <button
+                    className="text-sm text-red-600 hover:text-red-700"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      removeFile(f.name, f.size)
+                    }}
+                    aria-label={`Remove ${f.name}`}
+                  >
+                    Remove
+                  </button>
                 </div>
-                <button
-                  className="text-sm text-red-600 hover:text-red-700"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    removeFile(f.name, f.size)
-                  }}
-                  aria-label={`Remove ${f.name}`}
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
-        <Button>PROCEED</Button>
+        {error && (
+          <div className="text-sm text-red-600 mb-3">{error}</div>
+        )}
+        <Button
+          disabled={files.length === 0 || submitting}
+          onClick={async () => {
+            if (files.length === 0 || submitting) return;
+            setError(null);
+            setSubmitting(true);
+            try {
+              const res = await compressImage(files);
+              if (res.success) {
+                router.push("/histories");
+              } else {
+                setError(res.message || "Failed to start compression.");
+              }
+            } catch (e) {
+              setError("Unexpected error. Please try again.");
+            } finally {
+              setSubmitting(false);
+            }
+          }}
+          >
+          {submitting ? "Starting..." : "PROCEED"}
+        </Button>
       </div>
     </div>
   )

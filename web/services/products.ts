@@ -30,14 +30,6 @@ export type Product = {
   updatedAt?: string;
 };
 
-// export async function createProduct(input: Product): Promise<ApiResponse<Product>> {
-//   const endpoint = APIs.PRODUCTS;
-//   return callProducts<Product>(endpoint, {
-//     method: "POST",
-//     body: JSON.stringify(input),
-//     withAuth: true,
-//   });
-// }
 
 export async function listProducts(): Promise<ApiResponse<Product[]>> {
   const baseUrl = process.env.API_URL;

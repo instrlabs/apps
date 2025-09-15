@@ -3,7 +3,6 @@ package internal
 import (
 	"errors"
 	"os"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -29,9 +28,8 @@ func SetupMiddleware(app *fiber.App) {
 
 		if token != "" {
 			if info, err := ExtractTokenInfo(token); err == nil {
-				c.Request().Header.Set("X-Authenticated", "true")
-				c.Request().Header.Set("X-User-Id", info.UserID)
-				c.Request().Header.Set("X-User-Roles", strings.Join(info.Roles, ","))
+				c.Locals("UserID", info.UserID)
+				c.Locals("Roles", info.Roles)
 			} else {
 				if errors.Is(err, ErrTokenExpired) {
 					return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
