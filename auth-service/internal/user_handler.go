@@ -403,7 +403,7 @@ func (h *UserHandler) ForgotPassword(c *fiber.Ctx) error {
 		})
 	}
 	resetToken := base64.URLEncoding.EncodeToString(b)
-	expiry := time.Now().Add(time.Hour * time.Duration(h.config.ResetTokenExpiryHours))
+	expiry := time.Now().UTC().Add(time.Hour * time.Duration(h.config.ResetTokenExpiryHours))
 	if err := h.userRepo.SetResetToken(input.Email, resetToken, expiry); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,

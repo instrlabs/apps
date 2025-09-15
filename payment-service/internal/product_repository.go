@@ -27,8 +27,8 @@ func (r *ProductRepository) Create(p *Product) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	p.CreatedAt = time.Now()
-	p.UpdatedAt = time.Now()
+	p.CreatedAt = time.Now().UTC()
+	p.UpdatedAt = time.Now().UTC()
 
 	_, err := r.collection.InsertOne(ctx, p)
 	return err
@@ -83,7 +83,7 @@ func (r *ProductRepository) Update(id string, updateFields bson.M) error {
 	if updateFields == nil {
 		updateFields = bson.M{}
 	}
-	updateFields["updatedAt"] = time.Now()
+	updateFields["updatedAt"] = time.Now().UTC()
 
 	update := bson.M{"$set": updateFields}
 	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)

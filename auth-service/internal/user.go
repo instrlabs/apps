@@ -28,7 +28,7 @@ func NewUser(name, email, password string) (*User, error) {
 		return nil, err
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	return &User{
 		Name:      name,
 		Email:     email,
@@ -40,7 +40,7 @@ func NewUser(name, email, password string) (*User, error) {
 
 // NewGoogleUser creates a new user from a Google profile
 func NewGoogleUser(name, email, googleID string) *User {
-	now := time.Now()
+	now := time.Now().UTC()
 	return &User{
 		Name:      name,
 		Email:     email,

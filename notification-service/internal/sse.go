@@ -47,7 +47,7 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 	c.Set("Content-Type", "text/event-stream")
 	c.Set("Cache-Control", "no-cache")
 	c.Set("Connection", "keep-alive")
-	c.Set("Access-Control-Allow-Origin", "*")
+	c.Set("Access-Control-Allow-Origin", "http://localhost:8000")
 
 	messageChan := make(chan []byte, 16)
 	doneChan := make(chan bool)
@@ -56,7 +56,7 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 		userId:      userId,
 		connection:  messageChan,
 		done:        doneChan,
-		connectedAt: time.Now(),
+		connectedAt: time.Now().UTC(),
 	}
 
 	s.mutex.Lock()
@@ -103,7 +103,7 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 				_, _ = fmt.Fprintf(w, "event: message\ndata: %s\n\n", string(msgJson))
 				_ = w.Flush()
 			case <-ticker.C:
-				info := map[string]interface{}{"time": time.Now()}
+				info := map[string]interface{}{"time": time.Now().UTC()}
 				infoJson, _ := json.Marshal(info)
 				_, _ = fmt.Fprintf(w, "event: ping\ndata: %s\n\n", string(infoJson))
 				_ = w.Flush()

@@ -50,7 +50,7 @@ func ExtractTokenInfo(tokenString string) (*TokenInfo, error) {
 	roles := extractRoles(claims["roles"])
 
 	if t, err := claims.GetExpirationTime(); err == nil && t != nil {
-		if time.Now().After(t.Time) {
+		if time.Now().UTC().After(t.Time) {
 			return nil, ErrTokenExpired
 		}
 	}

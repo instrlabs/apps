@@ -188,20 +188,3 @@ export async function fetchPOSTFormData<T>(
     errors: !isOK ? resBody.errors : null,
   };
 }
-
-export async function fetchEventStream(
-  path: string
-): Promise<Response> {
-  const url = "http://localhost:3001" + path;
-
-  return await fetch(url, {
-    method: "GET",
-    headers: {
-      Accept: "text/event-stream",
-      Connection: "keep-alive",
-      "Cache-Control": "no-cache",
-      "Cookie": (await cookies()).toString(),
-    },
-    cache: "no-store"
-  });
-}

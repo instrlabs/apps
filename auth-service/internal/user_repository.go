@@ -108,7 +108,7 @@ func (r *UserRepository) UpdateRefreshToken(userID string, refreshToken string) 
 	update := bson.M{
 		"$set": bson.M{
 			"refresh_token": refreshToken,
-			"updated_at":    time.Now(),
+			"updated_at":    time.Now().UTC(),
 		},
 	}
 
@@ -125,7 +125,7 @@ func (r *UserRepository) SetResetToken(email string, resetToken string, expiry t
 		"$set": bson.M{
 			"reset_token":         resetToken,
 			"reset_token_expires": expiry,
-			"updated_at":          time.Now(),
+			"updated_at":          time.Now().UTC(),
 		},
 	}
 
@@ -142,7 +142,7 @@ func (r *UserRepository) FindByResetToken(resetToken string) (*User, error) {
 	err := r.collection.FindOne(ctx, bson.M{
 		"reset_token": resetToken,
 		"reset_token_expires": bson.M{
-			"$gt": time.Now(),
+			"$gt": time.Now().UTC(),
 		},
 	}).Decode(&user)
 
@@ -171,7 +171,7 @@ func (r *UserRepository) UpdatePassword(userID string, hashedPassword string) er
 			"password":            hashedPassword,
 			"reset_token":         "",
 			"reset_token_expires": time.Time{},
-			"updated_at":          time.Now(),
+			"updated_at":          time.Now().UTC(),
 		},
 	}
 
@@ -209,7 +209,7 @@ func (r *UserRepository) UpdateGoogleID(userID string, googleID string) error {
 	update := bson.M{
 		"$set": bson.M{
 			"google_id":  googleID,
-			"updated_at": time.Now(),
+			"updated_at": time.Now().UTC(),
 		},
 	}
 
@@ -230,7 +230,7 @@ func (r *UserRepository) UpdateProfile(userID string, name string) error {
 	update := bson.M{
 		"$set": bson.M{
 			"name":       name,
-			"updated_at": time.Now(),
+			"updated_at": time.Now().UTC(),
 		},
 	}
 
@@ -251,7 +251,7 @@ func (r *UserRepository) ClearRefreshToken(userID string) error {
 	update := bson.M{
 		"$set": bson.M{
 			"refresh_token": "",
-			"updated_at":    time.Now(),
+			"updated_at":    time.Now().UTC(),
 		},
 	}
 

@@ -14,7 +14,7 @@ import (
 func SetupMiddleware(app *fiber.App) {
 	// INBOUND LOG
 	app.Use(func(c *fiber.Ctx) error {
-		start := time.Now()
+		start := time.Now().UTC()
 		err := c.Next()
 		log.WithFields(log.Fields{
 			"method":      c.Method(),

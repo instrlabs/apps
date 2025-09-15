@@ -13,6 +13,7 @@ import OverlayTop from "@/components/overlay-top";
 import { NotificationProvider, NotificationWidget } from "@/hooks/useNotification";
 import { OverlayProvider } from "@/hooks/useOverlay";
 import { ModalProvider } from "@/hooks/useModal";
+import {SSEProvider} from "@/hooks/useSSE";
 
 export default async function SiteLayout({ children }: Readonly<{
   children: React.ReactNode;
@@ -23,6 +24,7 @@ export default async function SiteLayout({ children }: Readonly<{
   return (
     <ProfileProvider data={profileData}>
     <ProductProvider data={productData}>
+    <SSEProvider>
     <NotificationProvider>
     <ModalProvider>
     <OverlayProvider defaultLeft="left:navigation">
@@ -36,6 +38,7 @@ export default async function SiteLayout({ children }: Readonly<{
     </OverlayProvider>
     </ModalProvider>
     </NotificationProvider>
+    </SSEProvider>
     </ProductProvider>
     </ProfileProvider>
   );
