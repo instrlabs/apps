@@ -6,10 +6,10 @@ import { useForm } from "react-hook-form";
 
 import { ROUTES } from "@/constants/routes";
 import useNotification from "@/hooks/useNotification";
-import Button from "@/components/button";
-import TextField from "@/components/text-field";
-import LinkText from "@/components/link-text";
-import { loginUser } from "@/services/auth";
+import Button from "@/components/actions/button";
+import TextField from "@/components/inputs/text-field";
+import LinkText from "@/components/actions/link-text";
+import { loginUser } from "@/services/authentications";
 import { SOMETHING_WENT_WRONG } from "@/constants/errors";
 import type { FieldError } from "@/shared/types";
 

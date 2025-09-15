@@ -3,7 +3,7 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 export type FileDropzoneProps = {
-  accept?: string; // comma-separated accept string, e.g. "image/png,image/jpeg"
+  accept?: string; // comma-separated accept string, e.g. "images/png,images/jpeg"
   onFilesAdded: (files: File[]) => void;
   className?: string;
   children?: React.ReactNode;

@@ -7,9 +7,9 @@ import Avatar from "@/components/avatar";
 import EditIcon from "@/components/icons/edit";
 import LockIcon from "@/components/icons/lock";
 import LogoutIcon from "@/components/icons/logout";
-import MenuButton from "@/components/menu-button";
+import MenuButton from "@/components/actions/menu-button";
 import { useProfile } from "@/hooks/useProfile";
-import { logoutUser } from "@/services/auth";
+import { logoutUser } from "@/services/authentications";
 
 export default function ProfileOverlay() {
   const router = useRouter();

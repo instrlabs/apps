@@ -1,12 +1,12 @@
 "use client"
 
 import {useCallback, useEffect, useMemo, useState} from "react"
-import Button from "@/components/button";
+import Button from "@/components/actions/button";
 import { useRouter } from "next/navigation";
 import useModal from "@/hooks/useModal";
-import ImagePreviewOverlay from "@/components/image-preview";
-import FileDropzone from "@/components/shared/file-dropzone";
-import { compressImage } from "@/services/image_instructions";
+import ImagePreviewOverlay from "@/components/layouts/image-preview";
+import FileDropzone from "@/components/inputs/file-dropzone";
+import { compressImage } from "@/services/images";
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return "0 B"
@@ -28,7 +28,7 @@ export default function ImageCompressPage() {
     const next: Record<string, string> = {}
     const urlsToRevoke: string[] = []
     for (const f of files) {
-      if (f.type.startsWith("image/")) {
+      if (f.type.startsWith("images/")) {
         const url = URL.createObjectURL(f)
         next[`${f.name}:${f.size}`] = url
         urlsToRevoke.push(url)
@@ -43,11 +43,10 @@ export default function ImageCompressPage() {
 
   const accept = useMemo(
     () => [
-      "image/png",
-      "image/jpeg",
-      "image/webp",
-      "image/gif",
-      "application/pdf",
+      "images/png",
+      "images/jpeg",
+      "images/webp",
+      "images/gif",
     ].join(","),
     []
   )

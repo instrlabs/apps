@@ -1,14 +1,14 @@
 import React, {Suspense} from "react";
 
-import {getProfile} from "@/services/auth";
+import {getProfile} from "@/services/authentications";
 import {ProfileProvider} from "@/hooks/useProfile";
 import {ProductProvider} from "@/hooks/useProduct";
 import {listProducts} from "@/services/products";
 import {OverlayProvider} from "@/hooks/useOverlay";
-import OverlayTop from "@/components/overlay-top";
-import OverlayBody from "@/components/overlay-body";
-import OverlayLeft from "@/components/overlay-left";
-import OverlayRight from "@/components/overlay-right";
+import OverlayTop from "@/components/layouts/overlay-top";
+import OverlayBody from "@/components/layouts/overlay-body";
+import OverlayLeft from "@/components/layouts/overlay-left";
+import OverlayRight from "@/components/layouts/overlay-right";
 import { ModalProvider } from "@/hooks/useModal";
 
 export default async function LoginLayout({

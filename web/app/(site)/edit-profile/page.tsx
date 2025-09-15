@@ -4,13 +4,13 @@ import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 
-import TextField from "@/components/text-field";
-import Button from "@/components/button";
-import ButtonIcon from "@/components/button-icon";
+import TextField from "@/components/inputs/text-field";
+import Button from "@/components/actions/button";
+import ButtonIcon from "@/components/actions/button-icon";
 import ChevronLeftIcon from "@/components/icons/chevron-left";
 import useNotification from "@/hooks/useNotification";
 import { useProfile } from "@/hooks/useProfile";
-import { updateProfile } from "@/services/auth";
+import { updateProfile } from "@/services/authentications";
 
 type EditProfileFormValues = {
   name: string;
@@ -60,7 +60,7 @@ export default function EditProfilePage() {
     // Regardless of whether update returns user data, refresh the profile to stay in sync with auth-service
     try {
       // Lazy import to avoid circular issues
-      const { getProfile: fetchProfile } = await import("@/services/auth");
+      const { getProfile: fetchProfile } = await import("@/services/authentications");
       const res = await fetchProfile();
       if (res && !res.errors && res.data) {
         setProfile(res.data.data.user);

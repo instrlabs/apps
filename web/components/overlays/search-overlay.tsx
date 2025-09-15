@@ -2,11 +2,11 @@
 
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
-import TextField from "@/components/text-field";
+import TextField from "@/components/inputs/text-field";
 import SearchIcon from "@/components/icons/search";
 import { useOverlay } from "@/hooks/useOverlay";
 import Chip from "@/components/chip";
-import MenuButton from "@/components/menu-button";
+import MenuButton from "@/components/actions/menu-button";
 import HashtagIcon from "@/components/icons/hashtag";
 import {useProduct} from "@/hooks/useProduct";
 import {Product} from "@/services/products";

@@ -4,10 +4,10 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 
-import { resetPassword } from "@/services/auth";
-import Button from "@/components/button";
+import { resetPassword } from "@/services/authentications";
+import Button from "@/components/actions/button";
 import useNotification from "@/hooks/useNotification";
-import TextField from "@/components/text-field";
+import TextField from "@/components/inputs/text-field";
 import { ROUTES } from "@/constants/routes";
 import type { FieldError } from "@/shared/types";
 

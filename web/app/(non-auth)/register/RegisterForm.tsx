@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 import { ROUTES } from "@/constants/routes";
-import { registerUser } from "@/services/auth";
+import { registerUser } from "@/services/authentications";
 import useNotification from "@/hooks/useNotification";
-import Button from "@/components/button";
-import TextField from "@/components/text-field";
+import Button from "@/components/actions/button";
+import TextField from "@/components/inputs/text-field";
 import type { FieldError } from "@/shared/types";
 
 type RegisterFormValues = {

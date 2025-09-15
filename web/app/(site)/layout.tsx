@@ -1,14 +1,14 @@
 "use server"
 
 import React, {Suspense} from "react";
-import OverlayBody from "@/components/overlay-body";
-import { getProfile } from "@/services/auth";
+import OverlayBody from "@/components/layouts/overlay-body";
+import { getProfile } from "@/services/authentications";
 import {ProfileProvider} from "@/hooks/useProfile";
 import {listProducts} from "@/services/products";
 import {ProductProvider} from "@/hooks/useProduct";
-import OverlayLeft from "@/components/overlay-left";
-import OverlayRight from "@/components/overlay-right";
-import OverlayTop from "@/components/overlay-top";
+import OverlayLeft from "@/components/layouts/overlay-left";
+import OverlayRight from "@/components/layouts/overlay-right";
+import OverlayTop from "@/components/layouts/overlay-top";
 
 import { NotificationProvider, NotificationWidget } from "@/hooks/useNotification";
 import { OverlayProvider } from "@/hooks/useOverlay";

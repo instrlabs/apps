@@ -4,12 +4,12 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
-import { requestPasswordReset } from "@/services/auth";
-import Button from "@/components/button";
+import { requestPasswordReset } from "@/services/authentications";
+import Button from "@/components/actions/button";
 import useNotification from "@/hooks/useNotification";
 import { ROUTES } from "@/constants/routes";
-import TextField from "@/components/text-field";
-import LinkText from "@/components/link-text";
+import TextField from "@/components/inputs/text-field";
+import LinkText from "@/components/actions/link-text";
 import type { FieldError } from "@/shared/types";
 
 export type ForgotFormValues = { email: string };

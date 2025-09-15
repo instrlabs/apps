@@ -3,12 +3,12 @@
 import Image from "next/image";
 
 import { useOverlay } from "@/hooks/useOverlay";
-import ButtonIcon from "@/components/button-icon";
+import ButtonIcon from "@/components/actions/button-icon";
 import MenuIcon from "@/components/icons/menu";
 import SearchIcon from "@/components/icons/search";
 import BellIcon from "@/components/icons/bell";
 import Avatar from "@/components/avatar";
-import TextField from "@/components/text-field";
+import TextField from "@/components/inputs/text-field";
 import {useProfile} from "@/hooks/useProfile";
 
 export default function OverlayTop() {

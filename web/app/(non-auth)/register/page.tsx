@@ -2,8 +2,8 @@ import React from "react";
 import type { Metadata } from "next";
 
 import { ROUTES } from "@/constants/routes";
-import GoogleSignInButton from "@/components/google-signin";
-import LinkText from "@/components/link-text";
+import GoogleSignInButton from "@/components/actions/google-signin";
+import LinkText from "@/components/actions/link-text";
 import RegisterForm from "./RegisterForm";
 
 export const metadata: Metadata = {

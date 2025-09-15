@@ -1,26 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import clsx from "clsx";
 import {useOverlay} from "@/hooks/useOverlay";
 
 export default function OverlayBody({ children }: {
   children: React.ReactNode;
 }) {
-  const { isLeftOpen, isRightOpen, leftWidth, rightWidth, isModalOpen, closeAll } = useOverlay();
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (isLeftOpen || isRightOpen || isModalOpen) {
-          e.stopPropagation();
-          closeAll();
-        }
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [isLeftOpen, isRightOpen, isModalOpen, closeAll]);
+  const { isLeftOpen, isRightOpen, leftWidth, rightWidth } = useOverlay();
 
   const leftTargetPx = Number.isFinite(leftWidth as number)
     ? Math.max(0, Math.round(leftWidth as number))

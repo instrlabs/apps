@@ -3,11 +3,11 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 
-import TextField from "@/components/text-field";
-import Button from "@/components/button";
+import TextField from "@/components/inputs/text-field";
+import Button from "@/components/actions/button";
 import useNotification from "@/hooks/useNotification";
-import { changePassword } from "@/services/auth";
-import ButtonIcon from "@/components/button-icon";
+import { changePassword } from "@/services/authentications";
+import ButtonIcon from "@/components/actions/button-icon";
 import ChevronLeftIcon from "@/components/icons/chevron-left";
 
 type ChangePasswordFormValues = {

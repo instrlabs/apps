@@ -1,4 +1,4 @@
-import { getImageInstructions, type ImageInstruction } from "@/services/image_instructions";
+import { getImageInstructions, type ImageInstruction } from "@/services/images";
 import { APIs } from "@/constants/api";
 
 export default async function HistoriesPage() {
