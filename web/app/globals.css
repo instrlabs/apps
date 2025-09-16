@@ -93,34 +93,22 @@ body {
   overflow: hidden;
 }
 
-@keyframes slideIn {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+@keyframes notificationIn {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
-@keyframes slideOut {
-  from {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateY(100%);
-    opacity: 0;
-  }
+@keyframes notificationOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(100%); opacity: 0; }
 }
 
-.animate-slide-in {
-  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+.animate-notification-in {
+  animation: notificationIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-.animate-slide-out {
-  animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+.animate-notification-out {
+  animation: notificationOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes fadeIn {

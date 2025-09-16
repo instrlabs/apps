@@ -1,20 +1,13 @@
 "use client"
 
-import {useCallback, useEffect, useMemo, useState} from "react"
+import {useCallback, useEffect, useState} from "react"
 import Button from "@/components/actions/button";
 import { useRouter } from "next/navigation";
 import useModal from "@/hooks/useModal";
 import ImagePreviewOverlay from "@/components/layouts/image-preview";
 import FileDropzone from "@/components/inputs/file-dropzone";
-import { compressImage } from "@/services/images";
-
-function formatBytes(bytes: number) {
-  if (bytes === 0) return "0 B"
-  const k = 1024
-  const sizes = ["B", "KB", "MB", "GB", "TB"]
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
-}
+import {compressImage} from "@/services/images";
+import {bytesToString} from "@/utils/bytesToString";
 
 export default function ImageCompressPage() {
   const router = useRouter();
@@ -24,15 +17,14 @@ export default function ImageCompressPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+
   useEffect(() => {
     const next: Record<string, string> = {}
     const urlsToRevoke: string[] = []
     for (const f of files) {
-      if (f.type.startsWith("images/")) {
-        const url = URL.createObjectURL(f)
-        next[`${f.name}:${f.size}`] = url
-        urlsToRevoke.push(url)
-      }
+      const url = URL.createObjectURL(f)
+      next[`${f.name}:${f.size}`] = url
+      urlsToRevoke.push(url)
     }
     setPreviews(next)
     return () => {
@@ -40,20 +32,9 @@ export default function ImageCompressPage() {
     }
   }, [files])
 
-
-  const accept = useMemo(
-    () => [
-      "images/png",
-      "images/jpeg",
-      "images/webp",
-      "images/gif",
-    ].join(","),
-    []
-  )
-
   const removeFile = useCallback((name: string, size: number) => {
     setFiles((prev) => prev.filter((f) => !(f.name === name && f.size === size)))
-  }, [])
+  }, []);
 
   return (
     <div className="w-full flex flex-col py-10">
@@ -65,9 +46,10 @@ export default function ImageCompressPage() {
       <div className="w-full mt-8 flex flex-col items-center">
         {files.length === 0 && (
           <FileDropzone
-            accept={accept}
+            multiple
+            accepts={["image/png", "image/jpeg", "image/webp", "image/gif"]}
             onFilesAdded={setFiles}
-            allowMultiple={true}
+            maxFileSize={5242880}
           />
         )}
 
@@ -109,7 +91,7 @@ export default function ImageCompressPage() {
                   <div className="min-w-0 flex-1 space-y-1">
                     <p className="truncate font-medium">{f.name}</p>
                     <p className="text-sm text-gray-500">
-                      {f.type.split("/")[1].toUpperCase()} • {formatBytes(f.size)}
+                      {f.type.split("/")[1].toUpperCase()} • {bytesToString(f.size)}
                     </p>
                   </div>
                   <button
@@ -131,28 +113,28 @@ export default function ImageCompressPage() {
         {error && (
           <div className="text-sm text-red-600 mb-3">{error}</div>
         )}
-        <Button
-          disabled={files.length === 0 || submitting}
-          onClick={async () => {
-            if (files.length === 0 || submitting) return;
-            setError(null);
-            setSubmitting(true);
-            try {
-              const res = await compressImage(files);
-              if (res.success) {
-                router.push("/histories");
-              } else {
-                setError(res.message || "Failed to start compression.");
-              }
-            } catch (e) {
-              setError("Unexpected error. Please try again.");
-            } finally {
-              setSubmitting(false);
-            }
-          }}
-          >
-          {submitting ? "Starting..." : "PROCEED"}
-        </Button>
+        {/*<Button*/}
+        {/*  disabled={files.length === 0 || submitting}*/}
+        {/*  onClick={async () => {*/}
+        {/*    if (files.length === 0 || submitting) return;*/}
+        {/*    setError(null);*/}
+        {/*    setSubmitting(true);*/}
+        {/*    try {*/}
+        {/*      const res = await compressImage(files);*/}
+        {/*      if (res.success) {*/}
+        {/*        router.push("/histories");*/}
+        {/*      } else {*/}
+        {/*        setError(res.message || "Failed to start compression.");*/}
+        {/*      }*/}
+        {/*    } catch (e) {*/}
+        {/*      setError("Unexpected error. Please try again.");*/}
+        {/*    } finally {*/}
+        {/*      setSubmitting(false);*/}
+        {/*    }*/}
+        {/*  }}*/}
+        {/*  >*/}
+        {/*  {submitting ? "Starting..." : "PROCEED"}*/}
+        {/*</Button>*/}
       </div>
     </div>
   )

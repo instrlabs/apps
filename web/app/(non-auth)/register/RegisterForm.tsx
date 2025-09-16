@@ -55,7 +55,7 @@ export default function RegisterForm() {
       });
       return;
     } else if (!success) {
-      showNotification(message, "error", 3000);
+      showNotification({ title: "Error", message, type: "error", duration: 3000 });
     } else if (data) {
       router.replace(ROUTES.LOGIN);
     }

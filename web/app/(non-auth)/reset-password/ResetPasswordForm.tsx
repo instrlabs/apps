@@ -25,11 +25,12 @@ export default function ResetPasswordForm() {
     const tokenParam = searchParams.get("token");
     if (!tokenParam) {
       setTokenError(true);
-      showNotification(
-        "Invalid or missing reset token. Please request a new password reset.",
-        "error",
-        3000
-      );
+      showNotification({
+        title: "Error",
+        message: "Invalid or missing reset token. Please request a new password reset.",
+        type: "error",
+        duration: 3000
+      });
     } else {
       setToken(tokenParam);
     }
@@ -64,7 +65,7 @@ export default function ResetPasswordForm() {
       });
       return;
     } else if (!success) {
-      showNotification(message, "error", 3000);
+      showNotification({ title: "Error", message, type: "error", duration: 3000 });
     } else {
       router.push(ROUTES.LOGIN);
     }

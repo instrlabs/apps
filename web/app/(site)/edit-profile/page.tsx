@@ -53,7 +53,7 @@ export default function EditProfilePage() {
     }
 
     if (error) {
-      showNotification(error, "error", 3000);
+      showNotification({ title: "Error", message: error, type: "error", duration: 3000 });
       return;
     }
 
@@ -67,7 +67,7 @@ export default function EditProfilePage() {
       }
     } catch {}
 
-    showNotification("Profile updated successfully", "info", 2500);
+    showNotification({ title: "Info", message: "Profile updated successfully", type: "info", duration: 2500 });
     router.back();
   };
 

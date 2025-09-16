@@ -5,10 +5,9 @@ import React from "react";
 type Props = {
   size?: number;
   className?: string;
-  title?: string;
 };
 
-export default function WarningIcon({ size = 24, className, title }: Props) {
+export default function WarningIcon({ size = 24, className }: Props) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -17,11 +16,8 @@ export default function WarningIcon({ size = 24, className, title }: Props) {
       viewBox="0 -960 960 960"
       fill="currentColor"
       className={className}
-      aria-hidden={title ? undefined : true}
-      role={title ? "img" : "presentation"}
     >
-      {title ? <title>{title}</title> : null}
-      <path d="M109-120q-11 0-20-5.5T75-140q-5-9-5.5-19.5T75-180l370-640q6-10 15.5-15t19.5-5q10 0 19.5 5t15.5 15l370 640q6 10 5.5 20.5T885-140q-5 9-14 14.5t-20 5.5H109Zm69-80h604L480-720 178-200Zm302-40q17 0 28.5-11.5T520-280q0-17-11.5-28.5T480-320q-17 0-28.5 11.5T440-280q0 17 11.5 28.5T480-240Zm0-120q17 0 28.5-11.5T520-400v-120q0-17-11.5-28.5T480-560q-17 0-28.5 11.5T440-520v120q0 17 11.5 28.5T480-360Zm0-100Z" />
+      <path d="M109.23-160 480-800l370.77 640H109.23ZM178-200h604L480-720 178-200Zm302-55.38q10.46 0 17.54-7.08 7.08-7.08 7.08-17.54 0-10.46-7.08-17.54-7.08-7.08-17.54-7.08-10.46 0-17.54 7.08-7.08 7.08-7.08 17.54 0 10.46 7.08 17.54 7.08 7.08 17.54 7.08Zm-20-89.24h40v-200h-40v200ZM480-460Z"/>
     </svg>
   );
 }

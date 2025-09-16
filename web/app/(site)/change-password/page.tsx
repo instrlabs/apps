@@ -41,7 +41,7 @@ export default function ChangePasswordPage() {
 
     if (errorFields && errorFields.length > 0) {
       const fieldError = errorFields[0];
-      showNotification(fieldError?.errorMessage || "Failed to change password", "error", 3000);
+      showNotification({ title: "Error", message: fieldError?.errorMessage || "Failed to change password", type: "error", duration: 3000 });
       return;
     }
 
@@ -49,13 +49,13 @@ export default function ChangePasswordPage() {
       if (/current password/i.test(error)) {
         setError("current_password", { type: "server", message: error });
       } else {
-        showNotification(error, "error", 3000);
+        showNotification({ title: "Error", message: error, type: "error", duration: 3000 });
       }
       return;
     }
 
     if (data) {
-      showNotification("Password changed successfully", "info", 2500);
+      showNotification({ title: "Info", message: "Password changed successfully", type: "info", duration: 2500 });
       reset({ current_password: "", new_password: "", confirm_password: "" });
     }
   };

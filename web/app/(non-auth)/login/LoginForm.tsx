@@ -48,12 +48,12 @@ export default function LoginForm() {
           });
         });
       } else if (!success) {
-        showNotification(message, "error", 3000);
+        showNotification({ title: "Error", message, type: "error", duration: 3000 });
       } else {
         router.push(ROUTES.HOME);
       }
     } catch {
-      showNotification(SOMETHING_WENT_WRONG, "error", 3000);
+      showNotification({ title: "Error", message: SOMETHING_WENT_WRONG, type: "error", duration: 3000 });
     }
   };
 

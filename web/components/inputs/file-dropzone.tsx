@@ -1,24 +1,24 @@
 "use client";
 
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import { bytesToString } from "@/utils/bytesToString";
+import { acceptsToExtensions } from "@/utils/acceptsToExtensions";
+import useNotification from "@/hooks/useNotification";
 
 export type FileDropzoneProps = {
-  accept?: string; // comma-separated accept string, e.g. "images/png,images/jpeg"
+  accepts: string[];
+  multiple: boolean;
   onFilesAdded: (files: File[]) => void;
-  className?: string;
-  children?: React.ReactNode;
-  allowMultiple?: boolean; // when false, only one file can be selected/dropped
+  maxFileSize: number; // in bytes
 };
 
-function filterAccepted(files: FileList | File[], accept?: string): File[] {
-  const list = Array.from(files);
-  if (!accept) return list;
-  const acceptedTypes = accept.split(",").map((s) => s.trim()).filter(Boolean);
-  if (acceptedTypes.length === 0) return list;
-  return list.filter((f) => acceptedTypes.includes(f.type));
+function validateFiles(files: File[], accepts: string[], maxFileSize: number): boolean {
+  const acceptedTypes = accepts.map((s) => s.trim()).filter(Boolean);
+  return files.every((file) => acceptedTypes.includes(file.type) && file.size <= maxFileSize);
 }
 
-const FileDropzone: React.FC<FileDropzoneProps> = ({ accept, onFilesAdded, className, children, allowMultiple = false }) => {
+const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, multiple, maxFileSize }) => {
+  const { showNotification } = useNotification();
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -43,12 +43,22 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accept, onFilesAdded, class
     e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-      let accepted = filterAccepted(e.dataTransfer.files, accept);
-      if (!allowMultiple) accepted = accepted.slice(0, 1);
-      if (accepted.length > 0) onFilesAdded(accepted);
+      const files = Array.from(e.dataTransfer.files);
+
+      if (!multiple && files.length > 1) {
+        showNotification({ title: "Error", message: "Only one file can be dropped at a time.", type: "error" });
+        return;
+      }
+
+      if (!validateFiles(files, accepts, maxFileSize)) {
+        showNotification({ title: "Error", message: "Invalid file type or file size.", type: "error" });
+        return;
+      }
+
+      onFilesAdded(files);
       e.dataTransfer.clearData();
     }
-  }, [accept, allowMultiple, onFilesAdded]);
+  }, [multiple, accepts, maxFileSize, onFilesAdded, showNotification]);
 
   const baseClass = useMemo(() => (
     `w-full max-w-2xl aspect-video flex flex-col items-center justify-center gap-3 ` +
@@ -59,40 +69,39 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accept, onFilesAdded, class
   return (
     <div
       role="button"
-      tabIndex={0}
-      aria-label="Upload files by dragging and dropping or by browsing"
       onClick={openFileDialog}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          openFileDialog();
-        }
-      }}
       onDragOver={handleDragOver}
       onDragEnter={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={(className ? className + " " : "") + baseClass}
-
+      className={baseClass}
     >
-      {children ?? (
-        <div className="text-center">
-          <p className="text-base font-light">Maximum file size: 50mb</p>
-          <p className="text-base font-light">Supports .PNG, .JPG, .WEBP, .GIF</p>
-        </div>
-      )}
+      <div className="text-center gap-1">
+        <p className="text-base font-light">Maximum file size: {bytesToString(maxFileSize)}</p>
+        <p className="text-base font-light">Support format: {acceptsToExtensions(accepts).join(", ")}</p>
+      </div>
       <input
         ref={inputRef}
         type="file"
-        accept={accept}
-        multiple={allowMultiple}
+        accept={accepts.join(",")}
+        multiple={multiple}
         className="hidden"
         onChange={(e) => {
           if (e.target.files) {
-            let accepted = filterAccepted(e.target.files, accept);
-            if (!allowMultiple) accepted = accepted.slice(0, 1);
-            if (accepted.length > 0) onFilesAdded(accepted);
+            const files = Array.from(e.target.files);
+
+            if (!multiple && files.length > 1) {
+              showNotification({ title: "Error", message: "Only one file can be dropped at a time.", type: "error" });
+              return;
+            }
+
+            if (!validateFiles(files, accepts, maxFileSize)) {
+              showNotification({ title: "Error", message: "Invalid file type or file size.", type: "error" });
+              return;
+            }
+
+            onFilesAdded(files);
           }
-          // reset so same files can be selected again
           e.currentTarget.value = "";
         }}
       />
