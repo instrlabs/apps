@@ -82,26 +82,32 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
       </div>
       <input
         ref={inputRef}
+        className="hidden"
         type="file"
         accept={accepts.join(",")}
         multiple={multiple}
-        className="hidden"
         onChange={(e) => {
           if (e.target.files) {
             const files = Array.from(e.target.files);
 
             if (!multiple && files.length > 1) {
-              showNotification({ title: "Error", message: "Only one file can be dropped at a time.", type: "error" });
+              showNotification({
+                type: "error",
+                title: "Something went wrong",
+                message: "Only one file can be dropped at a time."
+              });
+            } else if (!validateFiles(files, accepts, maxFileSize)) {
+              showNotification({
+                type: "error",
+                title: "Something went wrong",
+                message: "Invalid file type or file size."
+              });
+            } else {
+              onFilesAdded(files);
               return;
             }
-
-            if (!validateFiles(files, accepts, maxFileSize)) {
-              showNotification({ title: "Error", message: "Invalid file type or file size.", type: "error" });
-              return;
-            }
-
-            onFilesAdded(files);
           }
+
           e.currentTarget.value = "";
         }}
       />

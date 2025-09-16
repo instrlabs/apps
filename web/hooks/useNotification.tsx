@@ -79,7 +79,10 @@ export const NotificationWidget: React.FC = () => {
       }, data?.duration || 3000);
       return () => clearTimeout(timer);
     } else if(!visible && shouldRender) {
-      setShouldRender(false);
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 300);
+      return () => clearTimeout(timer);
     } else if (visible && !shouldRender) {
       setAnimationClass("animate-notification-in");
       setShouldRender(true);
@@ -89,7 +92,7 @@ export const NotificationWidget: React.FC = () => {
   if (!shouldRender) return null;
 
   return (
-    <div className="absolute top-[100px] right-0 z-50 w-full flex justify-center">
+    <div className="fixed bottom-6 right-6 z-50">
       <div className={`w-sm ${animationClass}`}>
         <div
           className={`
