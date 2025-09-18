@@ -70,18 +70,17 @@
   /* INPUT */
 }
 
-@theme inline {
+@theme {
   --color-text-primary: var(--text-primary);
   --color-error: var(--color-red-500);
   --color-card: var(--card-primary);
   --color-menu: var(--menu-primary);
   --color-menu-hover: var(--menu-hover-primary);
-  --color-border: var(--border-primary);
   --color-border-hover: var(--border-hover-primary);
 
   /* Fonts & effects */
   --font-sans: var(--font-roboto);
-  --shadow-primary: 0 0 30px 0 rgba(0, 0, 0, 0.04);
+  --shadow-primary: 0 0 6px 0 rgba(0, 0, 0, 0.06);
 }
 
 body {
@@ -91,6 +90,13 @@ body {
   color: var(--text-primary);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   overflow: hidden;
+}
+
+.card {
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-primary);
+  border: 1px solid var(--color-slate-200);
 }
 
 @keyframes notificationIn {
@@ -111,11 +117,20 @@ body {
   animation: notificationOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-@keyframes fadeIn {
+@keyframes modalIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-.animate-fade-in {
-  animation: fadeIn 300ms ease-out both;
+@keyframes modalOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.animate-modal-in {
+  animation: modalIn 300ms ease-out both;
+}
+
+.animate-modal-out {
+  animation: modalOut 300ms ease-out both;
 }

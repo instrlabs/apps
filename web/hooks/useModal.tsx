@@ -29,13 +29,13 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   useEffect(() => {
     if (visible) {
       setIsRendered(true);
-      setAnimationClass("animate-fade-in");
+      setAnimationClass("animate-modal-in");
     } else if (isRendered) {
-      setAnimationClass("animate-fade-out");
+      setAnimationClass("animate-modal-out");
       const timer = setTimeout(() => {
         setIsRendered(false);
         setContent(null);
-      }, 200);
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [visible, isRendered]);
@@ -69,33 +69,6 @@ const ModalWidgetInternal: React.FC<{
   content: ReactNode | null;
 }> = ({ isRendered, animationClass, closeModal, content }) => {
   if (!isRendered || !content) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
-      <div className={animationClass}>{content}</div>
-    </div>
-  );
-};
-
-// Optional external widget if a project prefers manual placement (mirrors NotificationWidget style)
-export const ModalWidget: React.FC = () => {
-  const { content, visible, closeModal } = useModal();
-  const [isRendered, setIsRendered] = useState(false);
-  const [animationClass, setAnimationClass] = useState("");
-
-  useEffect(() => {
-    if (visible) {
-      setIsRendered(true);
-      setAnimationClass("animate-fade-in");
-    } else if (isRendered) {
-      setAnimationClass("animate-fade-out");
-      const timer = setTimeout(() => setIsRendered(false), 200);
-      return () => clearTimeout(timer);
-    }
-  }, [visible, isRendered]);
-
-  if (!isRendered || !content) return null;
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={closeModal} />

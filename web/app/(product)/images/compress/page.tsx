@@ -3,15 +3,14 @@
 import {useCallback, useEffect, useState} from "react"
 import Button from "@/components/actions/button";
 import { useRouter } from "next/navigation";
-import useModal from "@/hooks/useModal";
-import ImagePreviewOverlay from "@/components/layouts/image-preview";
 import FileDropzone from "@/components/inputs/file-dropzone";
 import {compressImage} from "@/services/images";
 import {bytesToString} from "@/utils/bytesToString";
+import CloseIcon from "@/components/icons/CloseIcon";
+import ImagePreview from "@/components/ImagePreview";
 
 export default function ImageCompressPage() {
   const router = useRouter();
-  const { openModal } = useModal();
   const [files, setFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -59,50 +58,30 @@ export default function ImageCompressPage() {
               const key = f.name + ":" + f.size
               const preview = previews[key]
               return (
-                <div key={key} className="w-full flex items-center justify-between border border-border border-dashed rounded-xl p-4 gap-4">
-                  {preview ? (
-                    <img
-                      src={preview}
-                      alt={f.name}
-                      className="h-16 w-16 rounded object-contain flex-shrink-0 border cursor-zoom-in bg-white"
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (preview) {
-                          openModal(<ImagePreviewOverlay src={preview} />);
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          if (preview) {
-                            openModal(<ImagePreviewOverlay src={preview} />);
-                          }
-                        }
-                      }}
-                      aria-label={`Preview ${f.name}`}
-                    />
-                  ) : (
-                    <div className="h-16 w-16 rounded bg-gray-100 text-gray-400 flex items-center justify-center flex-shrink-0 border">
-                      {f.type.split("/")[1]?.toUpperCase() || "FILE"}
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <p className="truncate font-medium">{f.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {f.type.split("/")[1].toUpperCase()} • {bytesToString(f.size)}
+                <div key={key} className="w-full flex items-center justify-between card p-3 gap-4">
+                  <ImagePreview
+                    src={preview}
+                    alt={f.name}
+                    width={60}
+                    height={60}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">
+                      {f.name}
+                    </p>
+                    <p className="truncate font-light">
+                      {bytesToString(f.size)}
                     </p>
                   </div>
                   <button
-                    className="text-sm text-red-600 hover:text-red-700"
+                    className="text-sm text-red-500 hover:text-red-700"
                     onClick={(e) => {
                       e.stopPropagation()
                       removeFile(f.name, f.size)
                     }}
                     aria-label={`Remove ${f.name}`}
                   >
-                    Remove
+                    <CloseIcon />
                   </button>
                 </div>
               )
