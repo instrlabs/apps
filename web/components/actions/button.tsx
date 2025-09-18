@@ -44,9 +44,13 @@ export default function Button({
     }
   };
 
-  // Size classes tailored for text buttons
+  // Size classes tailored for text buttons with sensible min-widths for cleaner UI
   const sizeClass =
-    xSize === "sm" ? "py-2 px-3 text-sm" : xSize === "md" ? "py-3 px-4" : "py-4 px-6 text-base";
+    xSize === "sm"
+      ? "py-2 px-3 text-sm min-w-24"
+      : xSize === "md"
+      ? "py-3 px-4 min-w-28"
+      : "py-4 px-6 text-base min-w-32";
 
   const colorClasses =
     xColor === "primary"
@@ -74,7 +78,7 @@ export default function Button({
         colorClasses,
         "border border-[var(--btn-border)]",
         sizeClass,
-        "rounded-xl cursor-pointer font-medium shadow-primary",
+        "rounded-lg cursor-pointer font-medium shadow-primary",
         isDisabled && "opacity-70 cursor-not-allowed",
         className
       )}

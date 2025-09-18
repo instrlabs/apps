@@ -3,7 +3,6 @@
 import React from "react";
 import Image from "next/image";
 import useModal from "@/hooks/useModal";
-import ImagePreviewOverlay from "@/components/layouts/image-preview";
 
 export type ImagePreviewProps = {
   src: string;
@@ -12,6 +11,19 @@ export type ImagePreviewProps = {
   height: number;
   className?: string;
 };
+
+function ImagePreviewOverlay({ src }: { src: string }) {
+  return (
+    <Image
+      fill
+      alt="Preview"
+      src={src}
+      quality={100}
+      objectFit="contain"
+      className="max-h-[90vh] max-w-[90vw] relative!"
+    />
+  );
+}
 
 export default function ImagePreview({ src, alt, width, height, className }: ImagePreviewProps) {
   const { openModal } = useModal();
@@ -33,7 +45,7 @@ export default function ImagePreview({ src, alt, width, height, className }: Ima
         alt={alt}
         width={width}
         height={height}
-        style={{objectFit: "cover"}}
+        objectFit="cover"
         quality={30}
       />
       <div

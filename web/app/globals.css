@@ -128,9 +128,9 @@ body {
 }
 
 .animate-modal-in {
-  animation: modalIn 300ms ease-out both;
+  animation: modalIn 200ms ease-out both;
 }
 
 .animate-modal-out {
-  animation: modalOut 300ms ease-out both;
+  animation: modalOut 200ms ease-out both;
 }

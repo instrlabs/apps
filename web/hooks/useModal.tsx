@@ -35,7 +35,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const timer = setTimeout(() => {
         setIsRendered(false);
         setContent(null);
-      }, 300);
+      }, 200);
       return () => clearTimeout(timer);
     }
   }, [visible, isRendered]);
