@@ -1,8 +1,7 @@
 package internal
 
 import (
-	"os"
-
+	initx "github.com/histweety-labs/shared/init"
 	"github.com/joho/godotenv"
 )
 
@@ -19,8 +18,9 @@ type Config struct {
 	S3Bucket    string
 	S3UseSSL    bool
 
-	NatsURL             string
-	NatsSubjectRequests string
+	NatsURL                  string
+	NatsSubjectRequests      string
+	NatsSubjectNotifications string
 
 	PaymentServiceURL string
 }
@@ -29,32 +29,22 @@ func LoadConfig() *Config {
 	_ = godotenv.Load()
 
 	return &Config{
-		Environment: os.Getenv("ENVIRONMENT"),
-		Port:        os.Getenv("PORT"),
-		MongoURI:    os.Getenv("MONGO_URI"),
-		MongoDB:     os.Getenv("MONGO_DB"),
+		Environment: initx.GetEnv("ENVIRONMENT", "development"),
+		Port:        initx.GetEnv("PORT", ":3000"),
+		MongoURI:    initx.GetEnv("MONGO_URI", "mongodb://localhost:27017"),
+		MongoDB:     initx.GetEnv("MONGO_DB", "labs"),
 
-		S3Endpoint:  os.Getenv("S3_ENDPOINT"),
-		S3Region:    os.Getenv("S3_REGION"),
-		S3AccessKey: os.Getenv("S3_ACCESS_KEY"),
-		S3SecretKey: os.Getenv("S3_SECRET_KEY"),
-		S3Bucket:    os.Getenv("S3_BUCKET"),
-		S3UseSSL:    getEnvBool("S3_USE_SSL", false),
+		S3Endpoint:  initx.GetEnv("S3_ENDPOINT", "localhost:9000"),
+		S3Region:    initx.GetEnv("S3_REGION", "us-east-1"),
+		S3AccessKey: initx.GetEnv("S3_ACCESS_KEY", "minioadmin"),
+		S3SecretKey: initx.GetEnv("S3_SECRET_KEY", "minioadmin"),
+		S3Bucket:    initx.GetEnv("S3_BUCKET", "labs"),
+		S3UseSSL:    initx.GetEnvBool("S3_USE_SSL", false),
 
-		NatsURL:             os.Getenv("NATS_URL"),
-		NatsSubjectRequests: os.Getenv("NATS_SUBJECT_REQUESTS"),
+		NatsURL:                  initx.GetEnv("NATS_URL", "nats://localhost:4222"),
+		NatsSubjectRequests:      initx.GetEnv("NATS_SUBJECT_REQUESTS", "image.requests"),
+		NatsSubjectNotifications: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS", "image.notifications"),
 
-		PaymentServiceURL: os.Getenv("PAYMENT_SERVICE_URL"),
+		PaymentServiceURL: initx.GetEnv("PAYMENT_SERVICE_URL", "http://localhost:3000/payment"),
 	}
-}
-
-func getEnvBool(key string, fallback bool) bool {
-	if value, exists := os.LookupEnv(key); exists {
-		if value == "true" || value == "1" || value == "yes" {
-			return true
-		} else if value == "false" || value == "0" || value == "no" {
-			return false
-		}
-	}
-	return fallback
 }

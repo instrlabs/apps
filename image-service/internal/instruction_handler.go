@@ -1,11 +1,14 @@
 package internal
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"mime"
 	"mime/multipart"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -32,8 +35,9 @@ func NewInstructionHandler(
 	return &InstructionHandler{cfg: cfg, s3: s3, nats: nats, instrRepo: instrRepo, productServ: productServ}
 }
 
-func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
-	product := h.productServ.GetProduct(c, "image-compress")
+func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
+	productId := c.Params("product_id")
+	product := h.productServ.GetProduct(c, productId)
 	if product == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "product not found",
@@ -79,7 +83,7 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 	for idx, fh := range headers {
 		f, _ := fh.Open()
 		b, _ := io.ReadAll(f)
-		f.Close()
+		_ = f.Close()
 
 		ext := filepath.Ext(fh.Filename)
 		objectName := fmt.Sprintf("%s-%d%s", instructionID.Hex(), idx, ext)
@@ -186,7 +190,6 @@ func (h *InstructionHandler) UpdateInstructionOutputs(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "outputs updated", "errors": nil, "data": instr})
 }
 
-// GetInstructionFile streams a specific file for an instruction if owned by the user
 func (h *InstructionHandler) GetInstructionFile(c *fiber.Ctx) error {
 	idHex := c.Params("id")
 	fileName := c.Params("file_name")
@@ -243,7 +246,6 @@ func (h *InstructionHandler) GetInstructionFile(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).Send(b)
 }
 
-// GetInstructionFiles returns all input and output files for a given instruction if owned by the user
 func (h *InstructionHandler) GetInstructionFiles(c *fiber.Ctx) error {
 	idHex := c.Params("id")
 	id, err := primitive.ObjectIDFromHex(idHex)
@@ -270,4 +272,96 @@ func (h *InstructionHandler) GetInstructionFiles(c *fiber.Ctx) error {
 			"outputs": instr.Outputs,
 		},
 	})
+}
+
+// RunInstruction can be triggered via HTTP (body contains InstructionRequest) or indirectly via NATS
+func (h *InstructionHandler) RunInstruction(c *fiber.Ctx) error {
+	var req InstructionRequest
+	if c != nil && len(c.Body()) > 0 {
+		if err := json.Unmarshal(c.Body(), &req); err != nil {
+			log.Printf("RunInstruction: invalid body: %v", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid body", "errors": nil, "data": nil})
+		}
+		// process
+		h.RunInstructionMessage(c.Body())
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "instruction running", "errors": nil, "data": fiber.Map{"instruction_id": req.InstructionID}})
+	}
+	log.Println("RunInstruction invoked without context body")
+	return nil
+}
+
+func (h *InstructionHandler) processImageCompression(instr *Instruction) {
+	var outputs []File
+	for idx, input := range instr.Inputs {
+		inputBytes := h.s3.Get("images/" + input.FileName)
+		if inputBytes == nil {
+			log.Printf("processImageCompression: input file not found: %s", input.FileName)
+			_ = h.instrRepo.UpdateStatus(instr.ID, InstructionStatusFailed)
+			continue
+		}
+
+		ext := filepath.Ext(input.FileName)
+		outputName := fmt.Sprintf("%s-out-%d%s", instr.ID.Hex(), idx, ext)
+
+		cmd := exec.Command("convert", "-", "-quality", "60", "-")
+		cmd.Stdin = bytes.NewReader(inputBytes)
+		outputBytes, err := cmd.Output()
+		if err != nil {
+			log.Printf("compression failed: %v", err)
+			continue
+		}
+
+		if err := h.s3.Put("images/"+outputName, outputBytes); err != nil {
+			log.Printf("failed to upload compressed file: %v", err)
+			continue
+		}
+
+		outputs = append(outputs, File{
+			FileName: outputName,
+			Size:     int64(len(outputBytes)),
+		})
+	}
+
+	if err := h.instrRepo.UpdateOutputs(instr.ID, outputs); err != nil {
+		log.Printf("failed to update outputs: %v", err)
+		_ = h.instrRepo.UpdateStatus(instr.ID, InstructionStatusFailed)
+		return
+	}
+}
+
+func (h *InstructionHandler) RunInstructionMessage(data []byte) {
+	var msg InstructionRequest
+	if err := json.Unmarshal(data, &msg); err != nil {
+		log.Printf("RunInstructionMessage: unmarshal error: %v", err)
+		return
+	}
+
+	id, err := primitive.ObjectIDFromHex(msg.InstructionID)
+	if err != nil {
+		log.Printf("RunInstructionMessage: invalid instruction id: %v", err)
+		return
+	}
+
+	instr := h.instrRepo.GetByID(id)
+	if instr == nil || instr.ID.IsZero() {
+		log.Printf("RunInstructionMessage: instruction not found")
+		return
+	}
+
+	product := h.productServ.GetProduct(nil, instr.ProductID.Hex())
+	if product == nil {
+		log.Printf("RunInstructionMessage: product not found")
+	}
+
+	switch product.Key {
+	case "image-compress":
+		{
+			h.processImageCompression(instr)
+		}
+	}
+}
+
+func (h *InstructionHandler) CleanInstruction(c *fiber.Ctx) error {
+	log.Printf("CleanInstruction invoked")
+	return nil
 }

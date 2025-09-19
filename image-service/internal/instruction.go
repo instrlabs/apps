@@ -15,6 +15,8 @@ const (
 	InstructionStatusFailed     InstructionStatus = "FAILED"
 )
 
+type InstructionType string
+
 type File struct {
 	FileName string `json:"file_name" bson:"file_name"`
 	Size     int64  `json:"size" bson:"size"`

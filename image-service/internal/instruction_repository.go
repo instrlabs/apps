@@ -57,6 +57,7 @@ func (r *InstructionRepository) UpdateOutputs(id primitive.ObjectID, outputs []F
 	_, err := r.collection.UpdateByID(context.Background(), id, bson.M{
 		"$set": bson.M{
 			"outputs":    outputs,
+			"status":     InstructionStatusCompleted,
 			"updated_at": time.Now().UTC(),
 		},
 	})
@@ -87,4 +88,41 @@ func (r *InstructionRepository) ListByUser(userID primitive.ObjectID) []Instruct
 		res = append(res, ins)
 	}
 	return res
+}
+
+// ListOldCompleted returns completed instructions created before a cutoff time, limited by `limit`.
+func (r *InstructionRepository) ListOldCompleted(before time.Time, limit int64) []Instruction {
+	ctx := context.Background()
+	filter := bson.M{
+		"status":     InstructionStatusCompleted,
+		"created_at": bson.M{"$lt": before},
+	}
+	opts := options.Find().SetLimit(limit)
+	cur, err := r.collection.Find(ctx, filter, opts)
+	if err != nil {
+		log.Errorf("Failed to list old completed instructions: %v", err)
+		return []Instruction{}
+	}
+	defer cur.Close(ctx)
+
+	var res []Instruction
+	for cur.Next(ctx) {
+		var ins Instruction
+		if err := cur.Decode(&ins); err != nil {
+			log.Errorf("Failed to decode instruction: %v", err)
+			continue
+		}
+		res = append(res, ins)
+	}
+	return res
+}
+
+// DeleteByID deletes an instruction document by id.
+func (r *InstructionRepository) DeleteByID(id primitive.ObjectID) error {
+	_, err := r.collection.DeleteOne(context.Background(), bson.M{"_id": id})
+	if err != nil {
+		log.Errorf("Failed to delete instruction: %v", err)
+		return err
+	}
+	return nil
 }

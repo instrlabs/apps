@@ -2,9 +2,11 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	initx "github.com/histweety-labs/shared/init"
+	natsgo "github.com/nats-io/nats.go"
 
 	"github.com/arthadede/image-service/internal"
 )
@@ -40,13 +42,26 @@ func main() {
 
 	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, paymentSvc)
 
+	if _, err := nats.Conn.Subscribe(cfg.NatsSubjectRequests, func(m *natsgo.Msg) {
+		instrHandler.RunInstructionMessage(m.Data)
+	}); err != nil {
+		log.Printf("failed to subscribe to %s: %v", cfg.NatsSubjectRequests, err)
+	}
+
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			_ = instrHandler.CleanInstruction(nil)
+		}
+	}()
+
 	app.Get("/instructions", instrHandler.ListInstructions)
+	app.Post("/instructions/:product_id", instrHandler.CreateInstruction)
 	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
 	app.Get("/instructions/:id/:file_name", instrHandler.GetInstructionFile)
 	app.Patch("/instructions/:id/status", instrHandler.UpdateInstructionStatus)
 	app.Patch("/instructions/:id/outputs", instrHandler.UpdateInstructionOutputs)
-
-	app.Post("/compress", instrHandler.ImageCompress)
 
 	log.Fatal(app.Listen(cfg.Port))
 }

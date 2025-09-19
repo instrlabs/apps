@@ -13,10 +13,7 @@ type ImageService struct{}
 
 func NewImageService() *ImageService { return &ImageService{} }
 
-// Compress attempts to reduce file size while preserving the original format when beneficial.
-// It returns the original bytes if the compressed result is larger than the input.
 func (s *ImageService) Compress(file []byte) ([]byte, error) {
-	// Decode the image and detect format
 	img, err := imaging.Decode(bytes.NewReader(file))
 	if err != nil {
 		return nil, err

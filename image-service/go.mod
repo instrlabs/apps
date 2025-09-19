@@ -3,6 +3,7 @@ module github.com/arthadede/image-service
 go 1.24.4
 
 require (
+	github.com/disintegration/imaging v1.6.2
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/histweety-labs/shared v0.0.0-20250909154448-0d8b369cc5d0
 	github.com/joho/godotenv v1.5.1
@@ -40,6 +41,7 @@ require (
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
+	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
