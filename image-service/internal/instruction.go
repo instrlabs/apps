@@ -37,3 +37,9 @@ type InstructionRequest struct {
 	UserID        string `json:"user_id"`
 	InstructionID string `json:"instruction_id"`
 }
+
+type InstructionNotification struct {
+	UserID            string `json:"user_id"`
+	InstructionID     string `json:"instruction_id"`
+	InstructionStatus string `json:"instruction_status"`
+}

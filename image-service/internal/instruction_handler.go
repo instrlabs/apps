@@ -296,7 +296,6 @@ func (h *InstructionHandler) processImageCompression(instr *Instruction) {
 		inputBytes := h.s3.Get("images/" + input.FileName)
 		if inputBytes == nil {
 			log.Printf("processImageCompression: input file not found: %s", input.FileName)
-			_ = h.instrRepo.UpdateStatus(instr.ID, InstructionStatusFailed)
 			continue
 		}
 
@@ -325,7 +324,23 @@ func (h *InstructionHandler) processImageCompression(instr *Instruction) {
 	if err := h.instrRepo.UpdateOutputs(instr.ID, outputs); err != nil {
 		log.Printf("failed to update outputs: %v", err)
 		_ = h.instrRepo.UpdateStatus(instr.ID, InstructionStatusFailed)
+		if data, err := json.Marshal(&InstructionNotification{
+			UserID:            instr.UserID.Hex(),
+			InstructionID:     instr.ID.Hex(),
+			InstructionStatus: string(InstructionStatusFailed),
+		}); err == nil {
+			_ = h.nats.Conn.Publish(h.cfg.NatsSubjectNotifications, data)
+		}
 		return
+	}
+
+	_ = h.instrRepo.UpdateStatus(instr.ID, InstructionStatusCompleted)
+	if data, err := json.Marshal(&InstructionNotification{
+		UserID:            instr.UserID.Hex(),
+		InstructionID:     instr.ID.Hex(),
+		InstructionStatus: string(InstructionStatusCompleted),
+	}); err == nil {
+		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectNotifications, data)
 	}
 }
 
@@ -353,11 +368,18 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 		log.Printf("RunInstructionMessage: product not found")
 	}
 
+	_ = h.instrRepo.UpdateStatus(instr.ID, InstructionStatusProcessing)
+	if data, err := json.Marshal(&InstructionNotification{
+		UserID:            instr.UserID.Hex(),
+		InstructionID:     instr.ID.Hex(),
+		InstructionStatus: string(InstructionStatusProcessing),
+	}); err == nil {
+		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectNotifications, data)
+	}
+
 	switch product.Key {
 	case "image-compress":
-		{
-			h.processImageCompression(instr)
-		}
+		h.processImageCompression(instr)
 	}
 }
 
