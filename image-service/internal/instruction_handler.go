@@ -26,6 +26,20 @@ type InstructionHandler struct {
 	productServ *PaymentService
 }
 
+func (h *InstructionHandler) publishNotification(userID, instructionID string, status InstructionStatus) {
+	if h == nil || h.nats == nil || h.nats.Conn == nil {
+		return
+	}
+	data, err := json.Marshal(&InstructionNotification{
+		UserID:            userID,
+		InstructionID:     instructionID,
+		InstructionStatus: string(status),
+	})
+	if err == nil {
+		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectNotifications, data)
+	}
+}
+
 func NewInstructionHandler(
 	cfg *Config,
 	s3 *initx.S3,
@@ -108,6 +122,10 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 		})
 	}
 
+	// notify PENDING status
+	h.publishNotification(userID.Hex(), instructionID.Hex(), InstructionStatusPending)
+
+	// enqueue processing request via NATS
 	if data, err := json.Marshal(&InstructionRequest{
 		UserID:        userID.Hex(),
 		InstructionID: instructionID.Hex(),
@@ -163,6 +181,10 @@ func (h *InstructionHandler) UpdateInstructionStatus(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to update status", "errors": err.Error(), "data": nil})
 	}
 	instr := h.instrRepo.GetByID(id)
+	// publish status change notification
+	if instr != nil && !instr.ID.IsZero() {
+		h.publishNotification(instr.UserID.Hex(), instr.ID.Hex(), body.Status)
+	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "updated", "errors": nil, "data": instr})
 }
 
@@ -324,24 +346,10 @@ func (h *InstructionHandler) processImageCompression(instr *Instruction) {
 	if err := h.instrRepo.UpdateOutputs(instr.ID, outputs); err != nil {
 		log.Printf("failed to update outputs: %v", err)
 		_ = h.instrRepo.UpdateStatus(instr.ID, InstructionStatusFailed)
-		if data, err := json.Marshal(&InstructionNotification{
-			UserID:            instr.UserID.Hex(),
-			InstructionID:     instr.ID.Hex(),
-			InstructionStatus: string(InstructionStatusFailed),
-		}); err == nil {
-			_ = h.nats.Conn.Publish(h.cfg.NatsSubjectNotifications, data)
-		}
 		return
 	}
 
 	_ = h.instrRepo.UpdateStatus(instr.ID, InstructionStatusCompleted)
-	if data, err := json.Marshal(&InstructionNotification{
-		UserID:            instr.UserID.Hex(),
-		InstructionID:     instr.ID.Hex(),
-		InstructionStatus: string(InstructionStatusCompleted),
-	}); err == nil {
-		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectNotifications, data)
-	}
 }
 
 func (h *InstructionHandler) RunInstructionMessage(data []byte) {
@@ -369,13 +377,6 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	}
 
 	_ = h.instrRepo.UpdateStatus(instr.ID, InstructionStatusProcessing)
-	if data, err := json.Marshal(&InstructionNotification{
-		UserID:            instr.UserID.Hex(),
-		InstructionID:     instr.ID.Hex(),
-		InstructionStatus: string(InstructionStatusProcessing),
-	}); err == nil {
-		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectNotifications, data)
-	}
 
 	switch product.Key {
 	case "image-compress":
