@@ -48,17 +48,14 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 	instructionID := primitive.NewObjectID()
 
 	instr := &Instruction{
-		ID:             instructionID,
-		UserID:         userID,
-		ProductID:      productID,
-		Status:         InstructionStatusPending,
-		Inputs:         []File{},
-		Outputs:        []File{},
-		CreatedAt:      time.Now().UTC(),
-		UpdatedAt:      time.Now().UTC(),
-		RetryCount:     0,
-		RetryLockUntil: nil,
-		LastRetryAt:    nil,
+		ID:        instructionID,
+		UserID:    userID,
+		ProductID: productID,
+		Status:    InstructionStatusPending,
+		Inputs:    []File{},
+		Outputs:   []File{},
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 
 	var headers []*multipart.FileHeader
@@ -70,7 +67,7 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 			headers = fs
 		}
 	}
-	// minimal validation: require at least one file
+
 	if len(headers) == 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "no file uploaded",
@@ -107,10 +104,10 @@ func (h *InstructionHandler) ImageCompress(c *fiber.Ctx) error {
 		})
 	}
 
-	if data, err := json.Marshal(&JobMessage{
-		ID:     instructionID.Hex(),
-		UserID: userID.Hex(),
-	}); err == nil && h.nats != nil && h.nats.Conn != nil {
+	if data, err := json.Marshal(&InstructionRequest{
+		UserID:        userID.Hex(),
+		InstructionID: instructionID.Hex(),
+	}); err == nil {
 		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectRequests, data)
 	}
 

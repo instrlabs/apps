@@ -19,9 +19,8 @@ type Config struct {
 	S3Bucket    string
 	S3UseSSL    bool
 
-	NatsURL                  string
-	NatsSubjectRequests      string
-	NatsSubjectNotifications string
+	NatsURL             string
+	NatsSubjectRequests string
 
 	PaymentServiceURL string
 }
@@ -42,9 +41,8 @@ func LoadConfig() *Config {
 		S3Bucket:    os.Getenv("S3_BUCKET"),
 		S3UseSSL:    getEnvBool("S3_USE_SSL", false),
 
-		NatsURL:                  os.Getenv("NATS_URL"),
-		NatsSubjectRequests:      os.Getenv("NATS_SUBJECT_REQUESTS"),
-		NatsSubjectNotifications: os.Getenv("NATS_SUBJECT_NOTIFICATIONS"),
+		NatsURL:             os.Getenv("NATS_URL"),
+		NatsSubjectRequests: os.Getenv("NATS_SUBJECT_REQUESTS"),
 
 		PaymentServiceURL: os.Getenv("PAYMENT_SERVICE_URL"),
 	}
