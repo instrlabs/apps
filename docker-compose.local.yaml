@@ -47,17 +47,6 @@ services:
     env_file:
       - ./image-service/.env
     command: [ "./app" ]
-    dns:
-      - 8.8.8.8
-
-  image-worker:
-    build:
-      context: ./image-worker
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    env_file:
-      - ./image-worker/.env
-    command: ["./app"]
 
   gateway-service:
     build:
