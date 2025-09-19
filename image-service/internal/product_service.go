@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 )
 
@@ -35,12 +34,11 @@ func NewPaymentService(cfg *Config) *PaymentService {
 	}
 }
 
-func (s *PaymentService) GetProduct(c *fiber.Ctx, id string) *Product {
+func (s *PaymentService) GetProduct(userID string, id string) *Product {
 	url := fmt.Sprintf("%s/products/%s", s.baseURL, id)
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("X-Authenticated", "true")
-	req.Header.Set("X-User-Id", c.Locals("UserID").(string))
-	req.Header.Set("X-User-Roles", c.Locals("Roles").(string))
+	req.Header.Set("X-User-Id", userID)
 	resp, _ := s.httpClient.Do(req)
 	defer resp.Body.Close()
 

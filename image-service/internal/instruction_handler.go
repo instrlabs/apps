@@ -37,7 +37,8 @@ func NewInstructionHandler(
 
 func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 	productId := c.Params("product_id")
-	product := h.productServ.GetProduct(c, productId)
+	localUserID, _ := c.Locals("UserID").(string)
+	product := h.productServ.GetProduct(localUserID, productId)
 	if product == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "product not found",
@@ -46,7 +47,6 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 		})
 	}
 
-	localUserID, _ := c.Locals("UserID").(string)
 	userID, _ := primitive.ObjectIDFromHex(localUserID)
 	productID, _ := primitive.ObjectIDFromHex(product.ID)
 	instructionID := primitive.NewObjectID()
@@ -363,7 +363,7 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 		return
 	}
 
-	product := h.productServ.GetProduct(nil, instr.ProductID.Hex())
+	product := h.productServ.GetProduct(instr.UserID.Hex(), instr.ProductID.Hex())
 	if product == nil {
 		log.Printf("RunInstructionMessage: product not found")
 	}
