@@ -57,7 +57,6 @@ func (r *InstructionRepository) UpdateOutputs(id primitive.ObjectID, outputs []F
 	_, err := r.collection.UpdateByID(context.Background(), id, bson.M{
 		"$set": bson.M{
 			"outputs":    outputs,
-			"status":     InstructionStatusCompleted,
 			"updated_at": time.Now().UTC(),
 		},
 	})
@@ -117,7 +116,6 @@ func (r *InstructionRepository) ListOldCompleted(before time.Time, limit int64) 
 	return res
 }
 
-// DeleteByID deletes an instruction document by id.
 func (r *InstructionRepository) DeleteByID(id primitive.ObjectID) error {
 	_, err := r.collection.DeleteOne(context.Background(), bson.M{"_id": id})
 	if err != nil {

@@ -18,9 +18,9 @@ type Config struct {
 	S3Bucket    string
 	S3UseSSL    bool
 
-	NatsURL                  string
-	NatsSubjectRequests      string
-	NatsSubjectNotifications string
+	NatsURL                     string
+	NatsSubjectImagesRequests   string
+	NatsSubjectNotificationsSSE string
 
 	PaymentServiceURL string
 }
@@ -41,10 +41,10 @@ func LoadConfig() *Config {
 		S3Bucket:    initx.GetEnv("S3_BUCKET", "labs"),
 		S3UseSSL:    initx.GetEnvBool("S3_USE_SSL", false),
 
-		NatsURL:                  initx.GetEnv("NATS_URL", "nats://localhost:4222"),
-		NatsSubjectRequests:      initx.GetEnv("NATS_SUBJECT_REQUESTS", "image.requests"),
-		NatsSubjectNotifications: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS", "image.notifications"),
+		NatsURL:                     initx.GetEnv("NATS_URL", "nats://nats:4222"),
+		NatsSubjectImagesRequests:   initx.GetEnv("NATS_SUBJECT_IMAGES_REQUESTS", "images.requests"),
+		NatsSubjectNotificationsSSE: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS_SSE", "notifications.sse"),
 
-		PaymentServiceURL: initx.GetEnv("PAYMENT_SERVICE_URL", "http://localhost:3000/payment"),
+		PaymentServiceURL: initx.GetEnv("PAYMENT_SERVICE_URL", "http://payment-service:3000"),
 	}
 }

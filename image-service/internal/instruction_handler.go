@@ -26,20 +26,6 @@ type InstructionHandler struct {
 	productServ *PaymentService
 }
 
-func (h *InstructionHandler) publishNotification(userID, instructionID string, status InstructionStatus) {
-	if h == nil || h.nats == nil || h.nats.Conn == nil {
-		return
-	}
-	data, err := json.Marshal(&InstructionNotification{
-		UserID:            userID,
-		InstructionID:     instructionID,
-		InstructionStatus: string(status),
-	})
-	if err == nil {
-		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectNotifications, data)
-	}
-}
-
 func NewInstructionHandler(
 	cfg *Config,
 	s3 *initx.S3,
@@ -122,15 +108,13 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 		})
 	}
 
-	// notify PENDING status
-	h.publishNotification(userID.Hex(), instructionID.Hex(), InstructionStatusPending)
+	h.publishNotification(instructionID.Hex(), InstructionStatusPending)
 
-	// enqueue processing request via NATS
 	if data, err := json.Marshal(&InstructionRequest{
 		UserID:        userID.Hex(),
 		InstructionID: instructionID.Hex(),
 	}); err == nil {
-		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectRequests, data)
+		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectImagesRequests, data)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -158,58 +142,6 @@ func (h *InstructionHandler) GetInstructionByID(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "instruction not found", "errors": nil, "data": nil})
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "ok", "errors": nil, "data": instr})
-}
-
-func (h *InstructionHandler) UpdateInstructionStatus(c *fiber.Ctx) error {
-	idHex := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idHex)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid id", "errors": nil, "data": nil})
-	}
-	var body struct {
-		Status InstructionStatus `json:"status"`
-	}
-	if err := c.BodyParser(&body); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid body", "errors": nil, "data": nil})
-	}
-	switch body.Status {
-	case InstructionStatusPending, InstructionStatusProcessing, InstructionStatusCompleted, InstructionStatusFailed:
-	default:
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid status", "errors": nil, "data": nil})
-	}
-	if err := h.instrRepo.UpdateStatus(id, body.Status); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to update status", "errors": err.Error(), "data": nil})
-	}
-	instr := h.instrRepo.GetByID(id)
-	// publish status change notification
-	if instr != nil && !instr.ID.IsZero() {
-		h.publishNotification(instr.UserID.Hex(), instr.ID.Hex(), body.Status)
-	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "updated", "errors": nil, "data": instr})
-}
-
-func (h *InstructionHandler) UpdateInstructionOutputs(c *fiber.Ctx) error {
-	idHex := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idHex)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid id", "errors": nil, "data": nil})
-	}
-	var body struct {
-		Outputs []File `json:"outputs"`
-	}
-	if err := c.BodyParser(&body); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid body", "errors": nil, "data": nil})
-	}
-	for _, f := range body.Outputs {
-		if f.FileName == "" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "file_name required", "errors": nil, "data": nil})
-		}
-	}
-	if err := h.instrRepo.UpdateOutputs(id, body.Outputs); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to update outputs", "errors": err.Error(), "data": nil})
-	}
-	instr := h.instrRepo.GetByID(id)
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "outputs updated", "errors": nil, "data": instr})
 }
 
 func (h *InstructionHandler) GetInstructionFile(c *fiber.Ctx) error {
@@ -296,7 +228,6 @@ func (h *InstructionHandler) GetInstructionFiles(c *fiber.Ctx) error {
 	})
 }
 
-// RunInstruction can be triggered via HTTP (body contains InstructionRequest) or indirectly via NATS
 func (h *InstructionHandler) RunInstruction(c *fiber.Ctx) error {
 	var req InstructionRequest
 	if c != nil && len(c.Body()) > 0 {
@@ -310,6 +241,19 @@ func (h *InstructionHandler) RunInstruction(c *fiber.Ctx) error {
 	}
 	log.Println("RunInstruction invoked without context body")
 	return nil
+}
+
+func (h *InstructionHandler) publishNotification(instructionID string, status InstructionStatus) {
+	if h == nil || h.nats == nil || h.nats.Conn == nil {
+		return
+	}
+	data, err := json.Marshal(&InstructionNotification{
+		InstructionID:     instructionID,
+		InstructionStatus: string(status),
+	})
+	if err == nil {
+		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectNotificationsSSE, data)
+	}
 }
 
 func (h *InstructionHandler) processImageCompression(instr *Instruction) {
@@ -346,10 +290,12 @@ func (h *InstructionHandler) processImageCompression(instr *Instruction) {
 	if err := h.instrRepo.UpdateOutputs(instr.ID, outputs); err != nil {
 		log.Printf("failed to update outputs: %v", err)
 		_ = h.instrRepo.UpdateStatus(instr.ID, InstructionStatusFailed)
+		h.publishNotification(instr.ID.Hex(), InstructionStatusFailed)
 		return
 	}
 
 	_ = h.instrRepo.UpdateStatus(instr.ID, InstructionStatusCompleted)
+	h.publishNotification(instr.ID.Hex(), InstructionStatusCompleted)
 }
 
 func (h *InstructionHandler) RunInstructionMessage(data []byte) {
@@ -377,6 +323,7 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	}
 
 	_ = h.instrRepo.UpdateStatus(instr.ID, InstructionStatusProcessing)
+	h.publishNotification(instr.ID.Hex(), InstructionStatusProcessing)
 
 	switch product.Key {
 	case "image-compress":

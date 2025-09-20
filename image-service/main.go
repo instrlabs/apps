@@ -42,11 +42,9 @@ func main() {
 
 	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, paymentSvc)
 
-	if _, err := nats.Conn.Subscribe(cfg.NatsSubjectRequests, func(m *natsgo.Msg) {
+	_, _ = nats.Conn.Subscribe(cfg.NatsSubjectImagesRequests, func(m *natsgo.Msg) {
 		instrHandler.RunInstructionMessage(m.Data)
-	}); err != nil {
-		log.Printf("failed to subscribe to %s: %v", cfg.NatsSubjectRequests, err)
-	}
+	})
 
 	go func() {
 		ticker := time.NewTicker(1 * time.Hour)
@@ -60,8 +58,6 @@ func main() {
 	app.Post("/instructions/:product_id", instrHandler.CreateInstruction)
 	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
 	app.Get("/instructions/:id/:file_name", instrHandler.GetInstructionFile)
-	app.Patch("/instructions/:id/status", instrHandler.UpdateInstructionStatus)
-	app.Patch("/instructions/:id/outputs", instrHandler.UpdateInstructionOutputs)
 
 	log.Fatal(app.Listen(cfg.Port))
 }
