@@ -34,7 +34,6 @@ type Instruction struct {
 }
 
 type InstructionRequest struct {
-	UserID        string `json:"user_id"`
 	InstructionID string `json:"instruction_id"`
 }
 

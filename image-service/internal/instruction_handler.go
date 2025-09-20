@@ -111,7 +111,6 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 	h.publishNotification(instructionID.Hex(), InstructionStatusPending)
 
 	if data, err := json.Marshal(&InstructionRequest{
-		UserID:        userID.Hex(),
 		InstructionID: instructionID.Hex(),
 	}); err == nil {
 		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectImagesRequests, data)
