@@ -2,6 +2,7 @@
 import { bytesToString } from "@/utils/bytesToString";
 import {getImageInstruction} from "@/services/images";
 import {APIs} from "@/constants/api";
+import Notif from "@/app/(product)/images/compress/[id]/Notif";
 
 export default async function Compress({ params }: {
   params: Promise<{ id: string }>
@@ -17,6 +18,7 @@ export default async function Compress({ params }: {
 
   return (
     <div className="w-full flex flex-col py-10">
+      <Notif />
       <h2 className="text-center text-3xl font-bold mt-6">
         Your images have been compressed!
       </h2>

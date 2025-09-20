@@ -32,10 +32,10 @@ export async function getImageInstruction(id: string): Promise<ApiResponse<Image
   return await fetchGET<ImageInstruction>(`${APIs.IMAGE_INSTRUCTIONS}/${id}`);
 }
 
-export async function compressImage(files: File[]): Promise<ApiResponse<ResponseImageCompress>> {
+export async function compressImage(productID: string, files: File[]): Promise<ApiResponse<ResponseImageCompress>> {
   const formData = new FormData();
   files.forEach(file => formData.append("files", file));
-  return await fetchPOSTFormData<ResponseImageCompress>(APIs.IMAGE_COMPRESS, formData);
+  return await fetchPOSTFormData<ResponseImageCompress>(`${APIs.IMAGE_INSTRUCTIONS}/${productID}`, formData);
 }
 
 

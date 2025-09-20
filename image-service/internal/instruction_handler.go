@@ -243,14 +243,10 @@ func (h *InstructionHandler) RunInstruction(c *fiber.Ctx) error {
 }
 
 func (h *InstructionHandler) publishNotification(instructionID string, status InstructionStatus) {
-	if h == nil || h.nats == nil || h.nats.Conn == nil {
-		return
-	}
-	data, err := json.Marshal(&InstructionNotification{
+	if data, err := json.Marshal(&InstructionNotification{
 		InstructionID:     instructionID,
 		InstructionStatus: string(status),
-	})
-	if err == nil {
+	}); err == nil {
 		_ = h.nats.Conn.Publish(h.cfg.NatsSubjectNotificationsSSE, data)
 	}
 }

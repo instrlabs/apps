@@ -80,7 +80,7 @@ export default function ImageCompressPage() {
             xSize="lg"
             onClick={async () => {
               setSubmitting(true);
-              const res = await compressImage(files);
+              const res = await compressImage("68b86539fd4e412116305ace", files);
               if (res.success && res.data) {
                 router.push("/images/compress/" + res.data.instruction_id);
               } else {

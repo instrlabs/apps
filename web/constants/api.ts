@@ -12,6 +12,5 @@ export const APIs = {
 
   // Image service endpoints
   IMAGE_INSTRUCTIONS: `/image/instructions`,
-  IMAGE_COMPRESS: `/image/compress`,
   JOBS: `/jobs`,
 };

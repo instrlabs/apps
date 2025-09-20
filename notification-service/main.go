@@ -2,9 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/arthadede/notification-service/internal"
 	"github.com/gofiber/fiber/v2"
@@ -20,7 +17,7 @@ func main() {
 
 	sseService := internal.NewSSEService(cfg)
 
-	_, _ = natsSrv.Conn.Subscribe(cfg.NatsSubjectNotifications, func(m *natsgo.Msg) {
+	_, _ = natsSrv.Conn.Subscribe(cfg.NatsSubjectNotificationsSSE, func(m *natsgo.Msg) {
 		sseService.Broadcast(m.Data)
 	})
 
@@ -31,21 +28,5 @@ func main() {
 
 	app.Get("/sse", sseService.HandleSSE)
 
-	go func() {
-		log.Printf("Starting notification service on %s", cfg.Port)
-		if err := app.Listen(cfg.Port); err != nil {
-			log.Printf("Server stopped: %v", err)
-		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("Shutting down server...")
-
-	if err := app.Shutdown(); err != nil {
-		log.Fatalf("Error during server shutdown: %v", err)
-	}
-
-	log.Println("Server exiting")
+	log.Println(app.Listen(cfg.Port))
 }

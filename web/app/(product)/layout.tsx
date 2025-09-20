@@ -11,6 +11,7 @@ import OverlayLeft from "@/components/layouts/overlay-left";
 import OverlayRight from "@/components/layouts/overlay-right";
 import { ModalProvider } from "@/hooks/useModal";
 import {NotificationProvider, NotificationWidget} from "@/hooks/useNotification";
+import {SSEProvider} from "@/hooks/useSSE";
 
 export default async function LoginLayout({
   children,
@@ -21,6 +22,7 @@ export default async function LoginLayout({
   return (
     <ProfileProvider data={profileData}>
     <ProductProvider data={productData}>
+    <SSEProvider>
     <NotificationProvider>
     <ModalProvider>
     <OverlayProvider>
@@ -36,6 +38,7 @@ export default async function LoginLayout({
     </OverlayProvider>
     </ModalProvider>
     </NotificationProvider>
+    </SSEProvider>
     </ProductProvider>
     </ProfileProvider>
   );

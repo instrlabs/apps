@@ -47,7 +47,7 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 	c.Set("Content-Type", "text/event-stream")
 	c.Set("Cache-Control", "no-cache")
 	c.Set("Connection", "keep-alive")
-	c.Set("Access-Control-Allow-Origin", "http://localhost:8000")
+	c.Set("Access-Control-Allow-Origin", s.cfg.Origins)
 
 	messageChan := make(chan []byte, 16)
 	doneChan := make(chan bool)
@@ -98,7 +98,13 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 				client.done <- true
 				log.Printf("SSE client disconnected for user %s. Total clients: %d", userId, len(s.clients))
 				return
-			case msg := <-client.connection:
+			case data := <-client.connection:
+				var msg InstructionNotification
+				if err := json.Unmarshal(data, &msg); err != nil {
+					log.Printf("RunInstructionMessage: unmarshal error: %v", err)
+					return
+				}
+
 				msgJson, _ := json.Marshal(msg)
 				_, _ = fmt.Fprintf(w, "event: message\ndata: %s\n\n", string(msgJson))
 				_ = w.Flush()

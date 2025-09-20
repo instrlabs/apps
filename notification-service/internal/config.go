@@ -9,8 +9,10 @@ type Config struct {
 	Environment string
 	Port        string
 
-	NatsURL                  string
-	NatsSubjectNotifications string
+	Origins string
+
+	NatsURL                     string
+	NatsSubjectNotificationsSSE string
 }
 
 func NewConfig() *Config {
@@ -20,7 +22,9 @@ func NewConfig() *Config {
 		Environment: initx.GetEnv("ENVIRONMENT", "development"),
 		Port:        initx.GetEnv("PORT", ":3001"),
 
-		NatsURL:                  initx.GetEnv("NATS_URL", "nats://localhost:4222"),
-		NatsSubjectNotifications: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS", "notifications.sse"),
+		Origins: initx.GetEnv("CORS_ALLOWED_ORIGINS", "http://localhost:8000"),
+
+		NatsURL:                     initx.GetEnv("NATS_URL", "nats://localhost:4222"),
+		NatsSubjectNotificationsSSE: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS_SSE", "notifications.sse"),
 	}
 }

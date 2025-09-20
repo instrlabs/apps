@@ -2,6 +2,7 @@ package internal
 
 import (
 	"errors"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -11,7 +12,7 @@ func SetupMiddleware(app *fiber.App) {
 	// CORS
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "http://localhost:8000",
-		AllowMethods:     "GET,OPTIONS",
+		AllowMethods:     "GET, OPTIONS",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, Cache-Control, Pragma",
 		AllowCredentials: true,
 	}))
@@ -19,6 +20,7 @@ func SetupMiddleware(app *fiber.App) {
 	// AUTH
 	app.Use(func(c *fiber.Ctx) error {
 		token := c.Cookies("AccessToken")
+		log.Println(token)
 
 		c.Request().Header.Del("Cookie")
 		c.Request().Header.Del("X-Authenticated")
