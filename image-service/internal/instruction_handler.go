@@ -56,7 +56,7 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 		UserID:    userID,
 		ProductID: productID,
 		Status:    InstructionStatusPending,
-		Inputs:    []File{},
+		Files:     []File{},
 		Outputs:   []File{},
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
@@ -95,7 +95,7 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 			})
 		}
 
-		instr.Inputs = append(instr.Inputs, File{
+		instr.Files = append(instr.Files, File{
 			FileName: objectName,
 			Size:     int64(len(b)),
 		})
@@ -167,7 +167,7 @@ func (h *InstructionHandler) GetInstructionFile(c *fiber.Ctx) error {
 	}
 
 	found := false
-	for _, f := range instr.Inputs {
+	for _, f := range instr.Files {
 		if f.FileName == fileName {
 			found = true
 			break
@@ -221,7 +221,7 @@ func (h *InstructionHandler) GetInstructionFiles(c *fiber.Ctx) error {
 		"message": "ok",
 		"errors":  nil,
 		"data": fiber.Map{
-			"inputs":  instr.Inputs,
+			"inputs":  instr.Files,
 			"outputs": instr.Outputs,
 		},
 	})
@@ -242,7 +242,7 @@ func (h *InstructionHandler) RunInstruction(c *fiber.Ctx) error {
 	return nil
 }
 
-func (h *InstructionHandler) publishNotification(instructionID string, status InstructionStatus) {
+func (h *InstructionHandler) publishNotification(instructionID string, status FileStatus) {
 	if data, err := json.Marshal(&InstructionNotification{
 		InstructionID:     instructionID,
 		InstructionStatus: string(status),
@@ -253,7 +253,7 @@ func (h *InstructionHandler) publishNotification(instructionID string, status In
 
 func (h *InstructionHandler) processImageCompression(instr *Instruction) {
 	var outputs []File
-	for idx, input := range instr.Inputs {
+	for idx, input := range instr.Files {
 		inputBytes := h.s3.Get("images/" + input.FileName)
 		if inputBytes == nil {
 			log.Printf("processImageCompression: input file not found: %s", input.FileName)

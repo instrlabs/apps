@@ -6,29 +6,29 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type InstructionStatus string
+type FileStatus string
 
 const (
-	InstructionStatusPending    InstructionStatus = "PENDING"
-	InstructionStatusProcessing InstructionStatus = "PROCESSING"
-	InstructionStatusCompleted  InstructionStatus = "COMPLETED"
-	InstructionStatusFailed     InstructionStatus = "FAILED"
+	FileStatusPending    FileStatus = "PENDING"
+	FileStatusProcessing FileStatus = "PROCESSING"
+	FileStatusCompleted  FileStatus = "COMPLETED"
+	FileStatusFailed     FileStatus = "FAILED"
 )
 
 type InstructionType string
 
 type File struct {
-	FileName string `json:"file_name" bson:"file_name"`
-	Size     int64  `json:"size" bson:"size"`
+	OriginalName string     `json:"original_name" bson:"original_name"`
+	FileName     string     `json:"file_name" bson:"file_name"`
+	Size         int64      `json:"size" bson:"size"`
+	Status       FileStatus `json:"status" bson:"status"`
 }
 
 type Instruction struct {
 	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	UserID    primitive.ObjectID `json:"user_id" bson:"user_id"`
 	ProductID primitive.ObjectID `json:"product_id" bson:"product_id"`
-	Inputs    []File             `json:"inputs" bson:"inputs"`
-	Outputs   []File             `json:"outputs" bson:"outputs"`
-	Status    InstructionStatus  `json:"status" bson:"status"`
+	Files     []File             `json:"files" bson:"files"`
 	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 }

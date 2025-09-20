@@ -39,7 +39,7 @@ func (r *InstructionRepository) GetByID(id primitive.ObjectID) *Instruction {
 	return &instruction
 }
 
-func (r *InstructionRepository) UpdateStatus(id primitive.ObjectID, status InstructionStatus) error {
+func (r *InstructionRepository) UpdateStatus(id primitive.ObjectID, status FileStatus) error {
 	_, err := r.collection.UpdateByID(context.Background(), id, bson.M{
 		"$set": bson.M{
 			"status":     status,
