@@ -37,10 +37,13 @@ func main() {
 	initx.SetupAuthenticated(app, []string{})
 
 	instrRepo := internal.NewInstructionRepository(mongo)
+	fileRepo := internal.NewFileRepository(mongo)
 
 	paymentSvc := internal.NewPaymentService(cfg)
 
-	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, paymentSvc)
+	imageSvc := internal.NewImageService()
+	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, fileRepo, paymentSvc, imageSvc)
+	fileHandler := internal.NewFileHandler(cfg, s3, nats, instrRepo, fileRepo)
 
 	_, _ = nats.Conn.Subscribe(cfg.NatsSubjectImagesRequests, func(m *natsgo.Msg) {
 		instrHandler.RunInstructionMessage(m.Data)
@@ -54,8 +57,10 @@ func main() {
 		}
 	}()
 
+	app.Post("/instructions/:product/:key", instrHandler.CreateInstruction)
+	app.Post("/files/:instruction_id", fileHandler.CreateFile)
+
 	app.Get("/instructions", instrHandler.ListInstructions)
-	app.Post("/instructions/:product_id", instrHandler.CreateInstruction)
 	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
 	app.Get("/instructions/:id/:file_name", instrHandler.GetInstructionFile)
 

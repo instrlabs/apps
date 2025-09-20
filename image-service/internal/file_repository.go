@@ -15,6 +15,28 @@ type FileRepository struct {
 	collection *mongo.Collection
 }
 
+func (r *FileRepository) GetByID(id primitive.ObjectID) *File {
+	ctx := context.Background()
+	var f File
+	if err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&f); err != nil {
+		log.Printf("file_repository.GetByID: FindOne failed for id=%s: %v", id.Hex(), err)
+		return nil
+	}
+	return &f
+}
+
+func (r *FileRepository) LinkOutput(inputID, outputID primitive.ObjectID) error {
+	_, err := r.collection.UpdateByID(context.Background(), inputID, bson.M{
+		"$set": bson.M{
+			"output_id": outputID,
+		},
+	})
+	if err != nil {
+		log.Printf("file_repository.LinkOutput: UpdateByID failed input=%s output=%s: %v", inputID.Hex(), outputID.Hex(), err)
+	}
+	return err
+}
+
 func NewFileRepository(db *initx.Mongo) *FileRepository {
 	return &FileRepository{
 		db:         db,

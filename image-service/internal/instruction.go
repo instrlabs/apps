@@ -10,7 +10,6 @@ type FileStatus string
 
 const (
 	FileStatusFailed     FileStatus = "FAILED"
-	FileStatusPending    FileStatus = "PENDING"
 	FileStatusUploading  FileStatus = "UPLOADING"
 	FileStatusProcessing FileStatus = "PROCESSING"
 	FileStatusDone       FileStatus = "DONE"
@@ -22,6 +21,7 @@ type File struct {
 	ID            primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	InstructionID primitive.ObjectID `json:"instruction_id" bson:"instruction_id"`
 	OriginalName  string             `json:"original_name" bson:"original_name"`
+	FileName      string             `json:"file_name" bson:"file_name"`
 	Size          int64              `json:"size" bson:"size"`
 	Status        FileStatus         `json:"status" bson:"status"`
 	OutputID      primitive.ObjectID `json:"output_id" bson:"output_id"`
@@ -35,11 +35,8 @@ type Instruction struct {
 	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
-type InstructionRequest struct {
+type FileNotification struct {
 	InstructionID string `json:"instruction_id"`
-}
-
-type InstructionNotification struct {
-	InstructionID     string `json:"instruction_id"`
-	InstructionStatus string `json:"instruction_status"`
+	FileID        string `json:"file_id"`
+	FileStatus    string `json:"file_status"`
 }
