@@ -10,6 +10,7 @@ type FileStatus string
 
 const (
 	FileStatusFailed     FileStatus = "FAILED"
+	FileStatusPending    FileStatus = "PENDING"
 	FileStatusUploading  FileStatus = "UPLOADING"
 	FileStatusProcessing FileStatus = "PROCESSING"
 	FileStatusDone       FileStatus = "DONE"

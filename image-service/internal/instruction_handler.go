@@ -154,35 +154,57 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 	inputID := primitive.NewObjectID()
 	outputID := primitive.NewObjectID()
 	ext := filepath.Ext(fh.Filename)
-	fileName := "images/" + inputID.Hex() + ext
 
-	fileDoc := &File{
+	inName := "images/" + inputID.Hex() + ext
+	outName := "images/" + outputID.Hex() + ext
+
+	inFile := &File{
 		ID:            inputID,
 		InstructionID: instr.ID,
 		OriginalName:  fh.Filename,
-		FileName:      fileName,
+		FileName:      inName,
 		Size:          int64(len(b)),
 		Status:        FileStatusUploading,
 		OutputID:      outputID,
 	}
-	if err := h.fileRepo.CreateOne(fileDoc); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to create file record", "errors": nil, "data": nil})
+
+	outFile := &File{
+		ID:            outputID,
+		InstructionID: instr.ID,
+		OriginalName:  filepath.Base(outName),
+		FileName:      outName,
+		Size:          0,
+		Status:        FileStatusPending,
 	}
 
-	if err := h.s3.Put(fileDoc.FileName, b); err != nil {
+	if err := h.fileRepo.CreateMany([]*File{inFile, outFile}); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to create file records", "errors": nil, "data": nil})
+	}
+
+	// notify UI about new records
+	h.publishFileNotification(instr.ID, inFile.ID, FileStatusUploading)
+	h.publishFileNotification(instr.ID, outFile.ID, FileStatusPending)
+
+	if err := h.s3.Put(inFile.FileName, b); err != nil {
 		_ = h.fileRepo.UpdateStatus(inputID, FileStatusFailed)
+		_ = h.fileRepo.UpdateStatus(outputID, FileStatusFailed)
+		h.publishFileNotification(instr.ID, inFile.ID, FileStatusFailed)
+		h.publishFileNotification(instr.ID, outFile.ID, FileStatusFailed)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "upload failed", "errors": nil, "data": nil})
 	}
 
 	if err := h.nats.Conn.Publish(h.cfg.NatsSubjectImagesRequests, []byte(inputID.Hex())); err != nil {
 		_ = h.fileRepo.UpdateStatus(inputID, FileStatusFailed)
+		_ = h.fileRepo.UpdateStatus(outputID, FileStatusFailed)
+		h.publishFileNotification(instr.ID, inFile.ID, FileStatusFailed)
+		h.publishFileNotification(instr.ID, outFile.ID, FileStatusFailed)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to publish to nats", "errors": nil, "data": nil})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "file created",
 		"errors":  nil,
-		"data":    fiber.Map{"file": fileDoc},
+		"data":    fiber.Map{"input": inFile, "output": outFile},
 	})
 }
 
@@ -251,26 +273,23 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 		return
 	}
 
-	// 5b. Create output file doc and link it from input
-	ext := filepath.Ext(input.FileName)
-	outName := "images/" + input.OutputID.Hex() + ext
-	outFile := &File{
-		ID:            input.OutputID,
-		InstructionID: instr.ID,
-		OriginalName:  filepath.Base(outName),
-		FileName:      outName,
-		Size:          int64(len(outputBytes)),
-		Status:        FileStatusProcessing,
-	}
-	if err := h.fileRepo.CreateOne(outFile); err != nil {
-		log.Printf("RunInstructionMessage: failed to create output file doc: %v", err)
-		_ = h.fileRepo.UpdateStatus(outFile.ID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, outFile.ID, FileStatusFailed)
+	// 5b. Use pre-created output file doc
+	outFile := h.fileRepo.GetByID(input.OutputID)
+	if outFile == nil || outFile.ID.IsZero() {
+		log.Printf("RunInstructionMessage: pre-created output file not found for input=%s outputID=%s", input.ID.Hex(), input.OutputID.Hex())
+		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
+		h.publishFileNotification(instr.ID, input.ID, FileStatusFailed)
 		return
-	} else {
-		_ = h.fileRepo.UpdateStatus(outFile.ID, FileStatusUploading)
-		h.publishFileNotification(instr.ID, outFile.ID, FileStatusUploading)
 	}
+
+	// Ensure we have an S3 key (should be set during creation time)
+	if outFile.FileName == "" {
+		ext := filepath.Ext(input.FileName)
+		outFile.FileName = "images/" + outFile.ID.Hex() + ext
+	}
+
+	_ = h.fileRepo.UpdateStatus(outFile.ID, FileStatusUploading)
+	h.publishFileNotification(instr.ID, outFile.ID, FileStatusUploading)
 
 	// 6. Upload output to S3
 	if err := h.s3.Put(outFile.FileName, outputBytes); err != nil {
