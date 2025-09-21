@@ -28,7 +28,7 @@ export async function createInstruction(productKey: string) {
 export async function createInstructionDetails(instructionId: string, file: File) {
   const formData = new FormData();
   formData.append("file", file);
-  return await fetchPOSTFormData<{ file: InstructionFile }>(`${APIs.IMAGES}/instructions/${instructionId}/details`, formData);
+  return await fetchPOSTFormData<{ input: InstructionFile, output: InstructionFile }>(`${APIs.IMAGES}/instructions/${instructionId}/details`, formData);
 }
 
 export async function getImageInstructions() {

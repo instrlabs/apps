@@ -165,7 +165,7 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 		FileName:      inName,
 		Size:          int64(len(b)),
 		Status:        FileStatusUploading,
-		OutputID:      outputID,
+		OutputID:      &outputID,
 	}
 
 	outFile := &File{
@@ -274,7 +274,7 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	}
 
 	// 5b. Use pre-created output file doc
-	outFile := h.fileRepo.GetByID(input.OutputID)
+	outFile := h.fileRepo.GetByID(*input.OutputID)
 	if outFile == nil || outFile.ID.IsZero() {
 		log.Printf("RunInstructionMessage: pre-created output file not found for input=%s outputID=%s", input.ID.Hex(), input.OutputID.Hex())
 		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
