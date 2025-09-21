@@ -43,7 +43,6 @@ func main() {
 
 	imageSvc := internal.NewImageService()
 	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, fileRepo, paymentSvc, imageSvc)
-	fileHandler := internal.NewFileHandler(cfg, s3, nats, instrRepo, fileRepo)
 
 	_, _ = nats.Conn.Subscribe(cfg.NatsSubjectImagesRequests, func(m *natsgo.Msg) {
 		instrHandler.RunInstructionMessage(m.Data)
@@ -57,12 +56,12 @@ func main() {
 		}
 	}()
 
-	app.Post("/instructions/:product/:key", instrHandler.CreateInstruction)
-	app.Post("/files/:instruction_id", fileHandler.CreateFile)
+	app.Post("/instructions/:product_key", instrHandler.CreateInstruction)
+	app.Post("/instructions/:id/details", instrHandler.CreateInstructionDetails)
 
 	app.Get("/instructions", instrHandler.ListInstructions)
 	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
-	app.Get("/instructions/:id/:file_name", instrHandler.GetInstructionFile)
+	app.Get("/instructions/:id/details", instrHandler.GetInstructionDetails)
 
 	log.Fatal(app.Listen(cfg.Port))
 }

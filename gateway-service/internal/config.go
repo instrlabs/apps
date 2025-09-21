@@ -1,10 +1,8 @@
 package internal
 
 import (
-	"os"
-
+	initx "github.com/histweety-labs/shared/init"
 	"github.com/joho/godotenv"
-	log "github.com/sirupsen/logrus"
 )
 
 type ServiceConfig struct {
@@ -18,40 +16,26 @@ type Config struct {
 	Services []ServiceConfig
 }
 
-func init() {
-	if err := godotenv.Load(); err != nil {
-		log.Warn("Error loading .env file, using default environment variables")
-	}
-
-	log.SetFormatter(&log.JSONFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.InfoLevel)
-}
-
 func LoadConfig() *Config {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "3000"
-		log.Warn("PORT not set, using default: ", port)
-	}
+	_ = godotenv.Load()
 
 	return &Config{
-		Port: port,
+		Port: initx.GetEnv("PORT", ":3000"),
 		Services: []ServiceConfig{
 			{
 				Name:   "auth-service",
-				URL:    os.Getenv("AUTH_SERVICE_URL"),
+				URL:    initx.GetEnv("AUTH_SERVICE_URL", "http://auth-service:3000"),
 				Prefix: "/auth",
 			},
 			{
 				Name:   "payment-service",
-				URL:    os.Getenv("PAYMENT_SERVICE_URL"),
-				Prefix: "/payment",
+				URL:    initx.GetEnv("PAYMENT_SERVICE_URL", "http://payment-service:3000"),
+				Prefix: "/payments",
 			},
 			{
 				Name:   "image-service",
-				URL:    os.Getenv("IMAGE_SERVICE_URL"),
-				Prefix: "/image",
+				URL:    initx.GetEnv("IMAGE_SERVICE_URL", "http://image-service:3000"),
+				Prefix: "/images",
 			},
 		},
 	}

@@ -3,10 +3,9 @@ package internal
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"log"
-	"mime"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -36,7 +35,7 @@ func NewInstructionHandler(
 }
 
 func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
-	productKey := c.Params("product") + c.Params("key")
+	productKey := c.Params("product_key")
 	userID, _ := c.Locals("UserID").(string)
 	product := h.productServ.GetProduct(userID, productKey)
 	if product == nil {
@@ -92,11 +91,10 @@ func (h *InstructionHandler) GetInstructionByID(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "ok", "errors": nil, "data": instr})
 }
 
-func (h *InstructionHandler) GetInstructionFile(c *fiber.Ctx) error {
+func (h *InstructionHandler) GetInstructionDetails(c *fiber.Ctx) error {
 	idHex := c.Params("id")
-	fileName := c.Params("file_name")
-	if idHex == "" || fileName == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "id and file_name required", "errors": nil, "data": nil})
+	if idHex == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "id required", "errors": nil, "data": nil})
 	}
 
 	id, err := primitive.ObjectIDFromHex(idHex)
@@ -115,31 +113,77 @@ func (h *InstructionHandler) GetInstructionFile(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden", "errors": nil, "data": nil})
 	}
 
-	// Validate file belongs to this instruction by scanning files
 	files := h.fileRepo.ListByInstruction(instr.ID)
-	found := false
-	for _, f := range files {
-		if f.FileName == fileName {
-			found = true
-			break
-		}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "ok",
+		"errors":  nil,
+		"data":    fiber.Map{"files": files},
+	})
+}
+
+func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
+	instrIDHex := c.Params("id", "")
+	if instrIDHex == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "instruction id required", "errors": nil, "data": nil})
 	}
-	if !found {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "file not found in instruction", "errors": nil, "data": nil})
+	instrID, err := primitive.ObjectIDFromHex(instrIDHex)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid instruction id", "errors": nil, "data": nil})
 	}
 
-	// Retrieve from S3
-	b := h.s3.Get(fileName)
-	if b == nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "file not found", "errors": nil, "data": nil})
+	instr := h.instrRepo.GetByID(instrID)
+	if instr == nil || instr.ID.IsZero() {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "instruction not found", "errors": nil, "data": nil})
 	}
 
-	ext := filepath.Ext(fileName)
-	ct := mime.TypeByExtension(ext)
-	c.Set("Content-Type", ct)
-	c.Set("Content-Length", strconv.FormatInt(int64(len(b)), 10))
-	c.Attachment(fileName)
-	return c.Status(fiber.StatusOK).Send(b)
+	localUserID, _ := c.Locals("UserID").(string)
+	userID, _ := primitive.ObjectIDFromHex(localUserID)
+	if instr.UserID != userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden", "errors": nil, "data": nil})
+	}
+
+	fh, err := c.FormFile("file")
+	if err != nil || fh == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "no file uploaded", "errors": nil, "data": nil})
+	}
+
+	f, _ := fh.Open()
+	b, _ := io.ReadAll(f)
+	_ = f.Close()
+
+	inputID := primitive.NewObjectID()
+	outputID := primitive.NewObjectID()
+	ext := filepath.Ext(fh.Filename)
+	fileName := "images/" + inputID.Hex() + ext
+
+	fileDoc := &File{
+		ID:            inputID,
+		InstructionID: instr.ID,
+		OriginalName:  fh.Filename,
+		FileName:      fileName,
+		Size:          int64(len(b)),
+		Status:        FileStatusUploading,
+		OutputID:      outputID,
+	}
+	if err := h.fileRepo.CreateOne(fileDoc); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to create file record", "errors": nil, "data": nil})
+	}
+
+	if err := h.s3.Put(fileDoc.FileName, b); err != nil {
+		_ = h.fileRepo.UpdateStatus(inputID, FileStatusFailed)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "upload failed", "errors": nil, "data": nil})
+	}
+
+	if err := h.nats.Conn.Publish(h.cfg.NatsSubjectImagesRequests, []byte(inputID.Hex())); err != nil {
+		_ = h.fileRepo.UpdateStatus(inputID, FileStatusFailed)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to publish to nats", "errors": nil, "data": nil})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "file created",
+		"errors":  nil,
+		"data":    fiber.Map{"file": fileDoc},
+	})
 }
 
 func (h *InstructionHandler) RunInstructionMessage(data []byte) {
@@ -189,13 +233,16 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	// 5. Process based on product key
 	var outputBytes []byte
 	switch product.Key {
-	case "image-compress":
+	case "images-compress":
 		outputBytes, err = h.imageSvc.Compress(inputBytes)
 		if err != nil {
 			log.Printf("RunInstructionMessage: image-compress failed: %v", err)
 			_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
 			h.publishFileNotification(instr.ID, input.ID, FileStatusFailed)
 			return
+		} else {
+			_ = h.fileRepo.UpdateStatus(input.ID, FileStatusDone)
+			h.publishFileNotification(instr.ID, input.ID, FileStatusDone)
 		}
 	default:
 		log.Printf("RunInstructionMessage: unsupported product key: %s", product.Key)
@@ -205,44 +252,36 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	}
 
 	// 5b. Create output file doc and link it from input
-	outID := primitive.NewObjectID()
 	ext := filepath.Ext(input.FileName)
-	outName := "images/" + outID.Hex() + ext
+	outName := "images/" + input.OutputID.Hex() + ext
 	outFile := &File{
-		ID:            outID,
+		ID:            input.OutputID,
 		InstructionID: instr.ID,
 		OriginalName:  filepath.Base(outName),
 		FileName:      outName,
 		Size:          int64(len(outputBytes)),
-		Status:        FileStatusDone,
-		OutputID:      primitive.NilObjectID,
+		Status:        FileStatusProcessing,
 	}
 	if err := h.fileRepo.CreateOne(outFile); err != nil {
 		log.Printf("RunInstructionMessage: failed to create output file doc: %v", err)
-		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, input.ID, FileStatusFailed)
+		_ = h.fileRepo.UpdateStatus(outFile.ID, FileStatusFailed)
+		h.publishFileNotification(instr.ID, outFile.ID, FileStatusFailed)
 		return
-	}
-	if err := h.fileRepo.LinkOutput(input.ID, outID); err != nil {
-		log.Printf("RunInstructionMessage: failed to link output: %v", err)
-		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, input.ID, FileStatusFailed)
-		return
+	} else {
+		_ = h.fileRepo.UpdateStatus(outFile.ID, FileStatusUploading)
+		h.publishFileNotification(instr.ID, outFile.ID, FileStatusUploading)
 	}
 
 	// 6. Upload output to S3
 	if err := h.s3.Put(outFile.FileName, outputBytes); err != nil {
 		log.Printf("RunInstructionMessage: failed to upload output to S3: %v", err)
-		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, input.ID, FileStatusFailed)
+		_ = h.fileRepo.UpdateStatus(outFile.ID, FileStatusFailed)
+		h.publishFileNotification(instr.ID, outFile.ID, FileStatusFailed)
 		return
+	} else {
+		_ = h.fileRepo.UpdateStatus(outFile.ID, FileStatusDone)
+		h.publishFileNotification(instr.ID, outFile.ID, FileStatusDone)
 	}
-
-	// Publish DONE for output file
-	h.publishFileNotification(instr.ID, outFile.ID, FileStatusDone)
-
-	_ = h.fileRepo.UpdateStatus(input.ID, FileStatusDone)
-	h.publishFileNotification(instr.ID, input.ID, FileStatusDone)
 }
 
 func (h *InstructionHandler) publishFileNotification(instrID, fileID primitive.ObjectID, status FileStatus) {

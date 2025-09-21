@@ -25,18 +25,6 @@ func (r *FileRepository) GetByID(id primitive.ObjectID) *File {
 	return &f
 }
 
-func (r *FileRepository) LinkOutput(inputID, outputID primitive.ObjectID) error {
-	_, err := r.collection.UpdateByID(context.Background(), inputID, bson.M{
-		"$set": bson.M{
-			"output_id": outputID,
-		},
-	})
-	if err != nil {
-		log.Printf("file_repository.LinkOutput: UpdateByID failed input=%s output=%s: %v", inputID.Hex(), outputID.Hex(), err)
-	}
-	return err
-}
-
 func NewFileRepository(db *initx.Mongo) *FileRepository {
 	return &FileRepository{
 		db:         db,
