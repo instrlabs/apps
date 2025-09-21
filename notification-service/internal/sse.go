@@ -24,14 +24,21 @@ type SSEService struct {
 	mutex   sync.Mutex
 }
 
-func (s *SSEService) Broadcast(msg []byte) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	for _, client := range s.clients {
-		select {
-		case client.connection <- msg:
-		default:
+func (s *SSEService) NotificationUser(msg []byte) {
+	var envelope struct {
+		UserID string `json:"user_id"`
+	}
+	if err := json.Unmarshal(msg, &envelope); err == nil {
+		s.mutex.Lock()
+		client := s.clients[envelope.UserID]
+		s.mutex.Unlock()
+		if client != nil {
+			select {
+			case client.connection <- msg:
+			default:
+			}
 		}
+		return
 	}
 }
 

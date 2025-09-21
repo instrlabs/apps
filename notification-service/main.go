@@ -18,7 +18,7 @@ func main() {
 	sseService := internal.NewSSEService(cfg)
 
 	_, _ = natsSrv.Conn.Subscribe(cfg.NatsSubjectNotificationsSSE, func(m *natsgo.Msg) {
-		sseService.Broadcast(m.Data)
+		sseService.NotificationUser(m.Data)
 	})
 
 	app := fiber.New(fiber.Config{})
