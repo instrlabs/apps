@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 import { ROUTES } from "@/constants/routes";
-import { registerUser } from "@/services/authentications";
+import { registerUser } from "@/services/auth";
 import useNotification from "@/hooks/useNotification";
 import Button from "@/components/actions/button";
 import TextField from "@/components/inputs/text-field";

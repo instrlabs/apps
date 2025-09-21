@@ -1,7 +1,7 @@
 "use server"
 
-import { cookies } from "next/headers";
 import { APIs } from "@/constants/api";
+import {fetchGET} from "@/utils";
 
 export type ApiResponse<TBody> = {
   success: boolean;
@@ -32,25 +32,7 @@ export type Product = {
 
 
 export async function listProducts(): Promise<ApiResponse<Product[]>> {
-  const baseUrl = process.env.API_URL;
-  const url = `${baseUrl}${APIs.PRODUCTS}`;
-  const storeCookie = await cookies();
-  const res = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Cookie": storeCookie.toString()
-    },
-  });
-
-  const isOK = res.ok;
-  const resBody = await res.json();
-  return {
-    success: isOK,
-    message: resBody.message,
-    data: isOK ? resBody.data : null,
-    errors: !isOK ? resBody.errors : null,
-  };
+  return await fetchGET(`${APIs.PAYMENTS}/products`);
 }
 
 // export async function getProduct(id: string): Promise<ApiResponse<Product>> {

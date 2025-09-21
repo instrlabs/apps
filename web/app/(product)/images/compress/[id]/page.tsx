@@ -2,13 +2,13 @@
 import { bytesToString } from "@/utils/bytesToString";
 import {getImageInstruction} from "@/services/images";
 import {APIs} from "@/constants/api";
-import Notif from "@/app/(product)/images/compress/[id]/Notif";
+import Notif from "@/app/(product)/images/compress/Notif";
 
 export default async function Compress({ params }: {
   params: Promise<{ id: string }>
 }) {
   const getFileUrl = (id: string, filename: string) => {
-    return `${process.env.API_URL}${APIs.IMAGE_INSTRUCTIONS}/${encodeURIComponent(id)}/${encodeURIComponent(filename)}`;
+    return `${process.env.API_URL}${APIs.IMAGES}/${encodeURIComponent(id)}/${encodeURIComponent(filename)}`;
   }
 
   const res = await getImageInstruction((await params).id);

@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
-import { requestPasswordReset } from "@/services/authentications";
+import { requestPasswordReset } from "@/services/auth";
 import Button from "@/components/actions/button";
 import useNotification from "@/hooks/useNotification";
 import { ROUTES } from "@/constants/routes";

@@ -2,7 +2,7 @@
 
 import React, {Suspense} from "react";
 import OverlayBody from "@/components/layouts/overlay-body";
-import { getProfile } from "@/services/authentications";
+import { getProfile } from "@/services/auth";
 import {ProfileProvider} from "@/hooks/useProfile";
 import {listProducts} from "@/services/products";
 import {ProductProvider} from "@/hooks/useProduct";

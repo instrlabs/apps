@@ -9,7 +9,7 @@ export type FileDropzoneProps = {
   accepts: string[];
   multiple: boolean;
   onFilesAdded: (files: File[]) => void;
-  maxFileSize: number; // in bytes
+  maxSize: number; // in bytes
 };
 
 function validateFiles(files: File[], accepts: string[], maxFileSize: number): boolean {
@@ -17,7 +17,7 @@ function validateFiles(files: File[], accepts: string[], maxFileSize: number): b
   return files.every((file) => acceptedTypes.includes(file.type) && file.size <= maxFileSize);
 }
 
-const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, multiple, maxFileSize }) => {
+const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, multiple, maxSize }) => {
   const { showNotification } = useNotification();
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -50,7 +50,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
         return;
       }
 
-      if (!validateFiles(files, accepts, maxFileSize)) {
+      if (!validateFiles(files, accepts, maxSize)) {
         showNotification({ title: "Error", message: "Invalid file type or file size.", type: "error" });
         return;
       }
@@ -58,10 +58,10 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
       onFilesAdded(files);
       e.dataTransfer.clearData();
     }
-  }, [multiple, accepts, maxFileSize, onFilesAdded, showNotification]);
+  }, [multiple, accepts, maxSize, onFilesAdded, showNotification]);
 
   const baseClass = useMemo(() => (
-    `w-full max-w-2xl aspect-video flex flex-col items-center justify-center gap-3 ` +
+    `w-full aspect-video flex flex-col items-center justify-center gap-3 ` +
     `border-1 border-dashed rounded-xl p-10 cursor-pointer ` +
     (isDragging ? "bg-gray-50" : "")
   ), [isDragging]);
@@ -77,7 +77,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
       className={baseClass}
     >
       <div className="text-center gap-1">
-        <p className="text-base font-light">Maximum file size: {bytesToString(maxFileSize)}</p>
+        <p className="text-base font-light">Maximum file size: {bytesToString(maxSize)}</p>
         <p className="text-base font-light">Support format: {acceptsToExtensions(accepts).join(", ")}</p>
       </div>
       <input
@@ -96,7 +96,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
                 title: "Something went wrong",
                 message: "Only one file can be dropped at a time."
               });
-            } else if (!validateFiles(files, accepts, maxFileSize)) {
+            } else if (!validateFiles(files, accepts, maxSize)) {
               showNotification({
                 type: "error",
                 title: "Something went wrong",

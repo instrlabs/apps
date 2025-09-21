@@ -10,7 +10,7 @@ import ButtonIcon from "@/components/actions/button-icon";
 import ChevronLeftIcon from "@/components/icons/chevron-left";
 import useNotification from "@/hooks/useNotification";
 import { useProfile } from "@/hooks/useProfile";
-import { updateProfile } from "@/services/authentications";
+import { updateProfile } from "@/services/auth";
 
 type EditProfileFormValues = {
   name: string;
@@ -60,7 +60,7 @@ export default function EditProfilePage() {
     // Regardless of whether update returns user data, refresh the profile to stay in sync with auth-service
     try {
       // Lazy import to avoid circular issues
-      const { getProfile: fetchProfile } = await import("@/services/authentications");
+      const { getProfile: fetchProfile } = await import("@/services/auth");
       const res = await fetchProfile();
       if (res && !res.errors && res.data) {
         setProfile(res.data.data.user);

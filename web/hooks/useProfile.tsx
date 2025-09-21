@@ -3,7 +3,7 @@
 import React, {createContext, useContext, useEffect, useMemo, useState} from "react";
 import { redirect } from "next/navigation";
 
-import { ProfileResponse, getProfile, refreshToken } from "@/services/authentications";
+import { ProfileResponse, getProfile, refreshToken } from "@/services/auth";
 
 
 type ProfileContextType = {

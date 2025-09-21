@@ -1,4 +1,4 @@
-import { getImageInstructions, type ImageInstruction } from "@/services/images";
+import { getImageInstructions, type Instruction } from "@/services/images";
 import { APIs } from "@/constants/api";
 
 export default async function HistoriesPage() {
@@ -16,7 +16,7 @@ export default async function HistoriesPage() {
 
       {res.success && res.data && res.data.length > 0 && (
         <ul className="space-y-3">
-          {res.data.map((item: ImageInstruction) => (
+          {res.data.map((item: Instruction) => (
             <li key={item.id} className="rounded border p-4 flex flex-col gap-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
@@ -37,7 +37,7 @@ export default async function HistoriesPage() {
                   <div className="text-sm font-medium text-gray-800 mb-1">Inputs</div>
                   <ul className="text-sm text-gray-700 grid gap-1">
                     {item.inputs.map((f, idx) => {
-                      const href = `${process.env.API_URL}${APIs.IMAGE_INSTRUCTIONS}/${encodeURIComponent(item.id)}/${encodeURIComponent(f.file_name)}`;
+                      const href = `${process.env.API_URL}${APIs.IMAGES}/${encodeURIComponent(item.id)}/${encodeURIComponent(f.file_name)}`;
                       return (
                         <li key={`${item.id}-in-${idx}`} className="flex items-center justify-between gap-2">
                           <span className="truncate">{f.file_name}</span>
@@ -68,7 +68,7 @@ export default async function HistoriesPage() {
                   <div className="text-sm font-medium text-gray-800 mb-1">Outputs</div>
                   <ul className="text-sm text-gray-700 grid gap-1">
                     {item.outputs.map((f, idx) => {
-                      const href = `${process.env.API_URL}${APIs.IMAGE_INSTRUCTIONS}/${encodeURIComponent(item.id)}/${encodeURIComponent(f.file_name)}`;
+                      const href = `${process.env.API_URL}${APIs.IMAGES}/${encodeURIComponent(item.id)}/${encodeURIComponent(f.file_name)}`;
                       return (
                         <li key={`${item.id}-out-${idx}`} className="flex items-center justify-between gap-2">
                           <span className="truncate">{f.file_name}</span>

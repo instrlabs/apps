@@ -20,15 +20,14 @@ export async function registerUser({ name, email, password }: {
   email: string,
   password: string
 }): Promise<ApiResponse<RegisterResponse>> {
-  return await fetchPOST(APIs.AUTH_REGISTER, { name, email, password });
+  return await fetchPOST(`${APIs.AUTH}/register` , { name, email, password });
 }
 
 export async function loginUser({ email, password }: {
   email: string,
   password: string
-}): Promise<ApiResponse<EmptyBody>> {
-  const url = process.env.API_URL + APIs.AUTH_LOGIN;
-  const res = await fetch(url, {
+}): Promise<ApiResponse<null>> {
+  const res = await fetch(process.env.API_URL + `${APIs.AUTH}/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -53,13 +52,10 @@ export async function loginUser({ email, password }: {
 }
 
 export async function refreshToken(): Promise<ApiResponse<EmptyBody>> {
-  const url = process.env.API_URL + APIs.AUTH_REFRESH;
-  const refreshToken = (await cookies()).get("RefreshToken")?.value;
-
-  const res = await fetch(url, {
+  const res = await fetch(process.env.API_URL + `${APIs.AUTH}/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: refreshToken }),
+    body: JSON.stringify({ refresh_token: (await cookies()).get("RefreshToken")?.value }),
   });
 
   const isOK = res.ok;
@@ -78,32 +74,32 @@ export async function refreshToken(): Promise<ApiResponse<EmptyBody>> {
 }
 
 export async function requestPasswordReset(email: string): Promise<ApiResponse<EmptyBody>> {
-  return await fetchPOST(APIs.AUTH_FORGOT_PASSWORD, { email });
+  return await fetchPOST(`${APIs.AUTH}/forgot-password`, { email });
 }
 
 export async function resetPassword(token: string, new_password: string): Promise<ApiResponse<EmptyBody>> {
-  return await fetchPOST(APIs.AUTH_RESET_PASSWORD, { token, new_password });
-}
-
-export async function getProfile(): Promise<ApiResponse<ProfileResponse>> {
-  return await fetchGET(APIs.AUTH_PROFILE);
+  return await fetchPOST(`${APIs.AUTH}/reset-password`, { token, new_password });
 }
 
 export async function logoutUser(): Promise<ApiResponse<EmptyBody>> {
-  await fetchPOST<EmptyBody>(APIs.AUTH_LOGOUT, {});
+  await fetchPOST<EmptyBody>(`${APIs.AUTH}/logout`, {});
   const storeCookie = await cookies();
   storeCookie.delete("AccessToken");
   storeCookie.delete("RefreshToken");
-  redirect("/login?message=You have been logged out.")
+  redirect("/login")
+}
+
+export async function getProfile(): Promise<ApiResponse<ProfileResponse>> {
+  return await fetchGET(`${APIs.AUTH}/profile`);
 }
 
 export async function updateProfile(name: string): Promise<ApiResponse<EmptyBody>> {
-  return await fetchPUT(APIs.AUTH_PROFILE, { name });
+  return await fetchPUT(`${APIs.AUTH}/profile`, { name });
 }
 
 export async function changePassword(
   current_password: string,
   new_password: string
 ): Promise<ApiResponse<EmptyBody>> {
-  return await fetchPOST(APIs.AUTH_CHANGE_PASSWORD, { current_password, new_password });
+  return await fetchPOST(`${APIs.AUTH}/change-password`, { current_password, new_password });
 }

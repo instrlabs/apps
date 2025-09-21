@@ -47,6 +47,8 @@ services:
     env_file:
       - ./image-service/.env
     command: [ "./app" ]
+    dns:
+      - 8.8.8.8
 
   gateway-service:
     build:

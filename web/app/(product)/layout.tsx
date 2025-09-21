@@ -1,6 +1,6 @@
 import React, {Suspense} from "react";
 
-import {getProfile} from "@/services/authentications";
+import {getProfile} from "@/services/auth";
 import {ProfileProvider} from "@/hooks/useProfile";
 import {ProductProvider} from "@/hooks/useProduct";
 import {listProducts} from "@/services/products";

@@ -9,7 +9,7 @@ import LockIcon from "@/components/icons/lock";
 import LogoutIcon from "@/components/icons/logout";
 import MenuButton from "@/components/actions/menu-button";
 import { useProfile } from "@/hooks/useProfile";
-import { logoutUser } from "@/services/authentications";
+import { logoutUser } from "@/services/auth";
 
 export default function ProfileOverlay() {
   const router = useRouter();

@@ -9,7 +9,7 @@ import useNotification from "@/hooks/useNotification";
 import Button from "@/components/actions/button";
 import TextField from "@/components/inputs/text-field";
 import LinkText from "@/components/actions/link-text";
-import { loginUser } from "@/services/authentications";
+import { loginUser } from "@/services/auth";
 import { SOMETHING_WENT_WRONG } from "@/constants/errors";
 import type { FieldError } from "@/shared/types";
 

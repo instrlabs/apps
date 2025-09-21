@@ -40,7 +40,11 @@ func NewS3(cfg *S3Config) *S3 {
 
 func (s *S3) Put(objectName string, data []byte) error {
 	_, err := s.Client.PutObject(context.Background(), s.Cfg.S3Bucket, objectName, bytes.NewReader(data), int64(len(data)), minio.PutObjectOptions{})
-	return err
+	if err != nil {
+		log.Errorf("Failed to put object %s to S3: %v", objectName, err)
+		return err
+	}
+	return nil
 }
 
 func (s *S3) Get(objectName string) []byte {

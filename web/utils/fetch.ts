@@ -47,7 +47,7 @@ export async function fetchGET<T>(
 
 export async function fetchPOST<T>(
   path: string,
-  body: unknown
+  body?: unknown
 ): Promise<ApiResponse<T>> {
   const url = process.env.API_URL + path;
 

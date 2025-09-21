@@ -1,41 +1,51 @@
 "use server"
 
 import { APIs } from "@/constants/api";
-import {ApiResponse, fetchGET, fetchGETBytes, fetchPOSTFormData} from "@/utils/fetch";
+import { fetchGET, fetchGETBytes, fetchPOST, fetchPOSTFormData } from "@/utils/fetch";
 
-export type ImageInstruction = {
+export type Instruction = {
   id: string;
   user_id: string;
   product_id: string;
-  inputs: {
-    file_name: string;
-    size: number;
-  }[];
-  outputs: {
-    file_name: string;
-    size: number;
-  }[];
-  status: string;
   created_at: string;
   updated_at: string;
 };
 
-type ResponseImageCompress = {
-  instruction_id: string
+export type InstructionFile = {
+  id: string;
+  instruction_id: string;
+  original_name: string;
+  file_name: string;
+  size: number;
+  status: string;
+  output_id?: string;
+};
+
+export async function createInstruction(productKey: string) {
+  return await fetchPOST<{ instruction: Instruction }>(`${APIs.IMAGES}/instructions/${productKey}`);
 }
 
-export async function getImageInstructions(): Promise<ApiResponse<ImageInstruction[]>> {
-  return await fetchGET<ImageInstruction[]>(APIs.IMAGE_INSTRUCTIONS);
-}
-
-export async function getImageInstruction(id: string): Promise<ApiResponse<ImageInstruction>> {
-  return await fetchGET<ImageInstruction>(`${APIs.IMAGE_INSTRUCTIONS}/${id}`);
-}
-
-export async function compressImage(productID: string, files: File[]): Promise<ApiResponse<ResponseImageCompress>> {
+export async function createInstructionDetails(instructionId: string, file: File) {
   const formData = new FormData();
-  files.forEach(file => formData.append("files", file));
-  return await fetchPOSTFormData<ResponseImageCompress>(`${APIs.IMAGE_INSTRUCTIONS}/${productID}`, formData);
+  formData.append("file", file);
+  return await fetchPOSTFormData<{ file: InstructionFile }>(`${APIs.IMAGES}/instructions/${instructionId}/details`, formData);
 }
+
+export async function getImageInstructions() {
+  return await fetchGET<{ instructions: Instruction[] }>(APIs.IMAGES + "/instructions");
+}
+
+export async function getImageInstruction(id: string) {
+  return await fetchGET<{ instruction: Instruction }>(`${APIs.IMAGES}/instructions/${id}`);
+}
+
+export async function getInstructionDetails(id: string) {
+  return await fetchGET<{ files: InstructionFile[] }>(`${APIs.IMAGES}/instructions/${id}/details`);
+}
+
+export async function getInstructionFileBytes(id: string, fileId: string) {
+  return await fetchGETBytes(`${APIs.IMAGES}/instructions/${id}/details/${fileId}`);
+}
+
 
 

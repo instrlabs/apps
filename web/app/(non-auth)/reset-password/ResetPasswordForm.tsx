@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 
-import { resetPassword } from "@/services/authentications";
+import { resetPassword } from "@/services/auth";
 import Button from "@/components/actions/button";
 import useNotification from "@/hooks/useNotification";
 import TextField from "@/components/inputs/text-field";

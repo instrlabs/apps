@@ -13,7 +13,7 @@ export default function ListProduct() {
         {productsByType['image']?.map((product) => (
           <Link
             key={product.key}
-            href={`/${product.key}`}
+            href={`/${product.key.split('-').join('/')}`}
           >
             <div
               className={
