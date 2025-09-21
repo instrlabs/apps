@@ -182,22 +182,22 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 	}
 
 	// notify UI about new records
-	h.publishFileNotification(instr.ID, inFile.ID, FileStatusUploading)
-	h.publishFileNotification(instr.ID, outFile.ID, FileStatusPending)
+	h.publishFileNotification(instr.UserID, instr.ID, inFile.ID)
+	h.publishFileNotification(instr.UserID, instr.ID, outFile.ID)
 
 	if err := h.s3.Put(inFile.FileName, b); err != nil {
 		_ = h.fileRepo.UpdateStatus(inputID, FileStatusFailed)
 		_ = h.fileRepo.UpdateStatus(outputID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, inFile.ID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, outFile.ID, FileStatusFailed)
+		h.publishFileNotification(instr.UserID, instr.ID, inFile.ID)
+		h.publishFileNotification(instr.UserID, instr.ID, outFile.ID)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "upload failed", "errors": nil, "data": nil})
 	}
 
 	if err := h.nats.Conn.Publish(h.cfg.NatsSubjectImagesRequests, []byte(inputID.Hex())); err != nil {
 		_ = h.fileRepo.UpdateStatus(inputID, FileStatusFailed)
 		_ = h.fileRepo.UpdateStatus(outputID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, inFile.ID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, outFile.ID, FileStatusFailed)
+		h.publishFileNotification(instr.UserID, instr.ID, inFile.ID)
+		h.publishFileNotification(instr.UserID, instr.ID, outFile.ID)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to publish to nats", "errors": nil, "data": nil})
 	}
 
@@ -228,7 +228,7 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	if instr == nil || instr.ID.IsZero() {
 		log.Printf("RunInstructionMessage: instruction not found for file=%s", fileIDHex)
 		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-		h.publishFileNotification(input.InstructionID, input.ID, FileStatusFailed)
+		h.publishFileNotification(primitive.NilObjectID, input.InstructionID, input.ID)
 		return
 	}
 
@@ -237,18 +237,18 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	if product == nil {
 		log.Printf("RunInstructionMessage: product not found for instruction=%s", instr.ID.Hex())
 		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, input.ID, FileStatusFailed)
+		h.publishFileNotification(instr.UserID, instr.ID, input.ID)
 		return
 	}
 
 	// 4. Get binary from S3
 	_ = h.fileRepo.UpdateStatus(input.ID, FileStatusProcessing)
-	h.publishFileNotification(instr.ID, input.ID, FileStatusProcessing)
+	h.publishFileNotification(instr.UserID, instr.ID, input.ID)
 	inputBytes := h.s3.Get(input.FileName)
 	if inputBytes == nil {
 		log.Printf("RunInstructionMessage: input file missing on S3: %s", input.FileName)
 		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, input.ID, FileStatusFailed)
+		h.publishFileNotification(instr.UserID, instr.ID, input.ID)
 		return
 	}
 
@@ -260,16 +260,16 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 		if err != nil {
 			log.Printf("RunInstructionMessage: image-compress failed: %v", err)
 			_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-			h.publishFileNotification(instr.ID, input.ID, FileStatusFailed)
+			h.publishFileNotification(instr.UserID, instr.ID, input.ID)
 			return
 		} else {
 			_ = h.fileRepo.UpdateStatus(input.ID, FileStatusDone)
-			h.publishFileNotification(instr.ID, input.ID, FileStatusDone)
+			h.publishFileNotification(instr.UserID, instr.ID, input.ID)
 		}
 	default:
 		log.Printf("RunInstructionMessage: unsupported product key: %s", product.Key)
 		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, input.ID, FileStatusFailed)
+		h.publishFileNotification(instr.UserID, instr.ID, input.ID)
 		return
 	}
 
@@ -278,7 +278,7 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	if outFile == nil || outFile.ID.IsZero() {
 		log.Printf("RunInstructionMessage: pre-created output file not found for input=%s outputID=%s", input.ID.Hex(), input.OutputID.Hex())
 		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, input.ID, FileStatusFailed)
+		h.publishFileNotification(instr.UserID, instr.ID, input.ID)
 		return
 	}
 
@@ -289,22 +289,22 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	}
 
 	_ = h.fileRepo.UpdateStatus(outFile.ID, FileStatusUploading)
-	h.publishFileNotification(instr.ID, outFile.ID, FileStatusUploading)
+	h.publishFileNotification(instr.UserID, instr.ID, outFile.ID)
 
 	// 6. Upload output to S3
 	if err := h.s3.Put(outFile.FileName, outputBytes); err != nil {
 		log.Printf("RunInstructionMessage: failed to upload output to S3: %v", err)
 		_ = h.fileRepo.UpdateStatus(outFile.ID, FileStatusFailed)
-		h.publishFileNotification(instr.ID, outFile.ID, FileStatusFailed)
+		h.publishFileNotification(instr.UserID, instr.ID, outFile.ID)
 		return
 	} else {
-		_ = h.fileRepo.UpdateStatus(outFile.ID, FileStatusDone)
-		h.publishFileNotification(instr.ID, outFile.ID, FileStatusDone)
+		_ = h.fileRepo.UpdateStatusAndSize(outFile.ID, FileStatusDone, int64(len(outputBytes)))
+		h.publishFileNotification(instr.UserID, instr.ID, outFile.ID)
 	}
 }
 
-func (h *InstructionHandler) publishFileNotification(instrID, fileID primitive.ObjectID, status FileStatus) {
-	n := FileNotification{InstructionID: instrID.Hex(), FileID: fileID.Hex(), FileStatus: string(status)}
+func (h *InstructionHandler) publishFileNotification(userID, instrID, fileID primitive.ObjectID) {
+	n := FileNotification{UserID: userID.Hex(), InstructionID: instrID.Hex(), FileID: fileID.Hex()}
 	b, err := json.Marshal(n)
 	if err != nil {
 		log.Printf("publishFileNotification: marshal error: %v", err)

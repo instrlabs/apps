@@ -92,3 +92,17 @@ func (r *FileRepository) UpdateStatus(id primitive.ObjectID, st FileStatus) erro
 	}
 	return err
 }
+
+// UpdateStatusAndSize updates both the status and size fields for a file in a single operation.
+func (r *FileRepository) UpdateStatusAndSize(id primitive.ObjectID, st FileStatus, size int64) error {
+	_, err := r.collection.UpdateByID(context.Background(), id, bson.M{
+		"$set": bson.M{
+			"status": st,
+			"size":   size,
+		},
+	})
+	if err != nil {
+		log.Printf("file_repository.UpdateStatusAndSize: UpdateByID failed for id=%s status=%v size=%d: %v", id.Hex(), st, size, err)
+	}
+	return err
+}
