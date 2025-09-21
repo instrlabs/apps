@@ -75,7 +75,7 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 
 func (h *InstructionHandler) ListInstructions(c *fiber.Ctx) error {
 	// Not implemented against new model yet; return empty list to keep API stable
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "ok", "errors": nil, "data": []Instruction{}})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "ok", "errors": nil, "data": map[string]interface{}{"instructions": []Instruction{}}})
 }
 
 func (h *InstructionHandler) GetInstructionByID(c *fiber.Ctx) error {
@@ -88,7 +88,7 @@ func (h *InstructionHandler) GetInstructionByID(c *fiber.Ctx) error {
 	if instr == nil || instr.ID.IsZero() {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "instruction not found", "errors": nil, "data": nil})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "ok", "errors": nil, "data": instr})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "ok", "errors": nil, "data": map[string]interface{}{"instruction": instr}})
 }
 
 func (h *InstructionHandler) GetInstructionDetails(c *fiber.Ctx) error {
