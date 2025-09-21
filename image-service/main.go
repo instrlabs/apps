@@ -56,12 +56,13 @@ func main() {
 		}
 	}()
 
-	app.Post("/instructions/:product_key", instrHandler.CreateInstruction)
+	app.Post("/instructions/:productKey", instrHandler.CreateInstruction)
 	app.Post("/instructions/:id/details", instrHandler.CreateInstructionDetails)
 
 	app.Get("/instructions", instrHandler.ListInstructions)
 	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
 	app.Get("/instructions/:id/details", instrHandler.GetInstructionDetails)
+	app.Get("/instructions/:id/details/:fileId", instrHandler.GetInstructionFileBytes)
 
 	log.Fatal(app.Listen(cfg.Port))
 }

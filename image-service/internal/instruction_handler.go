@@ -35,7 +35,7 @@ func NewInstructionHandler(
 }
 
 func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
-	productKey := c.Params("product_key")
+	productKey := c.Params("productKey")
 	userID, _ := c.Locals("UserID").(string)
 	product := h.productServ.GetProduct(userID, productKey)
 	if product == nil {
@@ -299,4 +299,49 @@ func (h *InstructionHandler) publishFileNotification(instrID, fileID primitive.O
 func (h *InstructionHandler) CleanInstruction(c *fiber.Ctx) error {
 	log.Printf("CleanInstruction invoked")
 	return nil
+}
+
+// GetInstructionFileBytes finds a file by instructionId and fileId and returns its bytes
+func (h *InstructionHandler) GetInstructionFileBytes(c *fiber.Ctx) error {
+	instrIDHex := c.Params("id", "")
+	fileIDHex := c.Params("fileId", "")
+	if instrIDHex == "" || fileIDHex == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "instruction id and file id required", "errors": nil, "data": nil})
+	}
+
+	instrID, err := primitive.ObjectIDFromHex(instrIDHex)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid instruction id", "errors": nil, "data": nil})
+	}
+	fileID, err := primitive.ObjectIDFromHex(fileIDHex)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid file id", "errors": nil, "data": nil})
+	}
+
+	instr := h.instrRepo.GetByID(instrID)
+	if instr == nil || instr.ID.IsZero() {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "instruction not found", "errors": nil, "data": nil})
+	}
+
+	// authorization: ensure the requester owns the instruction
+	localUserID, _ := c.Locals("UserID").(string)
+	userID, _ := primitive.ObjectIDFromHex(localUserID)
+	if instr.UserID != userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden", "errors": nil, "data": nil})
+	}
+
+	f := h.fileRepo.GetByID(fileID)
+	if f == nil || f.ID.IsZero() || f.InstructionID != instr.ID {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "file not found", "errors": nil, "data": nil})
+	}
+
+	b := h.s3.Get(f.FileName)
+	if b == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "file blob not found", "errors": nil, "data": nil})
+	}
+
+	// send as binary
+	c.Set("Content-Type", "application/octet-stream")
+	c.Set("Content-Disposition", "attachment; filename="+filepath.Base(f.FileName))
+	return c.Status(fiber.StatusOK).Send(b)
 }
