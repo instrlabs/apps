@@ -9,49 +9,42 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID                primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Name              string             `json:"name" bson:"name"`
-	Email             string             `json:"email" bson:"email"`
-	Password          string             `json:"-" bson:"password"`
-	GoogleID          string             `json:"-" bson:"google_id,omitempty"`
-	RefreshToken      string             `json:"-" bson:"refresh_token,omitempty"`
-	ResetToken        string             `json:"-" bson:"reset_token,omitempty"`
-	ResetTokenExpires time.Time          `json:"-" bson:"reset_token_expires,omitempty"`
-	CreatedAt         time.Time          `json:"created_at" bson:"created_at"`
-	UpdatedAt         time.Time          `json:"updated_at" bson:"updated_at"`
+	ID           primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Name         string             `json:"name" bson:"name,omitempty"`
+	Email        string             `json:"email" bson:"email,unique"`
+	PinHash      string             `json:"-" bson:"pin_hash,omitempty"`
+	PinExpires   time.Time          `json:"-" bson:"pin_expires,omitempty"`
+	GoogleID     string             `json:"-" bson:"google_id,omitempty"`
+	RefreshToken string             `json:"-" bson:"refresh_token,omitempty"`
+	RegisteredAt time.Time          `json:"registered_at" bson:"registered_at,omitempty"`
+	CreatedAt    time.Time          `json:"created_at" bson:"created_at"`
+	UpdatedAt    time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
-// NewUser creates a new user with the given name, email and password
-func NewUser(name, email, password string) (*User, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-
+func NewUser(email string) *User {
 	now := time.Now().UTC()
 	return &User{
-		Name:      name,
+		ID:        primitive.NewObjectID(),
 		Email:     email,
-		Password:  string(hashedPassword),
 		CreatedAt: now,
 		UpdatedAt: now,
-	}, nil
+	}
 }
 
-// NewGoogleUser creates a new user from a Google profile
 func NewGoogleUser(name, email, googleID string) *User {
-	now := time.Now().UTC()
-	return &User{
-		Name:      name,
-		Email:     email,
-		GoogleID:  googleID,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
+	user := NewUser(email)
+	user.Name = name
+	user.GoogleID = googleID
+	return user
 }
 
-// ComparePassword compares the given password with the user's password
-func (u *User) ComparePassword(password string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+func (u *User) ComparePin(pin string) bool {
+	if u.PinHash == "" {
+		return false
+	}
+	if !u.PinExpires.IsZero() && time.Now().UTC().After(u.PinExpires) {
+		return false
+	}
+	err := bcrypt.CompareHashAndPassword([]byte(u.PinHash), []byte(pin))
 	return err == nil
 }

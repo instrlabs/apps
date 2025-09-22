@@ -29,39 +29,6 @@
           }
         }
       },
-        "/forgot-password": {
-            "post": {
-                "description": "Request a password reset link for a registered email",
-                "tags": ["auth"],
-                "summary": "Request password reset",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "required": ["email"],
-                                "properties": {"email": {"type": "string", "format": "email"}}
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Password reset link sent if email exists",
-                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
-                    },
-                    "400": {
-                        "description": "Invalid request body or validation error",
-                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
-                    }
-                }
-            }
-        },
         "/google": {
             "get": {
                 "description": "Redirect user to Google OAuth consent screen",
@@ -135,7 +102,7 @@
         },
         "/login": {
             "post": {
-                "description": "Authenticate a user with email and password",
+                "description": "Authenticate a user with email and 6-digit PIN",
                 "tags": ["auth"],
                 "summary": "Login user",
                 "requestBody": {
@@ -144,10 +111,10 @@
                         "application/json": {
                             "schema": {
                                 "type": "object",
-                                "required": ["email", "password"],
+                                "required": ["email", "pin"],
                                 "properties": {
                                     "email": {"type": "string", "format": "email"},
-                                    "password": {"type": "string", "minLength": 1}
+                                    "pin": {"type": "string", "minLength": 6, "maxLength": 6, "description": "6-digit code"}
                                 }
                             }
                         }
@@ -298,7 +265,7 @@
         },
         "/register": {
             "post": {
-                "description": "Register a new user with email and password",
+                "description": "Register a new user with email only; sends a 6-digit PIN to the email",
                 "tags": ["auth"],
                 "summary": "Register a new user",
                 "requestBody": {
@@ -307,11 +274,9 @@
                         "application/json": {
                             "schema": {
                                 "type": "object",
-                                "required": ["name", "email", "password"],
+                                "required": ["email"],
                                 "properties": {
-                                    "name": {"type": "string"},
-                                    "email": {"type": "string", "format": "email"},
-                                    "password": {"type": "string", "minLength": 6}
+                                    "email": {"type": "string", "format": "email"}
                                 }
                             }
                         }
@@ -361,52 +326,6 @@
                     },
                     "500": {
                         "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/reset-password": {
-            "post": {
-                "description": "Reset a user's password using a reset token",
-                "tags": ["auth"],
-                "summary": "Reset user password",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "required": ["token", "new_password"],
-                                "properties": {
-                                    "token": {"type": "string"},
-                                    "new_password": {"type": "string", "minLength": 6}
-                                }
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Password has been reset successfully",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body, token, or password validation error",
                         "schema": {
                             "type": "object",
                             "properties": {
@@ -493,44 +412,57 @@
                 }
             }
         },
-        "/change-password": {
+        "/send-pin": {
             "post": {
-                "description": "Change the authenticated user's password",
-                "tags": ["user"],
-                "summary": "Change password",
+                "description": "Send a 6-digit PIN to the user's email if registered",
+                "tags": ["auth"],
+                "summary": "Send one-time PIN",
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {"schema": {"type": "object", "required": ["current_password", "new_password"], "properties": {"current_password": {"type": "string"}, "new_password": {"type": "string", "minLength": 6}}}}
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["email"],
+                                "properties": {
+                                    "email": {"type": "string", "format": "email"}
+                                }
+                            }
+                        }
                     }
                 },
                 "responses": {
                     "200": {
-                        "description": "Password changed successfully",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": { "type": "string" }
-                            }
-                        }
+                        "description": "PIN sent if email exists",
+                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
                     },
                     "400": {
                         "description": "Invalid request body or validation error",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": { "type": "string" }
-                            }
-                        }
+                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": { "type": "string" }
-                            }
-                        }
+                    "404": {
+                        "description": "User not found",
+                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
+                    }
+                }
+            }
+        },
+        "/users/by-email": {
+            "get": {
+                "description": "Find a user by email",
+                "tags": ["user"],
+                "summary": "Find user by email",
+                "parameters": [
+                    {"name": "email", "in": "query", "required": true, "schema": {"type": "string", "format": "email"}}
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User found",
+                        "content": {"application/json": {"schema": {"type": "object", "properties": {"data": {"type": "object"}, "message": {"type": "string"}}}}}
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
                     }
                 }
             }

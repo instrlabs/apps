@@ -27,24 +27,23 @@ func main() {
 	initx.SetupServiceSwagger(app)
 	initx.SetupServiceHealth(app)
 	initx.SetupAuthenticated(app, []string{
+		"/users",
 		"/login",
 		"/refresh",
 		"/register",
-		"/forgot-password",
-		"/reset-password",
 		"/google",
+		"/send-pin",
 	})
 
 	app.Post("/register", userHandler.Register)
 	app.Post("/login", userHandler.Login)
 	app.Post("/logout", userHandler.Logout)
 	app.Post("/refresh", userHandler.RefreshToken)
-	app.Post("/forgot-password", userHandler.ForgotPassword)
-	app.Post("/reset-password", userHandler.ResetPassword)
+	app.Post("/send-pin", userHandler.SendPin)
+	app.Post("/check", userHandler.CheckEmail)
 
 	app.Get("/profile", userHandler.GetProfile)
 	app.Put("/profile", userHandler.UpdateProfile)
-	app.Post("/change-password", userHandler.ChangePassword)
 
 	app.Get("/google", userHandler.GoogleLogin)
 	app.Get("/google/callback", userHandler.GoogleCallback)

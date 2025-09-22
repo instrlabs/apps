@@ -83,7 +83,7 @@ Environment variables (see internal/config.go):
 - FE_RESET_PASSWORD: Frontend URL to handle password reset
 - FE_OAUTH_REDIRECT: Frontend URL to redirect after OAuth
 - CORS_ALLOWED_ORIGINS: allowed origins for CORS (defaults to http://web.localhost if empty)
-- COOKIE_DOMAIN: cookie domain used by Gateway (defaults to .localhost if empty)
+- DOMAIN: cookie domain used by Gateway (defaults to .localhost if empty)
 
 ## Running Locally
 1. Create a .env with the variables above (at minimum PORT, MONGO_URI, MONGO_DB, JWT_SECRET).

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/gofiber/fiber/v2/log"
 	initx "github.com/histweety-labs/shared/init"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -24,21 +25,24 @@ func NewUserRepository(db *initx.Mongo) *UserRepository {
 	}
 }
 
-func (r *UserRepository) Create(user *User) error {
+func (r *UserRepository) Create(user *User) *User {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	var existingUser User
 	err := r.collection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&existingUser)
 	if err == nil {
-		return errors.New("user with this email already exists")
-	}
-	if !errors.Is(err, mongo.ErrNoDocuments) {
-		return err
+		log.Errorf("User already exists with email %s", user.Email)
+		return nil
 	}
 
 	_, err = r.collection.InsertOne(ctx, user)
-	return err
+	if err != nil {
+		log.Errorf("Failed to create user: %v", err)
+		return nil
+	}
+
+	return user
 }
 
 func (r *UserRepository) FindByEmail(email string) (*User, error) {
@@ -109,69 +113,6 @@ func (r *UserRepository) UpdateRefreshToken(userID string, refreshToken string) 
 		"$set": bson.M{
 			"refresh_token": refreshToken,
 			"updated_at":    time.Now().UTC(),
-		},
-	}
-
-	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	return err
-}
-
-// SetResetToken sets a password reset token for a user
-func (r *UserRepository) SetResetToken(email string, resetToken string, expiry time.Time) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	update := bson.M{
-		"$set": bson.M{
-			"reset_token":         resetToken,
-			"reset_token_expires": expiry,
-			"updated_at":          time.Now().UTC(),
-		},
-	}
-
-	_, err := r.collection.UpdateOne(ctx, bson.M{"email": email}, update)
-	return err
-}
-
-// FindByResetToken finds a user by reset token
-func (r *UserRepository) FindByResetToken(resetToken string) (*User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var user User
-	err := r.collection.FindOne(ctx, bson.M{
-		"reset_token": resetToken,
-		"reset_token_expires": bson.M{
-			"$gt": time.Now().UTC(),
-		},
-	}).Decode(&user)
-
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, errors.New("invalid or expired reset token")
-		}
-		return nil, err
-	}
-
-	return &user, nil
-}
-
-// UpdatePassword updates the password for a user
-func (r *UserRepository) UpdatePassword(userID string, hashedPassword string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	objectID, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return errors.New("invalid user ID")
-	}
-
-	update := bson.M{
-		"$set": bson.M{
-			"password":            hashedPassword,
-			"reset_token":         "",
-			"reset_token_expires": time.Time{},
-			"updated_at":          time.Now().UTC(),
 		},
 	}
 
@@ -251,6 +192,92 @@ func (r *UserRepository) ClearRefreshToken(userID string) error {
 	update := bson.M{
 		"$set": bson.M{
 			"refresh_token": "",
+			"updated_at":    time.Now().UTC(),
+		},
+	}
+
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	return err
+}
+
+// SetPinWithExpiry sets the user's PIN hash with an expiry (for OTP scenarios)
+func (r *UserRepository) SetPinWithExpiry(email, hashedPin string, expiry time.Time) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	update := bson.M{
+		"$set": bson.M{
+			"pin_hash":    hashedPin,
+			"pin_expires": expiry,
+			"updated_at":  time.Now().UTC(),
+		},
+	}
+	res, err := r.collection.UpdateOne(ctx, bson.M{"email": email}, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return errors.New("user not found")
+	}
+	return nil
+}
+
+// ClearPin clears the PIN hash and expiry (e.g., after OTP is used)
+func (r *UserRepository) ClearPin(userID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return errors.New("invalid user ID")
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"pin_hash":    "",
+			"pin_expires": time.Time{},
+			"updated_at":  time.Now().UTC(),
+		},
+	}
+
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	return err
+}
+
+// UpdatePin updates the persistent pin hash for a user
+func (r *UserRepository) UpdatePin(userID, hashedPin string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return errors.New("invalid user ID")
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"pin_hash":   hashedPin,
+			"updated_at": time.Now().UTC(),
+		},
+	}
+
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	return err
+}
+
+// UpdateRegisteredAt sets the RegisteredAt timestamp for the user
+func (r *UserRepository) UpdateRegisteredAt(userID string, t time.Time) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return errors.New("invalid user ID")
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"registered_at": t,
 			"updated_at":    time.Now().UTC(),
 		},
 	}
