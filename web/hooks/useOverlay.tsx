@@ -109,7 +109,7 @@ export function OverlayProvider({ children, defaultLeft, defaultRight }: {
   }, []);
 
   const openRight = useCallback((currentKey: string) => {
-    const key = currentKey ?? "";
+    const key = `right:${currentKey ?? ""}`;
     const content = overlay.get(key) as OverlayOpts;
     setRightNodeState(content.render());
     setRightWidth(content.width);

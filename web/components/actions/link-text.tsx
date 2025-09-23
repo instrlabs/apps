@@ -10,7 +10,7 @@ type LinkTextProps = {
 
 export default function LinkText({ href, children, className }: LinkTextProps) {
   return (
-    <Link href={href} className={clsx("text-primary text-sm underline", className)}>
+    <Link href={href} className={clsx("text-blue-400", className)}>
       {children}
     </Link>
   );

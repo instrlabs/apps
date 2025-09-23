@@ -5,62 +5,41 @@ interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   xSize?: "sm" | "md" | "lg";
   xIsInvalid?: boolean;
   xErrorMessage?: string;
-  xIsRounded?: boolean;
 }
 
 const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
-  (
-    {
-      xSize = "lg",
-      xIsInvalid,
-      xErrorMessage,
-      className,
-      xIsRounded,
-      ...rest
-    },
-    ref
-  ) => {
+  ({ xSize = "md", xIsInvalid, xErrorMessage, className, ...rest }, ref) => {
     const sizeClasses =
-      xSize === "sm" ? "px-3 py-2 text-sm"
-        : xSize === "md" ? "px-4 py-3"
-          : "px-5 py-4";
+      xSize === "sm" ? "px-3 leading-8 text-sm"
+      : xSize === "md" ? "px-3 leading-12"
+        : xSize === "lg" ? "px-5"
+          : "";
 
-    const shapeClass = xIsRounded === true ? "rounded-full" : "rounded-lg";
+    const baseClasses = `
+      bg-white/2
+      focus:outline-none
+      w-full shadow-primary rounded-lg
+      placeholder:[color:var(--text-primary)]/60
+      hover:shadow-hover
+      focus:shadow-focus`;
 
-    const baseClasses =
-      "w-full shadow-primary border bg-[var(--input-bg)] " +
-      "border-[var(--input-border)] placeholder:[color:var(--input-placeholder)] " +
-      "hover:border-[var(--input-hover-border)] focus:border-[var(--input-focus-border)] " +
-      "focus:shadow-[var(--input-focus-shadow)] focus:outline-none " +
-      "disabled:bg-[var(--input-disabled-bg)] disabled:text-[color:var(--input-disabled-text)] disabled:cursor-not-allowed";
-
-    // Error state overrides using the provided tokens
     const errorClasses = xIsInvalid
-      ? "border-[var(--input-error-border)] focus:shadow-[var(--input-error-shadow)]"
+      ? "border-[var(--input-error-border)]"
       : undefined;
 
     return (
       <div className="relative w-full">
         <input
-          className={clsx(
-            baseClasses,
-            shapeClass,
-            sizeClasses,
-            errorClasses,
-            className
-          )}
-          aria-invalid={xIsInvalid || undefined}
+          className={clsx(baseClasses, sizeClasses, errorClasses, className)}
           ref={ref}
           {...rest}
         />
         {xIsInvalid && xErrorMessage ? (
-          <span className="absolute left-5 top-full mt-1 text-xs text-error">
-            {xErrorMessage}
-          </span>
+          <span className="text-error absolute top-full left-5 mt-1 text-xs">{xErrorMessage}</span>
         ) : null}
       </div>
     );
-  }
+  },
 );
 
 TextField.displayName = "TextField";

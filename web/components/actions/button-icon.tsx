@@ -45,7 +45,7 @@ export default function ButtonIcon({
         colorClasses,
         "border border-[var(--btn-border)]",
         sizeClass,
-        "rounded-full cursor-pointer shadow-primary",
+        "rounded-full cursor-pointer shadow-primary hover:shadow-hover focus:shadow-focus",
         className
       )}
       {...rest}

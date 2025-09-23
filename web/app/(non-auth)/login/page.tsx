@@ -5,37 +5,26 @@ import { ROUTES } from "@/constants/routes";
 import GoogleSignInButton from "@/components/actions/google-signin";
 import LinkText from "@/components/actions/link-text";
 import LoginForm from "./LoginForm";
+import Button from "@/components/actions/button";
 
 export const metadata: Metadata = {
-  title: "Sign in",
-  description: "Sign in to your account to access your dashboard and manage your settings.",
-  openGraph: {
-    title: "Sign in",
-    description: "Sign in to your account to access your dashboard and manage your settings.",
-    type: "website",
-  },
-  twitter: {
-    card: "summary",
-    title: "Sign in",
-    description: "Sign in to your account to access your dashboard and manage your settings.",
-  },
-  robots: {
-    index: false,
-    follow: false,
-  },
+  title: "Login - Labs",
+  description: "",
 };
 
 export default function LoginPage() {
   return (
-    <div className="h-screen w-full flex flex-col justify-center items-center p-10">
-      <h1 className="text-3xl font-bold mb-15">Log in to your account</h1>
-      <LoginForm />
-      <div className="flex flex-col gap-5 w-sm mt-3">
+    <div className="h-screen w-screen flex items-center justify-center">
+      <div className="w-full max-w-md flex flex-col gap-6 p-10 mx-auto">
+        <LoginForm />
+        <hr/>
         <GoogleSignInButton />
-        <div className="text-sm text-center">
-          Don&apos;t have an account?{" "}
-          <LinkText href={ROUTES.REGISTER}>Sign up</LinkText>
-        </div>
+        <Button xVariant="transparent">
+          <p className="font-light">
+            Don&apos;t have an account? {" "}
+            <LinkText href={ROUTES.REGISTER}>Sign up</LinkText>
+          </p>
+        </Button>
       </div>
     </div>
   );

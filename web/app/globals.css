@@ -1,95 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: var(--color-white);
-  --bg-secondary: var(--color-gray-950);
-  --text-primary: var(--color-gray-800);
-  --card-primary: var(--color-white);
-  --menu-primary: var(--color-gray-50);
-  --menu-hover-primary: var(--color-blue-50);
-  --border-primary: var(--color-gray-200);
-  --border-hover-primary: var(--color-blue-200);
-
-  /* BUTTON */
-  --btn-primary-bg: var(--color-gray-800);
-  --btn-primary-text: var(--color-white);
-  --btn-primary-hover: var(--color-gray-700);
-  --btn-primary-active: var(--color-gray-800);
-  --btn-primary-disabled: var(--color-gray-400);
-
-  /* BUTTON BORDER */
-  --btn-border: var(--color-gray-200);
-
-  /* BUTTON SECONDARY */
-  --btn-secondary-bg: var(--color-white);
-  --btn-secondary-text: var(--color-gray-600);
-  --btn-secondary-hover: var(--color-gray-100);
-  --btn-secondary-active: var(--color-gray-200);
-  --btn-secondary-disabled: var(--color-gray-200);
-
-  /* INPUT */
-  --input-bg: var(--color-white);
-  --input-border: var(--color-gray-300);
-  --input-placeholder: var(--color-gray-400);
-  --input-hover-border: var(--color-gray-400);
-  --input-focus-border: var(--color-blue-500);
-  --input-focus-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-  --input-disabled-bg: var(--color-gray-100);
-  --input-disabled-text: var(--color-gray-400);
-  --input-error-border: var(--color-red-500);
-  --input-error-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
-
-
-  --font-roboto: "Roboto", sans-serif;
-  --overlay-anim-duration: 300ms;
+  /* Base colors: dark mode by default (Vercel-like) */
+  --bg-primary: #0A0A0A;
+  --text-primary: var(--color-white);
+  --card-primary: var(--color-gray-900);
 }
 
-[data-theme="dark"] {
-  --bg-primary: var(--color-gray-900);
-  --bg-secondary: var(--color-gray-100);
-  --text-primary: var(--color-gray-100);
-  --card-primary: var(--color-gray-800);
 
-  /* BUTTON */
-  --btn-primary-bg: var(--color-blue-500);
-  --btn-primary-text: var(--color-white);
-  --btn-primary-hover: var(--color-blue-600);
-  --btn-primary-active: var(--color-blue-700);
-  --btn-primary-disabled: var(--color-blue-200);
-
-  /* BUTTON BORDER */
-  --btn-border: var(--color-gray-600);
-
-  /* BUTTON SECONDARY */
-  --btn-secondary-bg: var(--color-gray-700);
-  --btn-secondary-text: var(--color-white);
-  --btn-secondary-hover: var(--color-gray-600);
-  --btn-secondary-active: var(--color-gray-800);
-  --btn-secondary-disabled: var(--color-gray-500);
-
-  /* INPUT */
-}
+/*[data-theme="dark"] {}*/
 
 @theme {
-  --color-text-primary: var(--text-primary);
   --color-error: var(--color-red-500);
   --color-card: var(--card-primary);
   --color-menu: var(--menu-primary);
   --color-menu-hover: var(--menu-hover-primary);
   --color-border-hover: var(--border-hover-primary);
 
-  /* Fonts & effects */
-  --font-sans: var(--font-roboto);
-  --shadow-primary: 0 0 6px 0 rgba(0, 0, 0, 0.06);
+  /* Effects */
+  --shadow-primary: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  --shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 3px 1px rgba(255, 255, 255, 0.1);
+  --shadow-focus: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 5px 3px rgba(255, 255, 255, 0.1);
 }
 
 body {
   width: 100vw;
   height: 100vh;
-  background: radial-gradient(circle, var(--color-slate-100), var(--color-slate-200));
+  background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   overflow: hidden;
+}
+
+hr {
+  border-color: var(--color-white);
+  opacity: 0.1;
 }
 
 .card {

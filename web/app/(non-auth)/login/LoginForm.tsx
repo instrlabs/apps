@@ -1,97 +1,146 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
-import { ROUTES } from "@/constants/routes";
-import useNotification from "@/hooks/useNotification";
 import Button from "@/components/actions/button";
 import TextField from "@/components/inputs/text-field";
-import LinkText from "@/components/actions/link-text";
-import { loginUser } from "@/services/auth";
-import { SOMETHING_WENT_WRONG } from "@/constants/errors";
-import type { FieldError } from "@/shared/types";
+import InputPin from "@/components/inputs/input-pin";
+import { loginUser, sendPIN } from "@/services/auth";
+import useNotification from "@/hooks/useNotification";
+import InlineSpinner from "@/components/feedback/InlineSpinner";
+import { redirect, RedirectType } from "next/navigation";
 
-type LoginFormValues = {
+type FormEmailValues = {
   email: string;
-  password: string;
 };
 
 export default function LoginForm() {
-  const router = useRouter();
-  const { showNotification } = useNotification();
+  const [email, setEmail] = React.useState("");
+  const [state, setState] = React.useState<"email" | "pin">("email");
+  return (
+    <>
+      {state === "email" && (
+        <FormEmail setEmail={setEmail} next={() => { setState("pin") }} />
+      )}
+      {state === "pin" && (
+        <FormPin email={email} next={() => redirect("/", RedirectType.replace) } />
+      )}
+    </>
+  )
+}
 
+function FormEmail({ setEmail, next }: {
+  setEmail: (email: string) => void,
+  next: () => void,
+}) {
+  const [loading, setLoading] = React.useState(false);
+  const { showNotification } = useNotification();
   const {
     register,
     handleSubmit,
-    setError,
-    formState: { errors },
-  } = useForm<LoginFormValues>({
-    defaultValues: { email: "", password: "" },
+  } = useForm<FormEmailValues>({
+    defaultValues: { email: "" },
     mode: "onSubmit",
     reValidateMode: "onChange",
   });
 
-  const onSubmit = async (values: LoginFormValues) => {
-    try {
-      const { success, message, errors } = await loginUser({
-        email: values.email,
-        password: values.password,
-      });
+  const onSubmit = async (values: FormEmailValues) => {
+    setLoading(true);
 
-      if (errors && errors?.length > 0) {
-        errors.forEach((err: FieldError) => {
-          setError(err.fieldName as keyof LoginFormValues, {
-            type: "server",
-            message: err.errorMessage,
-          });
-        });
-      } else if (!success) {
-        showNotification({ title: "Error", message, type: "error", duration: 3000 });
+    try {
+      const { success, message } = await sendPIN({ email: values.email });
+      if (success) {
+        setEmail(values.email)
+        next()
       } else {
-        router.push(ROUTES.HOME);
+        showNotification({
+          type: "error",
+          message: message,
+        })
       }
-    } catch {
-      showNotification({ title: "Error", message: SOMETHING_WENT_WRONG, type: "error", duration: 3000 });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7 w-full max-w-sm">
-      <TextField
-        type="email"
-        placeholder="Enter your email"
-        xIsRounded
-        xIsInvalid={!!errors.email}
-        xErrorMessage={errors.email?.message}
-        {...register("email", {
-          required: "Email is required",
-          pattern: {
-            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-            message: "Enter a valid email address",
-          },
-        })}
-      />
-
-      <div className="space-y-1">
+    <>
+      <h3 className="text-center text-3xl font-semibold">Log in to Labs</h3>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <TextField
-          type="password"
-          placeholder="Enter your password"
-          xIsRounded
-          xIsInvalid={!!errors.password}
-          xErrorMessage={errors.password?.message}
-          {...register("password", {
-            required: "Password is required",
-            minLength: { value: 6, message: "Password must be at least 6 characters" },
+          type="email"
+          placeholder="Email Address"
+          {...register("email", {
+            required: "Email is required",
+            pattern: {
+              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+              message: "Enter a valid email address",
+            },
           })}
         />
-        <div className="text-right">
-          <LinkText href={ROUTES.FORGOT_PASSWORD}>Forgot password?</LinkText>
-        </div>
-      </div>
+        <Button
+          type="submit"
+          xVariant="solid"
+          disabled={loading}
+        >
+          <div className="flex items-center justify-center gap-2">
+            {loading && <InlineSpinner />} <span>Continue with Email</span>
+          </div>
+        </Button>
+      </form>
+    </>
+  );
+}
 
-      <Button xSize="lg" type="submit">Sign in</Button>
-    </form>
+
+function FormPin({ email, next }: {
+  email: string,
+  next: () => void,
+}) {
+  const [loading, setLoading] = React.useState(false);
+  const [values, setValues] = React.useState<string[]>(Array(6).fill(""));
+  const { showNotification } = useNotification();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+    const { success, message} = await loginUser({ email, pin: values.join("") });
+      if (success) {
+        next()
+      } else {
+        showNotification({
+          type: "error",
+          message: message,
+        })
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <h3 className="text-center text-3xl font-semibold">Verification</h3>
+      <p className="text-center text-white/70">
+        If you have an account, we have sent a code to <b>{email}</b>. Enter it below.
+      </p>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="mx-auto">
+          <InputPin values={values} onChange={setValues} />
+        </div>
+        <Button
+          type="submit"
+          xVariant="solid"
+          disabled={loading}
+        >
+          <div className="flex items-center justify-center gap-2">
+            {loading && <InlineSpinner />} <span>Continue</span>
+          </div>
+        </Button>
+      </form>
+    </>
   );
 }

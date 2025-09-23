@@ -8,14 +8,9 @@ import React, {
   ReactNode,
 } from "react";
 
-import InfoIcon from "@/components/icons/InfoIcon";
-import ErrorIcon from "@/components/icons/ErrorIcon";
-import WarningIcon from "@/components/icons/WarningIcon";
-
 type NotificationType = "error" | "warning" | "info";
 
 type NotificationMessage = {
-  title: string;
   message: string;
   type?: NotificationType;
   duration?: number;
@@ -35,8 +30,8 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [data, setData] = useState<NotificationMessage | null>(null);
 
   const showNotification = (payload: NotificationMessage) => {
-    const { title, message, type = "info", duration = 3000 } = payload;
-    setData({ title, message, type, duration });
+    const { message, type = "info", duration = 3000 } = payload;
+    setData({ message, type, duration });
     setVisible(true);
   };
 
@@ -93,23 +88,20 @@ export const NotificationWidget: React.FC = () => {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      <div className={`w-sm ${animationClass}`}>
+      <div className={`w-xs ${animationClass}`}>
         <div
           className={`
-          p-4 flex flex-row items-center gap-3
-          rounded-xl shadow-primary bg-white border
-          ${data?.type === "error" && "border-red-300"}
-          ${data?.type === "warning" && "border-yellow-300"}
-          ${data?.type === "info" && "border-blue-300"}
+          p-4 flex flex-col rounded-lg border
+          ${data?.type === "error" && "bg-red-500/10 border-red-500"}
+          ${data?.type === "warning" && "bg-yellow-500/10 border-yellow-500"}
+          ${data?.type === "info" && "bg-blue-500/10 border-blue-500"}
         `}
         >
-          {data?.type === "error" && <ErrorIcon size={32} className="shrink-0 text-red-500" />}
-          {data?.type === "warning" && <WarningIcon size={32} className="shrink-0 text-yellow-500" />}
-          {data?.type === "info" && <InfoIcon size={32} className="shrink-0 text-blue-500" />}
-          <div className="flex flex-col">
-            <h5 className="text-base font-medium">{data?.title}</h5>
-            <p className="text-sm">{data?.message}</p>
-          </div>
+          <p className={`text-sm
+            ${data?.type === "error" ? "text-red-500" : ""}
+            ${data?.type === "warning" ? "text-yellow-500" : ""}
+            ${data?.type === "info" ? "text-blue-500" : ""}
+          `}>{data?.message}</p>
         </div>
       </div>
     </div>

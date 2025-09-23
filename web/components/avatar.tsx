@@ -73,7 +73,7 @@ export default function Avatar({
       aria-label={safeName}
       title={safeName}
       className={clsx(
-        "relative inline-flex items-center justify-center shadow-primary leading-none rounded-full cursor-pointer overflow-hidden",
+        "relative inline-flex items-center justify-center shadow-primary hover:shadow-hover focus:shadow-focus leading-none rounded-full cursor-pointer overflow-hidden",
         sizeClass,
         bgClass,
         fgClass,

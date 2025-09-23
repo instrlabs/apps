@@ -1,89 +1,63 @@
 "use client";
 
 import React from "react";
-import clsx from "clsx";
 
-type ButtonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> & {
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   xSize?: "sm" | "md" | "lg";
-  xColor?: "primary" | "secondary";
-  isLoading?: boolean;
-  loadingText?: string;
-  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void | Promise<void>;
+  xVariant?: "solid" | "outline" | "transparent";
 };
 
 export default function Button({
-  type = "button",
-  children,
-  onClick,
-  className,
-  disabled,
   xSize = "md",
-  xColor = "primary",
-  isLoading,
+  xVariant = "outline",
+  children,
   ...rest
 }: ButtonProps) {
-  const [internalLoading, setInternalLoading] = React.useState(false);
+  // Container Classes
+  const outlineClasses = [
+    "bg-white/2",
+    "shadow-primary",
+    "hover:bg-white/8"
+  ].join(" ");
 
-  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!onClick) return;
-    if (internalLoading) return;
+  const solidClasses = [
+    "bg-white",
+    "text-black",
+    "hover:bg-white/85",
+    "disabled:bg-white/85",
+  ].join(" ");
 
-    try {
-      const maybePromise = onClick(e);
-      const isPromise = !!maybePromise && typeof (maybePromise as PromiseLike<unknown>).then === "function";
-      if (isPromise) {
-        setInternalLoading(true);
-        try {
-          await (maybePromise as Promise<void>);
-        } finally {
-          setInternalLoading(false);
-        }
-      }
-    } catch (err) {
-      throw err;
-    }
-  };
+  const transparentClasses = [
+    "bg-transparent",
+    "shadow-none",
+  ].join(" ");
 
-  // Size classes tailored for text buttons with sensible min-widths for cleaner UI
-  const sizeClass =
-    xSize === "sm"
-      ? "py-2 px-3 text-sm min-w-24"
-      : xSize === "md"
-      ? "py-3 px-4 min-w-28"
-      : "py-4 px-6 text-base min-w-32";
+  const variantClasses =
+    xVariant === "solid" ? solidClasses :
+      xVariant === "outline" ? outlineClasses :
+        xVariant === "transparent" ? transparentClasses :
+          "";
 
-  const colorClasses =
-    xColor === "primary"
-      ? [
-          "bg-[var(--btn-primary-bg)]",
-          "text-[var(--btn-primary-text)]",
-          "hover:bg-[var(--btn-primary-hover)]",
-          "active:bg-[var(--btn-primary-active)]",
-          "disabled:bg-[var(--btn-primary-disabled)]",
-        ]
-      : [
-          "bg-[var(--btn-secondary-bg)]",
-          "text-[var(--btn-secondary-text)]",
-          "hover:bg-[var(--btn-secondary-hover)]",
-          "active:bg-[var(--btn-secondary-active)]",
-          "disabled:bg-[var(--btn-secondary-disabled)]",
-        ];
+  // Size Classes
+  const smClasses = "py-2 px-3 text-sm min-w-24";
+  const mdClasses = "py-3 px-4 min-w-28";
+  const lgClasses = "py-4 px-6 text-base min-w-32";
 
-  const isDisabled = disabled || isLoading || internalLoading;
+  const sizeClasses =
+    xSize === "sm" ? smClasses :
+      xSize === "md" ? mdClasses :
+        xSize === "lg" ? lgClasses :
+          "";
+
+  const baseClasses = "cursor-pointer font-medium rounded-lg transition-colors disabled:cursor-not-allowed";
 
   return (
     <button
-      type={type}
-      className={clsx(
-        colorClasses,
-        "border border-[var(--btn-border)]",
-        sizeClass,
-        "rounded-lg cursor-pointer font-medium shadow-primary",
-        isDisabled && "opacity-70 cursor-not-allowed",
-        className
-      )}
-      disabled={isDisabled}
-      onClick={handleClick}
+      className={[
+        baseClasses,
+        sizeClasses,
+        variantClasses,
+      ].join(" ")}
       {...rest}
     >
       {children}

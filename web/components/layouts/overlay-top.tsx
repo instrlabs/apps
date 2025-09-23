@@ -13,6 +13,7 @@ import {useProfile} from "@/hooks/useProfile";
 
 export default function OverlayTop() {
   const { profile } = useProfile();
+  const { openRight } = useOverlay();
 
   return (
     <div className="absolute top-0 left-0 right-0 ">
@@ -34,8 +35,7 @@ export default function OverlayTop() {
               type="text"
               placeholder="Search..."
               className="pr-10 cursor-pointer"
-              xIsRounded
-              xSize="md"
+              xSize="sm"
               // onFocus={() => toggleByKey("modal:search")}
               // onClick={() => toggleByKey("modal:search")}
               readOnly
@@ -48,16 +48,16 @@ export default function OverlayTop() {
         </div>
         <div className="flex items-center space-x-5">
           <ButtonIcon
-             xSize="lg"
+             xSize="sm"
              xColor="secondary"
              // onClick={() => toggleByKey("right:notifications")}
            >
-            <BellIcon className="w-6 h-6 text-gray-800" />
+            <BellIcon className="w-6 h-6 text-gray-200" />
           </ButtonIcon>
           <Avatar
             name={profile?.name}
             size="md"
-            // onClick={() => toggleByKey("right:profile")}
+            onClick={() => openRight("profile")}
           />
         </div>
       </div>

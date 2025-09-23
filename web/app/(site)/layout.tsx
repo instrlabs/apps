@@ -30,8 +30,6 @@ export default async function SiteLayout({ children }: Readonly<{
     <OverlayProvider defaultLeft="left:navigation">
       <Suspense>
         <OverlayBody>{children}</OverlayBody>
-        <OverlayLeft />
-        <OverlayRight />
         <OverlayTop />
         <NotificationWidget />
       </Suspense>

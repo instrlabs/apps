@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "geist": "^1.5.1",
     "lodash.debounce": "^4.0.8",
-    "lodash.throttle": "^4.1.1",
-    "next": "15.4.5",
+    "next": "15.4.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.53.0"
@@ -23,7 +23,6 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/lodash.debounce": "^4.0.9",
-    "@types/lodash.throttle": "^4.1.9",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
