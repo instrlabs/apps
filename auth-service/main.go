@@ -27,15 +27,13 @@ func main() {
 	initx.SetupServiceSwagger(app)
 	initx.SetupServiceHealth(app)
 	initx.SetupAuthenticated(app, []string{
-		"/users",
+		"/check",
 		"/login",
 		"/refresh",
-		"/register",
 		"/google",
 		"/send-pin",
 	})
 
-	app.Post("/register", userHandler.Register)
 	app.Post("/login", userHandler.Login)
 	app.Post("/logout", userHandler.Logout)
 	app.Post("/refresh", userHandler.RefreshToken)

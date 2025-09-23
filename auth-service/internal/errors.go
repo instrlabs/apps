@@ -15,6 +15,7 @@ const (
 	// Validation errors
 	ErrEmailRequired        = "Email is required"
 	ErrEmailAlreadyInUse    = "Email already in use"
+	ErrEmailNotFound        = "Email not found"
 	ErrInvalidEmail         = "Invalid email format"
 	ErrPasswordRequired     = "Pin is required"
 	ErrRefreshTokenRequired = "Refresh token is required"

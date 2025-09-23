@@ -5,14 +5,12 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/big"
 	"net/smtp"
-	"time"
 
+	"github.com/gofiber/fiber/v2/log"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -23,95 +21,27 @@ import (
 
 type UserHandler struct {
 	cfg      *Config
-	config   *Config
 	userRepo *UserRepository
 }
 
 func NewUserHandler(cfg *Config, userRepo *UserRepository) *UserHandler {
 	return &UserHandler{
 		cfg:      cfg,
-		config:   cfg,
 		userRepo: userRepo,
 	}
 }
 
-func generateSixDigitPIN() (string, error) {
+func generateSixDigitPIN() string {
 	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
 	if err != nil {
-		return "", err
+		log.Errorf("generateSixDigitPIN: Failed to generate six digit PIN: %v", err)
+		return ""
 	}
-	return fmt.Sprintf("%06d", n.Int64()), nil
-}
-
-func (h *UserHandler) Register(c *fiber.Ctx) error {
-	log.Println("Register: Processing registration request (email-only, send PIN)")
-
-	var input struct {
-		Email string `json:"email" validate:"required,email"`
-	}
-
-	if err := c.BodyParser(&input); err != nil {
-		log.Printf("Register: Invalid request body: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": ErrInvalidRequestBody,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	if input.Email == "" {
-		log.Println("Register: Email is required")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": ErrEmailRequired,
-			"errors": []fiber.Map{
-				{
-					"fieldName":    "email",
-					"errorMessage": ErrEmailRequired,
-				},
-			},
-			"data": nil,
-		})
-	}
-
-	user := NewUser(input.Email)
-	if user = h.userRepo.Create(user); user == nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrEmailAlreadyExists,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	pin, err := generateSixDigitPIN()
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": ErrInternalServer})
-	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(pin), bcrypt.DefaultCost)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": ErrInternalServer})
-	}
-	expiry := time.Now().UTC().Add(10 * time.Minute)
-	if err := h.userRepo.SetPinWithExpiry(input.Email, string(hash), expiry); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": ErrInternalServer})
-	}
-	if h.config.Environment == "development" {
-		log.Printf("Register PIN for %s: %s", input.Email, pin)
-		return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "PIN sent"})
-	}
-	from := h.config.EmailFrom
-	to := []string{input.Email}
-	subject := "Your Login PIN"
-	body := fmt.Sprintf("Your one-time PIN is: %s. It expires in 10 minutes.", pin)
-	message := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", from, input.Email, subject, body)
-	auth := smtp.PlainAuth("", h.config.SMTPUsername, h.config.SMTPPassword, h.config.SMTPHost)
-	if err := smtp.SendMail(h.config.SMTPHost+":"+h.config.SMTPPort, auth, from, to, []byte(message)); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": ErrInternalServer})
-	}
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "PIN sent"})
+	return fmt.Sprintf("%06d", n.Int64())
 }
 
 func (h *UserHandler) Login(c *fiber.Ctx) error {
-	log.Println("Login: Processing login request")
+	log.Info("Login: Processing login request")
 
 	var input struct {
 		Email string `json:"email" validate:"required,email"`
@@ -119,7 +49,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&input); err != nil {
-		log.Printf("Login: Invalid request body: %v", err)
+		log.Errorf("Login: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidRequestBody,
 			"errors":  nil,
@@ -128,7 +58,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	if input.Email == "" {
-		log.Println("Login: Email is required")
+		log.Info("Login: Email is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrEmailRequired,
 			"errors":  nil,
@@ -137,7 +67,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	if input.Pin == "" {
-		log.Println("Login: Pin is required")
+		log.Info("Login: Pin is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrPasswordRequired,
 			"errors": []fiber.Map{
@@ -150,19 +80,18 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Printf("Login: Attempting to login user with email: %s", input.Email)
-	user, err := h.userRepo.FindByEmail(input.Email)
-	if err == nil && user != nil {
-		if !user.ComparePin(input.Pin) {
-			err = errors.New("invalid email or pin")
-		} else {
-			if !user.PinExpires.IsZero() {
-				_ = h.userRepo.ClearPin(user.ID.Hex())
-			}
-		}
+	log.Infof("Login: Attempting to login user with email: %s", input.Email)
+	user := h.userRepo.FindByEmail(input.Email)
+	if user == nil || user.ID.IsZero() {
+		log.Infof("Login: Invalid credentials for email: %s", input.Email)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": ErrInvalidCredentials,
+			"errors":  nil,
+			"data":    nil,
+		})
 	}
-	if err != nil {
-		log.Printf("Login: Invalid credentials for email: %s, error: %v", input.Email, err)
+	if !user.ComparePin(input.Pin) {
+		log.Infof("Login: Invalid PIN for email: %s", input.Email)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidCredentials,
 			"errors":  nil,
@@ -170,9 +99,10 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
+	_ = h.userRepo.ClearPin(user.ID.Hex())
 	if user.RegisteredAt.IsZero() {
-		if err := h.userRepo.UpdateRegisteredAt(user.ID.Hex(), time.Now().UTC()); err != nil {
-			log.Printf("Login: Failed to set RegisteredAt for user %s: %v", user.ID.Hex(), err)
+		if err := h.userRepo.SetRegisteredAt(user.ID.Hex()); err != nil {
+			log.Errorf("Login: Failed to set RegisteredAt for user %s: %v", user.ID.Hex(), err)
 		}
 	}
 
@@ -209,7 +139,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		"refresh_token": refreshToken,
 	}
 
-	log.Println("Login: Setting access token cookie")
+	log.Info("Login: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.cfg.Domain,
 		Name:     "AccessToken",
@@ -221,19 +151,19 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		MaxAge:   h.cfg.TokenExpiryHours * 3600,
 	})
 
-	log.Println("Login: Setting refresh token cookie")
+	log.Info("Login: Setting refresh token cookie")
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.cfg.Domain,
 		Name:     "RefreshToken",
 		Value:    tokens["refresh_token"],
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.config.Environment == "production",
+		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
 		MaxAge:   30 * 24 * 3600, // 30 days
 	})
 
-	log.Printf("Login: User logged in successfully: %s", input.Email)
+	log.Infof("Login: User logged in successfully: %s", input.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Login successful",
 		"errors":  nil,
@@ -242,14 +172,14 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
-	log.Println("RefreshToken: Processing token refresh request")
+	log.Info("RefreshToken: Processing token refresh request")
 
 	var input struct {
 		RefreshToken string `json:"refresh_token" validate:"required"`
 	}
 
 	if err := c.BodyParser(&input); err != nil {
-		log.Printf("RefreshToken: Invalid request body: %v", err)
+		log.Errorf("RefreshToken: Invalid request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidRequestBody,
 			"errors":  nil,
@@ -258,7 +188,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	}
 
 	if input.RefreshToken == "" {
-		log.Println("RefreshToken: Refresh token cookie is missing")
+		log.Info("RefreshToken: Refresh token cookie is missing")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrRefreshTokenRequired,
 			"errors":  nil,
@@ -266,11 +196,11 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Println("RefreshToken: Attempting to refresh token")
+	log.Info("RefreshToken: Attempting to refresh token")
 	// Inline RefreshToken logic
-	user, err := h.userRepo.FindByRefreshToken(input.RefreshToken)
-	if err != nil {
-		log.Printf("RefreshToken: Invalid token error: %v", err)
+	user := h.userRepo.FindByRefreshToken(input.RefreshToken)
+	if user == nil || user.ID.IsZero() {
+		log.Infof("RefreshToken: Invalid refresh token")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidToken,
 			"errors":  nil,
@@ -311,7 +241,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		"refresh_token": newRefreshToken,
 	}
 
-	log.Println("RefreshToken: Setting new access token cookie")
+	log.Info("RefreshToken: Setting new access token cookie")
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.cfg.Domain,
 		Name:     "AccessToken",
@@ -323,19 +253,19 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		MaxAge:   h.cfg.TokenExpiryHours * 3600,
 	})
 
-	log.Println("RefreshToken: Setting new refresh token cookie")
+	log.Info("RefreshToken: Setting new refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.config.Domain,
+		Domain:   h.cfg.Domain,
 		Name:     "RefreshToken",
 		Value:    tokens["refresh_token"],
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.config.Environment == "production",
+		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
 		MaxAge:   30 * 24 * 3600, // 30 days
 	})
 
-	log.Println("RefreshToken: Token refreshed successfully")
+	log.Info("RefreshToken: Token refreshed successfully")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Token refreshed successfully",
 		"errors":  nil,
@@ -344,7 +274,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) GoogleLogin(c *fiber.Ctx) error {
-	log.Println("GoogleLogin: Initiating Google OAuth login")
+	log.Info("GoogleLogin: Initiating Google OAuth login")
 
 	b := make([]byte, 16)
 	rand.Read(b)
@@ -360,17 +290,17 @@ func (h *UserHandler) GoogleLogin(c *fiber.Ctx) error {
 		Endpoint: google.Endpoint,
 	}
 	url := conf.AuthCodeURL(state)
-	log.Printf("GoogleLogin: Redirecting to Google OAuth URL: %s", url)
+	log.Infof("GoogleLogin: Redirecting to Google OAuth URL: %s", url)
 
 	return c.Redirect(url)
 }
 
 func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
-	log.Println("GoogleCallback: Processing Google OAuth callback")
+	log.Info("GoogleCallback: Processing Google OAuth callback")
 
 	code := c.Query("code")
 	if code == "" {
-		log.Println("GoogleCallback: Missing authorization code")
+		log.Info("GoogleCallback: Missing authorization code")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidToken,
 			"errors":  nil,
@@ -378,7 +308,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Println("GoogleCallback: Handling Google callback with authorization code")
+	log.Info("GoogleCallback: Handling Google callback with authorization code")
 	// Build oauth2 config locally (no field stored)
 	conf := &oauth2.Config{
 		ClientID:     h.cfg.GoogleClientID,
@@ -392,7 +322,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	}
 	token, err := conf.Exchange(context.Background(), code)
 	if err != nil {
-		log.Printf("GoogleCallback: Exchange error: %v", err)
+		log.Errorf("GoogleCallback: Exchange error: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
 			"errors":  nil,
@@ -429,20 +359,23 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 			"data":    nil,
 		})
 	}
-	user, err := h.userRepo.FindByGoogleID(userInfo.ID)
-	if err != nil {
-		user, err = h.userRepo.FindByEmail(userInfo.Email)
-		if err != nil {
-			user = NewGoogleUser(userInfo.Name, userInfo.Email, userInfo.ID)
-			if err := h.userRepo.Create(user); err != nil {
+	user := h.userRepo.FindByGoogleID(userInfo.ID)
+	if user == nil || user.ID.IsZero() {
+		u2 := h.userRepo.FindByEmail(userInfo.Email)
+		if u2 == nil || u2.ID.IsZero() {
+			newUser := NewGoogleUser(userInfo.Email, userInfo.ID, userInfo.Name)
+			created := h.userRepo.Create(newUser)
+			if created == nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"message": ErrInternalServer,
 					"errors":  nil,
 					"data":    nil,
 				})
 			}
+			user = created
 		} else {
-			if err := h.userRepo.UpdateGoogleID(user.ID.Hex(), userInfo.ID); err != nil {
+			user = u2
+			if err := h.userRepo.UpdateGoogleID(user.ID.Hex(), userInfo.ID, userInfo.Name); err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"message": ErrInternalServer,
 					"errors":  nil,
@@ -456,7 +389,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		"user_id": user.ID.Hex(),
 		"roles":   []string{"user"},
 	})
-	accessToken, err := tok.SignedString([]byte(h.config.JWTSecret))
+	accessToken, err := tok.SignedString([]byte(h.cfg.JWTSecret))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
@@ -485,45 +418,45 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		"refresh_token": refreshToken,
 	}
 
-	log.Println("GoogleCallback: Setting access token cookie")
+	log.Info("GoogleCallback: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.config.Domain,
+		Domain:   h.cfg.Domain,
 		Name:     "access_token",
 		Value:    tokens["access_token"],
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.config.Environment == "production",
+		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
-		MaxAge:   h.config.TokenExpiryHours * 3600,
+		MaxAge:   h.cfg.TokenExpiryHours * 3600,
 	})
 
-	log.Println("GoogleCallback: Setting refresh token cookie")
+	log.Info("GoogleCallback: Setting refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.config.Domain,
+		Domain:   h.cfg.Domain,
 		Name:     "refresh_token",
 		Value:    tokens["refresh_token"],
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.config.Environment == "production",
+		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
 		MaxAge:   30 * 24 * 3600, // 30 days
 	})
 
-	redirectURL := h.config.FEOAuthRedirect
+	redirectURL := h.cfg.FEOAuthRedirect
 	if redirectURL == "" {
 		redirectURL = "/"
 	}
 
-	log.Printf("GoogleCallback: Redirecting to frontend: %s", redirectURL)
+	log.Infof("GoogleCallback: Redirecting to frontend: %s", redirectURL)
 	return c.Redirect(redirectURL)
 }
 
 func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
-	log.Println("GetProfile: Processing profile request using Locals UserID")
+	log.Info("GetProfile: Processing profile request using Locals UserID")
 
 	userID, _ := c.Locals("UserID").(string)
 	if userID == "" {
-		log.Println("GetProfile: UserID not found in context")
+		log.Info("GetProfile: UserID not found in context")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrUnauthorized,
 			"errors":  nil,
@@ -531,9 +464,9 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err := h.userRepo.FindByID(userID)
-	if err != nil {
-		log.Printf("GetProfile: User not found for UserID %s: %v", userID, err)
+	user := h.userRepo.FindByID(userID)
+	if user == nil || user.ID.IsZero() {
+		log.Infof("GetProfile: User not found for UserID %s", userID)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrUserNotFound,
 			"errors":  nil,
@@ -541,7 +474,7 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Printf("GetProfile: Profile retrieved successfully for user: %s", user.Email)
+	log.Infof("GetProfile: Profile retrieved successfully for user: %s", user.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Profile retrieved successfully",
 		"errors":  nil,
@@ -550,11 +483,11 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
-	log.Println("UpdateProfile: Processing profile update request using Locals UserID")
+	log.Info("UpdateProfile: Processing profile update request using Locals UserID")
 
 	userID, _ := c.Locals("UserID").(string)
 	if userID == "" {
-		log.Println("UpdateProfile: UserID not found in context")
+		log.Info("UpdateProfile: UserID not found in context")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrUnauthorized,
 			"errors":  nil,
@@ -567,7 +500,7 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 		Name string `json:"name"`
 	}
 	if err := c.BodyParser(&request); err != nil {
-		log.Printf("UpdateProfile: Failed to parse request body: %v", err)
+		log.Errorf("UpdateProfile: Failed to parse request body: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": ErrInvalidRequestBody,
 			"errors":  nil,
@@ -577,7 +510,7 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 
 	// Update profile (inline)
 	if request.Name == "" {
-		log.Printf("UpdateProfile: name cannot be empty")
+		log.Warnf("UpdateProfile: name cannot be empty")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Failed to update profile",
 			"errors":  fiber.Map{"general": "name cannot be empty"},
@@ -585,7 +518,7 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 		})
 	}
 	if err := h.userRepo.UpdateProfile(userID, request.Name); err != nil {
-		log.Printf("UpdateProfile: Failed to update profile: %v", err)
+		log.Errorf("UpdateProfile: Failed to update profile: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Failed to update profile",
 			"errors": fiber.Map{
@@ -596,9 +529,9 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 	}
 
 	// Get updated user
-	updatedUser, err := h.userRepo.FindByID(userID)
-	if err != nil {
-		log.Printf("UpdateProfile: Failed to get updated user: %v", err)
+	updatedUser := h.userRepo.FindByID(userID)
+	if updatedUser == nil || updatedUser.ID.IsZero() {
+		log.Errorf("UpdateProfile: Failed to get updated user after update")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
 			"errors":  nil,
@@ -606,7 +539,7 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Printf("UpdateProfile: Profile updated successfully for user: %s", updatedUser.Email)
+	log.Infof("UpdateProfile: Profile updated successfully for user: %s", updatedUser.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Profile updated successfully",
 		"errors":  nil,
@@ -617,11 +550,11 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) Logout(c *fiber.Ctx) error {
-	log.Println("Logout: Processing logout request using Locals UserID")
+	log.Info("Logout: Processing logout request using Locals UserID")
 
 	userID, _ := c.Locals("UserID").(string)
 	if userID == "" {
-		log.Println("Logout: UserID not found in context")
+		log.Info("Logout: UserID not found in context")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrUnauthorized,
 			"errors":  nil,
@@ -631,7 +564,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 
 	// Logout user (inline)
 	if err := h.userRepo.ClearRefreshToken(userID); err != nil {
-		log.Printf("Logout: Failed to logout user: %v", err)
+		log.Errorf("Logout: Failed to logout user: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to logout user",
 			"errors": fiber.Map{
@@ -643,28 +576,28 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 
 	// Clear cookies (if any were set previously)
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.config.Domain,
+		Domain:   h.cfg.Domain,
 		Name:     "access_token",
 		Value:    "",
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.config.Environment == "production",
+		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
 		MaxAge:   -1,
 	})
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.config.Domain,
+		Domain:   h.cfg.Domain,
 		Name:     "refresh_token",
 		Value:    "",
 		HTTPOnly: true,
 		SameSite: "None",
-		Secure:   h.config.Environment == "production",
+		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
 		MaxAge:   -1,
 	})
 
-	log.Printf("Logout: User logged out successfully: %s", userID)
+	log.Infof("Logout: User logged out successfully: %s", userID)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Logout successful",
 		"errors":  nil,
@@ -681,35 +614,41 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 			"message": ErrInvalidRequestBody,
 		})
 	}
-	_, err := h.userRepo.FindByEmail(input.Email)
-	if err != nil {
-		// do not reveal
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "If your email is registered, you will receive a PIN"})
+
+	u := h.userRepo.FindByEmail(input.Email)
+	if u == nil || u.ID.IsZero() {
+		newUser := NewUser(input.Email)
+		if created := h.userRepo.Create(newUser); created == nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": ErrInternalServer})
+		}
 	}
-	// generate 6-digit pin
-	pin, err := generateSixDigitPIN()
-	if err != nil {
+
+	pin := generateSixDigitPIN()
+	if pin == "" {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": ErrInternalServer})
 	}
+
 	hash, err := bcrypt.GenerateFromPassword([]byte(pin), bcrypt.DefaultCost)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": ErrInternalServer})
 	}
-	expiry := time.Now().UTC().Add(10 * time.Minute)
-	if err := h.userRepo.SetPinWithExpiry(input.Email, string(hash), expiry); err != nil {
+
+	if err := h.userRepo.SetPinWithExpiry(input.Email, string(hash)); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": ErrInternalServer})
 	}
-	if h.config.Environment == "development" {
-		log.Printf("Login PIN for %s: %s", input.Email, pin)
+
+	if h.cfg.Environment == "development" {
+		log.Infof("Login PIN for %s: %s", input.Email, pin)
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "PIN sent"})
 	}
-	from := h.config.EmailFrom
+
+	from := h.cfg.EmailFrom
 	to := []string{input.Email}
 	subject := "Your Login PIN"
 	body := fmt.Sprintf("Your one-time PIN is: %s. It expires in 10 minutes.", pin)
 	message := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", from, input.Email, subject, body)
-	auth := smtp.PlainAuth("", h.config.SMTPUsername, h.config.SMTPPassword, h.config.SMTPHost)
-	if err := smtp.SendMail(h.config.SMTPHost+":"+h.config.SMTPPort, auth, from, to, []byte(message)); err != nil {
+	auth := smtp.PlainAuth("", h.cfg.SMTPUsername, h.cfg.SMTPPassword, h.cfg.SMTPHost)
+	if err := smtp.SendMail(h.cfg.SMTPHost+":"+h.cfg.SMTPPort, auth, from, to, []byte(message)); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": ErrInternalServer})
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "PIN sent"})
@@ -724,10 +663,11 @@ func (h *UserHandler) CheckEmail(c *fiber.Ctx) error {
 			"message": ErrInvalidRequestBody,
 		})
 	}
-	user, _ := h.userRepo.FindByEmail(input.Email)
+	user := h.userRepo.FindByEmail(input.Email)
+	exists := user != nil && !user.ID.IsZero()
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Email checked successfully",
 		"errors":  nil,
-		"data":    map[string]interface{}{"exists": user != nil},
+		"data":    map[string]interface{}{"exists": exists},
 	})
 }

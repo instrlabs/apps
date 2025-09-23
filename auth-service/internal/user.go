@@ -11,7 +11,7 @@ import (
 type User struct {
 	ID           primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Name         string             `json:"name" bson:"name,omitempty"`
-	Email        string             `json:"email" bson:"email,unique"`
+	Email        string             `json:"email" bson:"email"`
 	PinHash      string             `json:"-" bson:"pin_hash,omitempty"`
 	PinExpires   time.Time          `json:"-" bson:"pin_expires,omitempty"`
 	GoogleID     string             `json:"-" bson:"google_id,omitempty"`
@@ -31,9 +31,9 @@ func NewUser(email string) *User {
 	}
 }
 
-func NewGoogleUser(name, email, googleID string) *User {
+func NewGoogleUser(email, googleID, googleName string) *User {
 	user := NewUser(email)
-	user.Name = name
+	user.Name = googleName
 	user.GoogleID = googleID
 	return user
 }

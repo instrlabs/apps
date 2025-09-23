@@ -263,81 +263,6 @@
                 }
             }
         },
-        "/register": {
-            "post": {
-                "description": "Register a new user with email only; sends a 6-digit PIN to the email",
-                "tags": ["auth"],
-                "summary": "Register a new user",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "required": ["email"],
-                                "properties": {
-                                    "email": {"type": "string", "format": "email"}
-                                }
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "User registered successfully",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "data": {
-                                    "type": "object",
-                                    "properties": {
-                                        "email": {
-                                            "type": "string"
-                                        }
-                                    }
-                                },
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body or validation error",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Email already exists",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/profile": {
             "get": {
                 "description": "Get the authenticated user's profile",
@@ -414,9 +339,9 @@
         },
         "/send-pin": {
             "post": {
-                "description": "Send a 6-digit PIN to the user's email if registered",
+                "description": "Send a 6-digit PIN to the email. If the email is not found, a user account is created first, then the PIN is sent.",
                 "tags": ["auth"],
-                "summary": "Send one-time PIN",
+                "summary": "Send one-time PIN (create if not exists)",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -433,15 +358,11 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "PIN sent if email exists",
+                        "description": "PIN sent",
                         "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
                     },
                     "400": {
                         "description": "Invalid request body or validation error",
-                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
-                    },
-                    "404": {
-                        "description": "User not found",
                         "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
                     }
                 }
