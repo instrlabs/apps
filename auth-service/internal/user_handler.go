@@ -100,7 +100,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	_ = h.userRepo.ClearPin(user.ID.Hex())
-	if user.RegisteredAt.IsZero() {
+	if user.RegisteredAt == nil || user.RegisteredAt.IsZero() {
 		if err := h.userRepo.SetRegisteredAt(user.ID.Hex()); err != nil {
 			log.Errorf("Login: Failed to set RegisteredAt for user %s: %v", user.ID.Hex(), err)
 		}
