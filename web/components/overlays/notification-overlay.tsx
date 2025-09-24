@@ -101,7 +101,7 @@ export default function NotificationOverlay({
   const data = items && items.length > 0 ? items : fallbackItems;
 
   return (
-    <div className="h-full w-full bg-card shadow-primary rounded-xl">
+    <div className="h-full w-full bg-card shadow-primary rounded-lg">
       <div className="flex flex-col">
         <header className="sticky top-0 z-10 px-5 py-5 bg-primary shadow-lg rounded-t-xl">
           <h2 className="text-lg font-bold text-primary-foreground">
@@ -111,7 +111,7 @@ export default function NotificationOverlay({
 
         <div className="flex-1 px-2 py-4 space-y-1">
             {data.map((n) => (
-              <div key={n.id} className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-foreground/10 transition">
+              <div key={n.id} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-foreground/10 transition">
                 <div className="shrink-0 w-10 h-10 rounded-full bg-border flex items-center justify-center">
                   {n.icon ?? <BellIcon className="w-6 h-6 text-foreground" aria-hidden="true"/>}
                 </div>

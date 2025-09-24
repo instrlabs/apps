@@ -54,7 +54,7 @@ export default function ButtonIcon({
 
   const baseClasses = `
   flex items-center justify-center
-  rounded-full transition-colors
+  rounded-full transition-colors aspect-square
   cursor-pointer disabled:cursor-not-allowed
   `;
 

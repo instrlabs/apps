@@ -4,6 +4,8 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 import { bytesToString } from "@/utils/bytesToString";
 import { acceptsToExtensions } from "@/utils/acceptsToExtensions";
 import useNotification from "@/hooks/useNotification";
+import Button from "@/components/actions/button";
+import CloudUploadIcon from "@/components/icons/CloudUploadIcon";
 
 export type FileDropzoneProps = {
   accepts: string[];
@@ -46,12 +48,12 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
       const files = Array.from(e.dataTransfer.files);
 
       if (!multiple && files.length > 1) {
-        showNotification({ title: "Error", message: "Only one file can be dropped at a time.", type: "error" });
+        showNotification({ message: "Only one file can be dropped at a time.", type: "error" });
         return;
       }
 
       if (!validateFiles(files, accepts, maxSize)) {
-        showNotification({ title: "Error", message: "Invalid file type or file size.", type: "error" });
+        showNotification({ message: "Invalid file type or file size.", type: "error" });
         return;
       }
 
@@ -61,9 +63,12 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
   }, [multiple, accepts, maxSize, onFilesAdded, showNotification]);
 
   const baseClass = useMemo(() => (
-    `w-full aspect-video flex flex-col items-center justify-center gap-3 ` +
-    `border-1 border-dashed rounded-xl p-10 cursor-pointer ` +
-    (isDragging ? "bg-gray-50" : "")
+    [
+      "group cursor-pointer bg-primary-black shadow-primary rounded-lg",
+      "h-full w-full flex flex-col items-center justify-center gap-4",
+      "transition-colors",
+      isDragging ? "bg-white/8" : "hover:bg-white/8",
+    ].join(" ")
   ), [isDragging]);
 
   return (
@@ -76,10 +81,17 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
       onDrop={handleDrop}
       className={baseClass}
     >
-      <div className="text-center gap-1">
-        <p className="text-base font-light">Maximum file size: {bytesToString(maxSize)}</p>
-        <p className="text-base font-light">Support format: {acceptsToExtensions(accepts).join(", ")}</p>
+      <div className={`
+        flex flex-row items-center justify-center gap-2
+        py-2 px-4 rounded-lg shadow-primary bg-transparent
+        group-hover:bg-white/1
+      `}>
+        <CloudUploadIcon className="size-5 text-white/50 group-hover:text-white transition-colors" />
+        <span className="text-sm font-light text-white/50 group-hover:text-white transition-colors">Import</span>
       </div>
+      <span className="max-w-xs text-center text-xs font-light text-white/50 group-hover:text-white transition-colors">
+        The maximum file size allowed is {bytesToString(maxSize)}, and the supported formats are {acceptsToExtensions(accepts).join(", ")}.
+      </span>
       <input
         ref={inputRef}
         className="hidden"
@@ -93,13 +105,11 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
             if (!multiple && files.length > 1) {
               showNotification({
                 type: "error",
-                title: "Something went wrong",
                 message: "Only one file can be dropped at a time."
               });
             } else if (!validateFiles(files, accepts, maxSize)) {
               showNotification({
                 type: "error",
-                title: "Something went wrong",
                 message: "Invalid file type or file size."
               });
             } else {

@@ -10,11 +10,15 @@ import {
   createInstructionDetails, getInstructionDetails
 } from "@/services/images";
 import useNotification from "@/hooks/useNotification";
-import ListFiles from "@/app/(product)/images/compress/ListFiles";
+import ListFiles from "@/app/(site)/images/compress/ListFiles";
 import Loading from "@/components/feedback/Loading";
-import SubmittedClient from "@/app/(product)/images/compress/SubmittedClient";
+import SubmittedClient from "@/app/(site)/images/compress/SubmittedClient";
 import useSSE from "@/hooks/useSSE";
 import debounce from "lodash.debounce";
+import ButtonIcon from "@/components/actions/button-icon";
+import TrashIcon from "@/components/icons/TrashIcon";
+import CloseIcon from "@/components/icons/CloseIcon";
+import CloudUploadIcon from "@/components/icons/CloudUploadIcon";
 
 type ProgressStatus = 'UPLOAD' | 'UPLOADED' | 'SUBMITTED' | 'LOADING';
 
@@ -72,7 +76,7 @@ export default function ImageCompressPage() {
     setProgress('LOADING');
     const compressResult = await createInstruction("images-compress");
     if (!compressResult.success || !compressResult.data) {
-      showNotification({ title: "Error", message: compressResult.message, type: "error", duration: 3000});
+      showNotification({ message: compressResult.message, type: "error", duration: 3000});
       return;
     } else {
       const instr = compressResult.data.instruction;
@@ -81,7 +85,7 @@ export default function ImageCompressPage() {
       for (const file of files) {
         const fileResult = await createInstructionDetails(instr.id, file);
         if (!fileResult.success || !fileResult.data) {
-          showNotification({ title: "Error", message: fileResult.message, type: "error", duration: 3000});
+          showNotification({ message: fileResult.message, type: "error", duration: 3000});
           break;
         } else {
           const { input, output } = fileResult.data;
@@ -95,37 +99,67 @@ export default function ImageCompressPage() {
   }
 
   return (
-    <div className="w-full flex flex-col items-center py-10">
-      <h2 className="text-center text-3xl font-bold mt-6">
-        Compress Images
-      </h2>
-      <p className="text-center text-lg mt-3">
-        Reduce file size while optimizing for maximal image quality.
-      </p>
+    <div className="flex h-full w-full flex-row gap-4 px-4 pb-4">
+      <div className="flex w-[340px] flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <h4 className="text-sm">Histories</h4>
+        </div>
+        <div className="bg-primary-black shadow-primary flex w-full flex-col gap-4 rounded-lg p-4">
+          <span className="text-sm">Last 30 days</span>
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex w-full flex-row items-center gap-2">
+              <CloseIcon className="size-4 shrink-0 cursor-pointer text-white/70" />
+              <span className="shrink truncate text-sm font-light text-white/50">
+                WhatsApp Image 2025-07-31 at 18.39.20.jpeg
+              </span>
+              <span className="shrink-0 text-sm font-light text-white/50">1.2 MB</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="w-full max-w-3xl mt-8 flex flex-col items-center space-y-4">
-        {progress === 'LOADING' && <Loading size={90} />}
+      <div className="flex h-full flex-1 flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <h4 className="text-sm">Image Compress</h4>
+        </div>
 
-        {progress === 'UPLOAD' && (
-          <FileDropzone
-            multiple
-            accepts={["image/png", "image/jpeg", "image/webp", "image/gif"]}
-            maxSize={FILE_SIZE_5MB}
-            onFilesAdded={handleUpload}
-          />
-        )}
+        <div className="flex h-full w-full flex-col">
+          {progress === "LOADING" && (
+            <div className={`
+              flex h-full w-full flex-col items-center justify-center
+              bg-primary-black shadow-primary rounded-lg
+            `}>
+              <Loading />
+            </div>
+          )}
 
-        {progress === 'UPLOADED' && (
-          <>
-            <ListFiles files={files} imagesUrls={urls} removeFile={removeFile} />
-            <Button xSize="lg" onClick={handleSubmit}>Submit</Button>
-          </>
-        )}
+          {progress === "UPLOAD" && (
+            <FileDropzone
+              multiple
+              accepts={["image/png", "image/jpeg", "image/webp", "image/gif"]}
+              maxSize={FILE_SIZE_5MB}
+              onFilesAdded={handleUpload}
+            />
+          )}
 
-        {progress === 'SUBMITTED' && instruction && inputFiles.length > 0 && (
-          <SubmittedClient instructionId={instruction.id} inputFiles={inputFiles} outputFiles={outputFiles} />
-        )}
+          {progress === "UPLOADED" && (
+            <>
+              <ListFiles files={files} imagesUrls={urls} removeFile={removeFile} />
+              <Button xSize="lg" onClick={handleSubmit}>
+                Submit
+              </Button>
+            </>
+          )}
+
+          {progress === "SUBMITTED" && instruction && inputFiles.length > 0 && (
+            <SubmittedClient
+              instructionId={instruction.id}
+              inputFiles={inputFiles}
+              outputFiles={outputFiles}
+            />
+          )}
+        </div>
       </div>
     </div>
-  )
+  );
 }

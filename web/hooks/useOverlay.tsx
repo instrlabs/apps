@@ -1,6 +1,6 @@
 "use client";
 
-import React, {createContext, useCallback, useContext, useMemo, useRef, useState} from "react";
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 
 import NavigationOverlay from "@/components/overlays/navigation-overlay";
 import NotificationOverlay from "@/components/overlays/notification-overlay";

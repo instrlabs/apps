@@ -10,6 +10,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 export default function Button({
   xSize = "md",
   xVariant = "outline",
+  className,
   children,
   ...rest
 }: ButtonProps) {
@@ -57,6 +58,7 @@ export default function Button({
         baseClasses,
         sizeClasses,
         variantClasses,
+        className,
       ].join(" ")}
       {...rest}
     >

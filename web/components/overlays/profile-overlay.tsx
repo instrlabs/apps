@@ -12,7 +12,7 @@ export default function ProfileOverlay() {
 
   return (
     <div className="h-full w-[300px] p-4 pl-0 pt-0">
-      <div className="bg-primary-black shadow-primary h-full w-full rounded-xl">
+      <div className="bg-primary-black shadow-primary h-full w-full rounded-lg">
         <div className="flex flex-col p-4">
           <h3 className="text-sm font-light text-white">{profile?.username}</h3>
           <p className="text-sm font-light text-white/60">{profile?.email}</p>

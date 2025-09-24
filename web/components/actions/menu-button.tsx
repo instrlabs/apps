@@ -17,8 +17,8 @@ export default function MenuButton({
   ...rest
 }: MenuButtonProps) {
   const sizeClass =
-    xSize === "sm" ? "p-3 text-sm" :
-      xSize === "md" ? "p-3 gap-3" :
+    xSize === "sm" ? "p-2 text-sm" :
+      xSize === "md" ? "p-2 gap-3" :
         xSize === "lg" ? "p-4 gap-4 text-base" :
           "";
 

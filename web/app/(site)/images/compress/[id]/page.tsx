@@ -2,7 +2,7 @@
 import { bytesToString } from "@/utils/bytesToString";
 import {getImageInstruction} from "@/services/images";
 import {APIs} from "@/constants/api";
-import Notif from "@/app/(product)/images/compress/Notif";
+import Notif from "@/app/(site)/images/compress/Notif";
 
 export default async function Compress({ params }: {
   params: Promise<{ id: string }>
