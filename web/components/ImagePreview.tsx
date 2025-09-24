@@ -9,7 +9,6 @@ export type ImagePreviewProps = {
   alt: string;
   width: number;
   height: number;
-  className?: string;
 };
 
 function ImagePreviewOverlay({ src }: { src: string }) {
@@ -25,15 +24,14 @@ function ImagePreviewOverlay({ src }: { src: string }) {
   );
 }
 
-export default function ImagePreview({ src, alt, width, height, className }: ImagePreviewProps) {
+export default function ImagePreview({ src, alt, width, height }: ImagePreviewProps) {
   const { openModal } = useModal();
 
   return (
     <div
       role="button"
       className={
-        "relative aspect-square object-cover cursor-zoom-in rounded-lg overflow-hidden " +
-        (className || "")
+        "relative cursor-zoom-in overflow-hidden flex items-center justify-center shadow-primary rounded-lg"
       }
       onClick={(e) => {
         e.stopPropagation();
@@ -45,8 +43,8 @@ export default function ImagePreview({ src, alt, width, height, className }: Ima
         alt={alt}
         width={width}
         height={height}
-        objectFit="cover"
         quality={30}
+        className="aspect-square object-contain object-center"
       />
       <div
         className={`

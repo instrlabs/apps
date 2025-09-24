@@ -12,7 +12,6 @@ import {
 import useNotification from "@/hooks/useNotification";
 import ListFiles from "@/app/(site)/images/compress/ListFiles";
 import Loading from "@/components/feedback/Loading";
-import SubmittedClient from "@/app/(site)/images/compress/SubmittedClient";
 import useSSE from "@/hooks/useSSE";
 import debounce from "lodash.debounce";
 import ButtonIcon from "@/components/actions/button-icon";
@@ -20,7 +19,7 @@ import TrashIcon from "@/components/icons/TrashIcon";
 import CloseIcon from "@/components/icons/CloseIcon";
 import CloudUploadIcon from "@/components/icons/CloudUploadIcon";
 
-type ProgressStatus = 'UPLOAD' | 'UPLOADED' | 'SUBMITTED' | 'LOADING';
+type ProgressStatus = 'UPLOAD' | 'UPLOADED' | 'LOADING';
 
 const FILE_SIZE_5MB = 5242880;
 
@@ -73,7 +72,6 @@ export default function ImageCompressPage() {
   }
 
   const handleSubmit = async () => {
-    setProgress('LOADING');
     const compressResult = await createInstruction("images-compress");
     if (!compressResult.success || !compressResult.data) {
       showNotification({ message: compressResult.message, type: "error", duration: 3000});
@@ -94,8 +92,6 @@ export default function ImageCompressPage() {
         }
       }
     }
-
-    setProgress('SUBMITTED');
   }
 
   return (
@@ -104,15 +100,14 @@ export default function ImageCompressPage() {
         <div className="flex flex-col gap-2">
           <h4 className="text-sm">Histories</h4>
         </div>
-        <div className="bg-primary-black shadow-primary flex w-full flex-col gap-4 rounded-lg p-4">
+        <div className="min-h-[300px] bg-primary-black shadow-primary flex w-full flex-col gap-4 rounded-lg p-4">
           <span className="text-sm">Last 30 days</span>
           <div className="flex flex-col items-center gap-2">
             <div className="flex w-full flex-row items-center gap-2">
-              <CloseIcon className="size-4 shrink-0 cursor-pointer text-white/70" />
               <span className="shrink truncate text-sm font-light text-white/50">
-                WhatsApp Image 2025-07-31 at 18.39.20.jpeg
+                September 24, 2025 · 1.2 MB
               </span>
-              <span className="shrink-0 text-sm font-light text-white/50">1.2 MB</span>
+              <CloseIcon className="ml-auto size-4 shrink-0 cursor-pointer text-white/70" />
             </div>
           </div>
         </div>
@@ -123,40 +118,36 @@ export default function ImageCompressPage() {
           <h4 className="text-sm">Image Compress</h4>
         </div>
 
-        <div className="flex h-full w-full flex-col">
+        <div className="flex h-full w-full flex-col items-start gap-4">
           {progress === "LOADING" && (
-            <div className={`
-              flex h-full w-full flex-col items-center justify-center
-              bg-primary-black shadow-primary rounded-lg
-            `}>
+            <div className="min-h-[300px] flex w-full flex-col items-center justify-center bg-primary-black shadow-primary rounded-lg">
               <Loading />
             </div>
           )}
 
           {progress === "UPLOAD" && (
-            <FileDropzone
-              multiple
-              accepts={["image/png", "image/jpeg", "image/webp", "image/gif"]}
-              maxSize={FILE_SIZE_5MB}
-              onFilesAdded={handleUpload}
-            />
+            <div className="min-h-[300px] flex w-full flex-col bg-primary-black shadow-primary rounded-lg">
+              <FileDropzone
+                multiple
+                accepts={["image/png", "image/jpeg", "image/webp", "image/gif"]}
+                maxSize={FILE_SIZE_5MB}
+                onFilesAdded={handleUpload}
+                className="min-h-[300px]"
+              />
+            </div>
           )}
 
           {progress === "UPLOADED" && (
             <>
-              <ListFiles files={files} imagesUrls={urls} removeFile={removeFile} />
-              <Button xSize="lg" onClick={handleSubmit}>
-                Submit
-              </Button>
+              <div className="min-h-[300px] flex w-full flex-col bg-primary-black shadow-primary rounded-lg">
+                <div className="p-4 flex flex-row items-center justify-between">
+                  <span className="text-sm font-light text-white/50">Total files: 4</span>
+                  <span className="text-sm font-light text-white/50">Total sizes: 10MB</span>
+                </div>
+                <ListFiles files={files} imagesUrls={urls} removeFile={removeFile} />
+              </div>
+              <Button xVariant="solid" xSize="sm" onClick={handleSubmit}>Continue to process</Button>
             </>
-          )}
-
-          {progress === "SUBMITTED" && instruction && inputFiles.length > 0 && (
-            <SubmittedClient
-              instructionId={instruction.id}
-              inputFiles={inputFiles}
-              outputFiles={outputFiles}
-            />
           )}
         </div>
       </div>

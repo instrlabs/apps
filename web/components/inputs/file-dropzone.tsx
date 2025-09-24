@@ -4,14 +4,14 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 import { bytesToString } from "@/utils/bytesToString";
 import { acceptsToExtensions } from "@/utils/acceptsToExtensions";
 import useNotification from "@/hooks/useNotification";
-import Button from "@/components/actions/button";
 import CloudUploadIcon from "@/components/icons/CloudUploadIcon";
 
 export type FileDropzoneProps = {
   accepts: string[];
   multiple: boolean;
   onFilesAdded: (files: File[]) => void;
-  maxSize: number; // in bytes
+  maxSize: number;
+  className?: string;
 };
 
 function validateFiles(files: File[], accepts: string[], maxFileSize: number): boolean {
@@ -19,7 +19,7 @@ function validateFiles(files: File[], accepts: string[], maxFileSize: number): b
   return files.every((file) => acceptedTypes.includes(file.type) && file.size <= maxFileSize);
 }
 
-const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, multiple, maxSize }) => {
+const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, multiple, maxSize, className }) => {
   const { showNotification } = useNotification();
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -64,12 +64,13 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
 
   const baseClass = useMemo(() => (
     [
-      "group cursor-pointer bg-primary-black shadow-primary rounded-lg",
-      "h-full w-full flex flex-col items-center justify-center gap-4",
+      "group cursor-pointer bg-primary-black",
+      "h-auto w-full flex flex-col items-center justify-center gap-4",
       "transition-colors",
       isDragging ? "bg-white/8" : "hover:bg-white/8",
+      className,
     ].join(" ")
-  ), [isDragging]);
+  ), [isDragging, className]);
 
   return (
     <div

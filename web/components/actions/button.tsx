@@ -50,7 +50,7 @@ export default function Button({
         xSize === "lg" ? lgClasses :
           "";
 
-  const baseClasses = "cursor-pointer font-medium rounded-lg transition-colors disabled:cursor-not-allowed";
+  const baseClasses = "inline-flex cursor-pointer font-medium rounded-lg transition-colors disabled:cursor-not-allowed";
 
   return (
     <button

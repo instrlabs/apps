@@ -64,3 +64,17 @@ hr {
 .animate-modal-out {
   animation: modalOut 200ms ease-out both;
 }
+
+/* Blink2-style subtle color pulsing for loading states */
+@keyframes blink2 {
+  0%, 100% {
+    filter: brightness(100%);
+  }
+  50% {
+    filter: brightness(75%);
+  }
+}
+
+.animate-blink2 {
+  animation: blink2 1.2s ease-in-out infinite;
+}
