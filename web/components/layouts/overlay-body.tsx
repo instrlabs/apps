@@ -21,13 +21,15 @@ export default function OverlayBody({ children }: {
   return (
     <div
       className={clsx(
-        "absolute top-0 bottom-0 py-3 pt-[80px] px-3",
-        "transition-[left,right,padding] duration-300 ease-in-out",
+        "absolute top-0 bottom-0 pt-[80px]",
+        "transition-[left,right] duration-300 ease-in-out",
       )}
       style={{ left: `${leftPx}px`, right: `${rightPx}px` }}
     >
-      <div className="w-full h-full rounded-xl overflow-auto bg-black">
-        <div className="h-full w-full flex animate-fade-in">{children}</div>
+      <div className="w-full h-full flex flex-col">
+        <div className="flex-1 animate-fade-in">
+          {children}
+        </div>
       </div>
     </div>
   );

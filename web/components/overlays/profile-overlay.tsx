@@ -11,7 +11,7 @@ export default function ProfileOverlay() {
   const { profile } = useProfile();
 
   return (
-    <div className="h-full w-[300px] p-4 pt-0">
+    <div className="h-full w-[300px] p-4 pl-0 pt-0">
       <div className="bg-primary-black shadow-primary h-full w-full rounded-xl">
         <div className="flex flex-col p-4">
           <h3 className="text-sm font-light text-white">{profile?.username}</h3>

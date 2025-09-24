@@ -1,13 +1,11 @@
-import { Suspense } from "react";
-
 import ListProduct from "@/app/(site)/ListProduct";
 
 export default function HomeContent() {
   return (
-    <>
-      <Suspense>
+    <div className="w-full h-full px-4 pb-4">
+      <div className="w-full h-full rounded-xl flex flex-col">
         <ListProduct />
-      </Suspense>
-    </>
+      </div>
+    </div>
   )
 }
