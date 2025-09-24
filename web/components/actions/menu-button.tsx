@@ -17,23 +17,26 @@ export default function MenuButton({
   ...rest
 }: MenuButtonProps) {
   const sizeClass =
-    xSize === "sm" ? "p-2 gap-2 text-sm" : xSize === "md" ? "p-3 gap-3" : "p-4 gap-4 text-base";
+    xSize === "sm" ? "p-3 text-sm" :
+      xSize === "md" ? "p-3 gap-3" :
+        xSize === "lg" ? "p-4 gap-4 text-base" :
+          "";
 
   return (
     <button
       type={type}
-      className={clsx(
-        "w-full flex items-center",
-        sizeClass,
-        "font-medium text-foreground",
-        "bg-menu border border-border hover:bg-menu-hover hover:border-border-hover",
-        "rounded-lg cursor-pointer",
-        className
-      )}
+      className={clsx("w-full px-2", className)}
       {...rest}
     >
-      {icon ? <span className="shrink-0">{icon}</span> : null}
-      <span className="truncate">{children}</span>
+      <div
+        className={clsx(
+          "w-full flex items-center rounded-lg text-left font-light text-white hover:bg-white/10 hover:text-white cursor-pointer transition-colors",
+          sizeClass
+        )}
+      >
+        {icon ? <span className="shrink-0">{icon}</span> : null}
+        <span className="truncate">{children}</span>
+      </div>
     </button>
   );
 }

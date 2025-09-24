@@ -68,7 +68,7 @@ export default function InputPin({
   };
 
   const baseInputClass =
-    "w-10 h-12 sm:w-12 sm:h-14 text-center text-lg rounded-lg bg-white/2 shadow-primary focus:outline-none focus:ring-2 focus:ring-white";
+    "w-10 h-12 sm:w-12 sm:h-14 text-center text-lg rounded-lg bg-primary-black shadow-primary focus:outline-none focus:ring-2 focus:ring-white";
 
   return (
     <div className={"flex gap-2 sm:gap-3"}>

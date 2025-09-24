@@ -363,7 +363,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	if user == nil || user.ID.IsZero() {
 		u2 := h.userRepo.FindByEmail(userInfo.Email)
 		if u2 == nil || u2.ID.IsZero() {
-			newUser := NewGoogleUser(userInfo.Email, userInfo.ID, userInfo.Name)
+			newUser := NewGoogleUser(userInfo.Email, userInfo.ID)
 			created := h.userRepo.Create(newUser)
 			if created == nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -375,7 +375,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 			user = created
 		} else {
 			user = u2
-			if err := h.userRepo.UpdateGoogleID(user.ID.Hex(), userInfo.ID, userInfo.Name); err != nil {
+			if err := h.userRepo.UpdateGoogleID(user.ID.Hex(), userInfo.ID); err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"message": ErrInternalServer,
 					"errors":  nil,
@@ -421,7 +421,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	log.Info("GoogleCallback: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.cfg.Domain,
-		Name:     "access_token",
+		Name:     "AccessToken",
 		Value:    tokens["access_token"],
 		HTTPOnly: true,
 		SameSite: "None",
@@ -433,7 +433,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	log.Info("GoogleCallback: Setting refresh token cookie")
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.cfg.Domain,
-		Name:     "refresh_token",
+		Name:     "RefreshToken",
 		Value:    tokens["refresh_token"],
 		HTTPOnly: true,
 		SameSite: "None",
@@ -482,73 +482,6 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 	})
 }
 
-func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
-	log.Info("UpdateProfile: Processing profile update request using Locals UserID")
-
-	userID, _ := c.Locals("UserID").(string)
-	if userID == "" {
-		log.Info("UpdateProfile: UserID not found in context")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": ErrUnauthorized,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	// Parse request body
-	var request struct {
-		Name string `json:"name"`
-	}
-	if err := c.BodyParser(&request); err != nil {
-		log.Errorf("UpdateProfile: Failed to parse request body: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": ErrInvalidRequestBody,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	// Update profile (inline)
-	if request.Name == "" {
-		log.Warnf("UpdateProfile: name cannot be empty")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Failed to update profile",
-			"errors":  fiber.Map{"general": "name cannot be empty"},
-			"data":    nil,
-		})
-	}
-	if err := h.userRepo.UpdateProfile(userID, request.Name); err != nil {
-		log.Errorf("UpdateProfile: Failed to update profile: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Failed to update profile",
-			"errors": fiber.Map{
-				"general": err.Error(),
-			},
-			"data": nil,
-		})
-	}
-
-	// Get updated user
-	updatedUser := h.userRepo.FindByID(userID)
-	if updatedUser == nil || updatedUser.ID.IsZero() {
-		log.Errorf("UpdateProfile: Failed to get updated user after update")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrInternalServer,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	log.Infof("UpdateProfile: Profile updated successfully for user: %s", updatedUser.Email)
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "Profile updated successfully",
-		"errors":  nil,
-		"data": fiber.Map{
-			"user": updatedUser,
-		},
-	})
-}
-
 func (h *UserHandler) Logout(c *fiber.Ctx) error {
 	log.Info("Logout: Processing logout request using Locals UserID")
 
@@ -574,10 +507,9 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 		})
 	}
 
-	// Clear cookies (if any were set previously)
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.cfg.Domain,
-		Name:     "access_token",
+		Name:     "AccessToken",
 		Value:    "",
 		HTTPOnly: true,
 		SameSite: "None",
@@ -588,7 +520,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 
 	c.Cookie(&fiber.Cookie{
 		Domain:   h.cfg.Domain,
-		Name:     "refresh_token",
+		Name:     "RefreshToken",
 		Value:    "",
 		HTTPOnly: true,
 		SameSite: "None",

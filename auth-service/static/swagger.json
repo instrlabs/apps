@@ -294,47 +294,6 @@
                         }
                     }
                 }
-            },
-            "put": {
-                "description": "Update the authenticated user's profile",
-                "tags": ["user"],
-                "summary": "Update user profile",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {"schema": {"type": "object"}}
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Profile updated successfully",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "data": { "type": "object" },
-                                "message": { "type": "string" }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body or validation error",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": { "type": "string" }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": { "type": "string" }
-                            }
-                        }
-                    }
-                }
             }
         },
         "/send-pin": {

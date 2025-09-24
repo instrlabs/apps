@@ -7,7 +7,7 @@ import { ApiResponse, EmptyBody, FormErrors, fetchGET, fetchPOST, fetchPUT } fro
 import {redirect} from "next/navigation";
 
 export interface ProfileResponse {
-  name: string;
+  username: string
   email: string
 }
 export async function loginUser({ email, pin }: {
@@ -81,6 +81,10 @@ export async function sendPIN({ email }: {
 
 export async function getProfile(): Promise<ApiResponse<ProfileResponse>> {
   return await fetchGET(`${APIs.AUTH}/profile`);
+}
+
+export async function loginByGoogle(): Promise<ApiResponse<ProfileResponse>> {
+  return redirect(`${process.env.API_URL}${APIs.AUTH}/google`);
 }
 
 export async function updateProfile(name: string): Promise<ApiResponse<EmptyBody>> {

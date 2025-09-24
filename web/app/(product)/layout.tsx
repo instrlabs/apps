@@ -3,7 +3,7 @@ import React, {Suspense} from "react";
 import {getProfile} from "@/services/auth";
 import {ProfileProvider} from "@/hooks/useProfile";
 import {ProductProvider} from "@/hooks/useProduct";
-import {listProducts} from "@/services/products";
+import {getProducts} from "@/services/products";
 import {OverlayProvider} from "@/hooks/useOverlay";
 import OverlayTop from "@/components/layouts/overlay-top";
 import OverlayBody from "@/components/layouts/overlay-body";
@@ -17,7 +17,7 @@ export default async function LoginLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const { data: profileData } = await getProfile();
-  const { data: productData } = await listProducts();
+  const { data: productData } = await getProducts();
 
   return (
     <ProfileProvider data={profileData}>

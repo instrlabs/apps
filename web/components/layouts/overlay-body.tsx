@@ -26,7 +26,7 @@ export default function OverlayBody({ children }: {
       )}
       style={{ left: `${leftPx}px`, right: `${rightPx}px` }}
     >
-      <div className="w-full h-full rounded-xl bg-card overflow-auto">
+      <div className="w-full h-full rounded-xl overflow-auto bg-black">
         <div className="h-full w-full flex animate-fade-in">{children}</div>
       </div>
     </div>

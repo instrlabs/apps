@@ -16,7 +16,7 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
           : "";
 
     const baseClasses = `
-      bg-white/2
+      bg-primary-black
       focus:outline-none
       w-full shadow-primary rounded-lg
       placeholder:[color:var(--text-primary)]/60

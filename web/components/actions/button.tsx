@@ -15,7 +15,7 @@ export default function Button({
 }: ButtonProps) {
   // Container Classes
   const outlineClasses = [
-    "bg-white/2",
+    "bg-primary-black",
     "shadow-primary",
     "hover:bg-white/8"
   ].join(" ");

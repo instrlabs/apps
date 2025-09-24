@@ -5,48 +5,65 @@ import clsx from "clsx";
 
 
 type ButtonIconProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  xSize: "sm" | "md" | "lg";
-  xColor: "primary" | "secondary";
+  xsize: "sm" | "md" | "lg";
+  xVariant?: "solid" | "outline" | "transparent";
 };
 
 export default function ButtonIcon({
-  className,
+  xsize,
+  xVariant = "outline",
   children,
-  type = "button",
-  xSize,
-  xColor,
   ...rest
 }: ButtonIconProps) {
-  const sizeClass =
-    xSize === "sm" ? "p-1"
-      : xSize === "md" ? "p-[6px]"
-        : "p-2";
+  // Container Classes
+  const outlineClasses = [
+    "bg-white/2",
+    "text-white/90",
+    "shadow-primary",
+    "hover:bg-white/8"
+  ].join(" ");
 
-  const colorClasses = xColor === "primary"
-    ? [
-        "bg-[var(--btn-primary-bg)]",
-        "text-[var(--btn-primary-text)]",
-        "hover:bg-[var(--btn-primary-hover)]",
-        "active:bg-[var(--btn-primary-active)]",
-        "disabled:bg-[var(--btn-primary-disabled)]",
-      ]
-    : [
-        "bg-[var(--btn-secondary-bg)]",
-        "text-[var(--btn-secondary-text)]",
-        "hover:bg-[var(--btn-secondary-hover)]",
-        "active:bg-[var(--btn-secondary-active)]",
-        "disabled:bg-[var(--btn-secondary-disabled)]",
-      ];
+  const solidClasses = [
+    "bg-white",
+    "text-black",
+    "hover:bg-white/85",
+    "disabled:bg-white/85",
+  ].join(" ");
+
+  const transparentClasses = [
+    "bg-transparent",
+    "shadow-none",
+  ].join(" ");
+
+  const variantClasses =
+    xVariant === "solid" ? solidClasses :
+      xVariant === "outline" ? outlineClasses :
+        xVariant === "transparent" ? transparentClasses :
+          "";
+
+  // Size Classes
+  const smClasses = "size-8";
+  const mdClasses = "size-10";
+  const lgClasses = "size-12";
+
+  const sizeClass =
+    xsize === "sm" ? smClasses :
+      xsize === "md" ? mdClasses :
+        xsize === "lg" ? lgClasses :
+          "";
+
+  const baseClasses = `
+  flex items-center justify-center
+  rounded-full transition-colors
+  cursor-pointer disabled:cursor-not-allowed
+  `;
 
   return (
     <button
-      type={type}
       className={clsx(
-        colorClasses,
-        "border border-[var(--btn-border)]",
+        baseClasses,
+        variantClasses,
         sizeClass,
-        "rounded-full cursor-pointer shadow-primary hover:shadow-hover focus:shadow-focus",
-        className
       )}
       {...rest}
     >

@@ -1,8 +1,6 @@
 @import "tailwindcss";
 
 :root {
-  /* Base colors: dark mode by default (Vercel-like) */
-  --bg-primary: #0A0A0A;
   --text-primary: var(--color-white);
   --card-primary: var(--color-gray-900);
 }
@@ -11,13 +9,8 @@
 /*[data-theme="dark"] {}*/
 
 @theme {
-  --color-error: var(--color-red-500);
-  --color-card: var(--card-primary);
-  --color-menu: var(--menu-primary);
-  --color-menu-hover: var(--menu-hover-primary);
-  --color-border-hover: var(--border-hover-primary);
+  --color-primary-black: hsla(0, 0%, 4%, 1);
 
-  /* Effects */
   --shadow-primary: 0 0 0 1px rgba(255, 255, 255, 0.1);
   --shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 3px 1px rgba(255, 255, 255, 0.1);
   --shadow-focus: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 5px 3px rgba(255, 255, 255, 0.1);
@@ -26,7 +19,7 @@
 body {
   width: 100vw;
   height: 100vh;
-  background: var(--bg-primary);
+  background: var(--color-black);
   color: var(--text-primary);
   overflow: hidden;
 }
@@ -34,13 +27,6 @@ body {
 hr {
   border-color: var(--color-white);
   opacity: 0.1;
-}
-
-.card {
-  background: var(--color-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-primary);
-  border: 1px solid var(--color-slate-200);
 }
 
 @keyframes notificationIn {

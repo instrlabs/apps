@@ -1,18 +1,9 @@
-"use client";
-
-import clsx from "clsx";
 import Button from "@/components/actions/button";
+import { loginByGoogle } from "@/services/auth";
 
-const GoogleSignInButton = () => {
-  const handleGoogleSignIn = () => {
-    window.location.href = "/api/auth/google";
-  };
-
+function GoogleSignInButton() {
   return (
-      <Button
-          onClick={handleGoogleSignIn}
-          xVariant="outline"
-      >
+      <Button onClick={loginByGoogle} xVariant="outline">
         <div className="flex items-center justify-center gap-2">
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path

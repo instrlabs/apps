@@ -1,25 +1,25 @@
 "use server"
 
-import React, {Suspense} from "react";
-import OverlayBody from "@/components/layouts/overlay-body";
-import { getProfile } from "@/services/auth";
-import {ProfileProvider} from "@/hooks/useProfile";
-import {listProducts} from "@/services/products";
-import {ProductProvider} from "@/hooks/useProduct";
-import OverlayLeft from "@/components/layouts/overlay-left";
-import OverlayRight from "@/components/layouts/overlay-right";
-import OverlayTop from "@/components/layouts/overlay-top";
+import React, { Suspense } from "react";
 
-import { NotificationProvider, NotificationWidget } from "@/hooks/useNotification";
+import { getProfile } from "@/services/auth";
+import { getProducts } from "@/services/products";
+
+import { ProductProvider } from "@/hooks/useProduct";
+import { ProfileProvider } from "@/hooks/useProfile";
 import { OverlayProvider } from "@/hooks/useOverlay";
+import { NotificationProvider, NotificationWidget } from "@/hooks/useNotification";
 import { ModalProvider } from "@/hooks/useModal";
-import {SSEProvider} from "@/hooks/useSSE";
+import { SSEProvider } from "@/hooks/useSSE";
+import OverlayBody from "@/components/layouts/overlay-body";
+import OverlayTop from "@/components/layouts/overlay-top";
+import OverlayRight from "@/components/layouts/overlay-right";
 
 export default async function SiteLayout({ children }: Readonly<{
   children: React.ReactNode;
 }>) {
   const { data: profileData } = await getProfile();
-  const { data: productData } = await listProducts();
+  const { data: productData } = await getProducts();
 
   return (
     <ProfileProvider data={profileData}>
@@ -27,10 +27,11 @@ export default async function SiteLayout({ children }: Readonly<{
     <SSEProvider>
     <NotificationProvider>
     <ModalProvider>
-    <OverlayProvider defaultLeft="left:navigation">
+    <OverlayProvider>
       <Suspense>
         <OverlayBody>{children}</OverlayBody>
         <OverlayTop />
+        <OverlayRight />
         <NotificationWidget />
       </Suspense>
     </OverlayProvider>

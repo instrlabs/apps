@@ -2,7 +2,11 @@ package internal
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
+	"fmt"
+	"math/big"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2/log"
@@ -34,6 +38,16 @@ func (r *UserRepository) Create(user *User) *User {
 	if err == nil {
 		log.Errorf("User already exists with email %s", user.Email)
 		return nil
+	}
+
+	// Ensure username is set and unique
+	if strings.TrimSpace(user.Username) == "" {
+		uname, genErr := r.generateUniqueUsername(ctx, user.Email)
+		if genErr != nil {
+			log.Errorf("Failed to generate unique username for %s: %v", user.Email, genErr)
+			return nil
+		}
+		user.Username = uname
 	}
 
 	_, err = r.collection.InsertOne(ctx, user)
@@ -159,14 +173,13 @@ func (r *UserRepository) FindByGoogleID(googleID string) *User {
 	return &user
 }
 
-func (r *UserRepository) UpdateGoogleID(userID string, googleID, googleName string) error {
+func (r *UserRepository) UpdateGoogleID(userID string, googleID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	update := bson.M{
 		"$set": bson.M{
-			"name":       googleName,
 			"google_id":  googleID,
 			"updated_at": time.Now().UTC(),
 		},
@@ -175,26 +188,6 @@ func (r *UserRepository) UpdateGoogleID(userID string, googleID, googleName stri
 	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
 	if err != nil {
 		log.Errorf("Failed to update google ID for user %s: %v", userID, err)
-		return err
-	}
-	return nil
-}
-
-func (r *UserRepository) UpdateProfile(userID string, name string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	objectID, err := primitive.ObjectIDFromHex(userID)
-	update := bson.M{
-		"$set": bson.M{
-			"name":       name,
-			"updated_at": time.Now().UTC(),
-		},
-	}
-
-	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	if err != nil {
-		log.Errorf("Failed to update profile for user %s: %v", userID, err)
 		return err
 	}
 	return nil
@@ -260,4 +253,35 @@ func (r *UserRepository) SetRegisteredAt(userID string) error {
 		return err
 	}
 	return err
+}
+
+func (r *UserRepository) generateUniqueUsername(ctx context.Context, email string) (string, error) {
+	base := email
+	if at := strings.Index(email, "@"); at != -1 {
+		base = email[:at]
+	}
+	base = strings.ToLower(strings.TrimSpace(base))
+	if base == "" {
+		base = "user"
+	}
+
+	for i := 0; i < 20; i++ { // up to 20 attempts
+		nBig, err := rand.Int(rand.Reader, big.NewInt(10000))
+		if err != nil {
+			return "", err
+		}
+		suffix := fmt.Sprintf("%04d", nBig.Int64())
+		candidate := fmt.Sprintf("%s%s", base, suffix)
+
+		var tmp User
+		err = r.collection.FindOne(ctx, bson.M{"username": candidate}).Decode(&tmp)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				return candidate, nil
+			}
+			return "", err
+		}
+		// username exists, try again
+	}
+	return "", fmt.Errorf("unable to generate unique username")
 }

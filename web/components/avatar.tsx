@@ -7,25 +7,47 @@ export type AvatarSize = "sm" | "md" | "lg";
 export type AvatarProps = {
   name?: string;
   src?: string;
-  size: AvatarSize;
+  xsize: AvatarSize;
   className?: string;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
 };
 
+function getBucket(name: string | undefined) {
+  let bucket = 0;
+  if (name && name.trim() !== "") {
+    const safeName = name.trim();
+    const firstChar = safeName[0]?.toLowerCase() ?? "u";
+    const isAlpha = firstChar >= "a" && firstChar <= "z";
+    const alphaIndex = isAlpha ? firstChar.charCodeAt(0) - 97 : firstChar.charCodeAt(0) % 26;
+    bucket = ((alphaIndex % 26) + 26) % 8;
+  }
+  return bucket;
+}
+
+function getInitial(name: string | undefined) {
+  let initials = "";
+  if (name && name.trim() !== "") {
+    const safeName = name.trim();
+    const words = safeName.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) {
+      initials = `${words[0][0] ?? ""}${words[1][0] ?? ""}`;
+    } else {
+      const lettersOnly = safeName.replace(/[^A-Za-z]/g, "");
+      initials = lettersOnly.slice(0, 2) || safeName.slice(0, 2);
+    }
+    initials = initials.toUpperCase();
+  }
+  return initials;
+}
+
 export default function Avatar({
-  name = "User",
-  src,
-  size = "md",
-  className,
+  name = "",
+  xsize = "md",
   onClick,
 }: AvatarProps) {
-  const safeName = (name ?? "User").trim() || "User";
-  const firstChar = safeName[0]?.toLowerCase() ?? "u";
-  const isAlpha = firstChar >= "a" && firstChar <= "z";
-  const alphaIndex = isAlpha ? firstChar.charCodeAt(0) - 97 : firstChar.charCodeAt(0) % 26;
-  const bucket = ((alphaIndex % 26) + 26) % 8;
+  const bucket = getBucket(name);
+  const initials = getInitial(name);
 
-  // Tailwind color classes by bucket (no hex values)
   const bgPaletteCls = [
     "bg-blue-500",
     "bg-green-500",
@@ -47,57 +69,37 @@ export default function Avatar({
     "text-white", // on slate
   ];
 
-  const bgClass = bgPaletteCls[bucket] ?? "bg-blue-500";
-  const fgClass = textPaletteCls[bucket] ?? "text-white";
+  const bgClass = bgPaletteCls[bucket];
+  const fgClass = textPaletteCls[bucket];
 
-  // Compute two-letter initials (prefer first letters of first two words; fallback to first two letters)
-  const words = safeName.split(/\s+/).filter(Boolean);
-  let initials = "";
-  if (words.length >= 2) {
-    initials = `${words[0][0] ?? ""}${words[1][0] ?? ""}`;
-  } else {
-    const lettersOnly = safeName.replace(/[^A-Za-z]/g, "");
-    initials = lettersOnly.slice(0, 2) || safeName.slice(0, 2);
-  }
-  initials = initials.toUpperCase();
+  // Size Classes
+  const smClasses = "size-8 text-sm";
+  const mdClasses = "size-10";
+  const lgClasses = "size-12";
 
-  // Size mappings
   const sizeClass =
-    size === "sm" ? "w-8 h-8" : size === "lg" ? "w-14 h-14" : "w-10 h-10"; // md default
-  const textSizeClass = size === "sm" ? "text-xs" : size === "lg" ? "text-lg" : "text-sm";
+    xsize === "sm" ? smClasses :
+      xsize === "md" ? mdClasses :
+        xsize === "lg" ? lgClasses :
+          "";
+
+  const baseClasses = `
+    flex items-center justify-center rounded-full
+    cursor-pointer select-none
+  `;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={safeName}
-      title={safeName}
       className={clsx(
-        "relative inline-flex items-center justify-center shadow-primary hover:shadow-hover focus:shadow-focus leading-none rounded-full cursor-pointer overflow-hidden",
+        baseClasses,
         sizeClass,
         bgClass,
         fgClass,
-        className
       )}
     >
-      {src ? (
-        <Image
-          src={src}
-          alt={safeName}
-          fill
-          sizes={size === "sm" ? "2rem" : size === "lg" ? "3.5rem" : "2.5rem"}
-          className="object-cover rounded-full"
-        />
-      ) : (
-        <div
-          className={clsx(
-            "w-full h-full flex items-center justify-center font-semibold",
-            textSizeClass
-          )}
-        >
-          {initials}
-        </div>
-      )}
+      {initials}
     </button>
   );
 }

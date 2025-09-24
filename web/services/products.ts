@@ -31,7 +31,7 @@ export type Product = {
 };
 
 
-export async function listProducts(): Promise<ApiResponse<Product[]>> {
+export async function getProducts(): Promise<ApiResponse<Product[]>> {
   return await fetchGET(`${APIs.PAYMENTS}/products`);
 }
 

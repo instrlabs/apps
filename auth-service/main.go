@@ -41,7 +41,6 @@ func main() {
 	app.Post("/check", userHandler.CheckEmail)
 
 	app.Get("/profile", userHandler.GetProfile)
-	app.Put("/profile", userHandler.UpdateProfile)
 
 	app.Get("/google", userHandler.GoogleLogin)
 	app.Get("/google/callback", userHandler.GoogleCallback)
