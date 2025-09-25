@@ -40,8 +40,8 @@ export default function Button({
           "";
 
   // Size Classes
-  const smClasses = "py-2 px-3 text-sm min-w-24";
-  const mdClasses = "py-3 px-4 min-w-28";
+  const smClasses = "py-2 px-3 text-sm";
+  const mdClasses = "py-3 px-4";
   const lgClasses = "py-4 px-6 text-base min-w-32";
 
   const sizeClasses =
@@ -50,7 +50,7 @@ export default function Button({
         xSize === "lg" ? lgClasses :
           "";
 
-  const baseClasses = "inline-flex cursor-pointer font-medium rounded-lg transition-colors disabled:cursor-not-allowed";
+  const baseClasses = "cursor-pointer font-medium rounded-lg transition-colors disabled:cursor-not-allowed";
 
   return (
     <button

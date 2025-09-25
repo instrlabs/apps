@@ -3,7 +3,7 @@ import clsx from "clsx";
 
 export type ChipSize = "sm" | "md" | "lg";
 export type ChipVariant = "filled" | "outline" | "outlined"; // 'outlined' kept for backward-compat
-export type ChipColor = "default" | "primary" | "error" | "warning" | "info";
+export type ChipColor = "default" | "primary" | "error" | "warning" | "info" | "danger" | "success";
 
 export interface ChipProps extends React.HTMLAttributes<HTMLDivElement> {
   children?: React.ReactNode;
@@ -48,25 +48,29 @@ const Chip = React.forwardRef<HTMLDivElement, ChipProps>(
     const outlineError = "border border-red-500 bg-red-500/10 text-red-500";
     const outlineWarning = "border border-yellow-500 bg-yellow-500/10 text-yellow-500";
     const outlineInfo = "border border-blue-500 bg-blue-500/10 text-blue-500";
+    const outlineSuccess = "border border-green-500 bg-green-500/10 text-green-500";
 
     // For filled, provide sensible semantic defaults
     const filledError = "bg-red-500 text-white";
     const filledWarning = "bg-yellow-500 text-black";
     const filledInfo = "bg-blue-500 text-white";
+    const filledSuccess = "bg-green-500 text-white";
 
     const variantClasses = (() => {
       if (variant === "filled") {
         if (xColor === "primary") return filledPrimary;
-        if (xColor === "error") return filledError;
+        if (xColor === "error" || xColor === "danger") return filledError;
         if (xColor === "warning") return filledWarning;
         if (xColor === "info") return filledInfo;
+        if (xColor === "success") return filledSuccess;
         return filledDefault; // default
       }
       // outline
       if (xColor === "primary") return outlinePrimary;
-      if (xColor === "error") return outlineError;
+      if (xColor === "error" || xColor === "danger") return outlineError;
       if (xColor === "warning") return outlineWarning;
       if (xColor === "info") return outlineInfo;
+      if (xColor === "success") return outlineSuccess;
       return outlineDefault; // default
     })();
 

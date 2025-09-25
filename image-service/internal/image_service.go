@@ -7,6 +7,7 @@ import (
 	"image/png"
 
 	"github.com/disintegration/imaging"
+	"github.com/gofiber/fiber/v2/log"
 )
 
 type ImageService struct{}
@@ -16,6 +17,7 @@ func NewImageService() *ImageService { return &ImageService{} }
 func (s *ImageService) Compress(file []byte) ([]byte, error) {
 	img, err := imaging.Decode(bytes.NewReader(file))
 	if err != nil {
+		log.Errorf("Failed to decode image: %v", err)
 		return nil, err
 	}
 
@@ -25,14 +27,17 @@ func (s *ImageService) Compress(file []byte) ([]byte, error) {
 	case "png":
 		enc := png.Encoder{CompressionLevel: png.BestCompression}
 		if err := enc.Encode(&buf, img); err != nil {
+			log.Errorf("Failed to encode image: %v", err)
 			return nil, err
 		}
 	case "jpeg", "jpg":
 		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 60}); err != nil {
+			log.Errorf("Failed to encode image: %v", err)
 			return nil, err
 		}
 	default:
 		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 60}); err != nil {
+			log.Errorf("Failed to encode image: %v", err)
 			return nil, err
 		}
 	}

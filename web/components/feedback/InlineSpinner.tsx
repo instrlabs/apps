@@ -2,7 +2,6 @@
 
 import React from "react";
 
-
 export default function InlineSpinner() {
   return (
     <div className="flex items-center justify-center size-4 overflow-hidden">

@@ -131,7 +131,6 @@ export async function fetchGETBytes(
   const res = await fetch(url, {
     method: "GET",
     headers: {
-      // Let the server specify Content-Type; we just forward auth cookie
       "Cookie": (await cookies()).toString(),
     },
   });
