@@ -8,7 +8,7 @@ on:
         required: false
         default: ''
   push:
-    branches: [ main, master, develop ]
+    branches: [master]
     paths:
       - 'auth-service/**'
       - 'auth-service-docker.yml'
@@ -46,31 +46,19 @@ jobs:
       - name: Compute tags
         id: meta
         run: |
-          REPO_IMAGE="${{ env.IMAGE_NAME }}"
+          REPO_NAME="${{ env.DOCKERHUB_REPONAME }}"
           SHA_TAG="sha-${GITHUB_SHA::7}"
-
-          TAGS=("${REPO_IMAGE}:${SHA_TAG}")
-
-          # Branch-based tag
-          if [[ "${GITHUB_REF}" == refs/heads/* ]]; then
-            BRANCH="${GITHUB_REF#refs/heads/}"
-            SAFE_BRANCH=${BRANCH//\//-}
-            TAGS+=("${REPO_IMAGE}:${SAFE_BRANCH}")
-            # latest only for main/master
-            if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
-              TAGS+=("${REPO_IMAGE}:latest")
-            fi
-          fi
+          TAGS=("${REPO_NAME}:${SHA_TAG}")
 
           # Git tag (release)
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             GIT_TAG="${GITHUB_REF#refs/tags/}"
-            TAGS+=("${REPO_IMAGE}:${GIT_TAG}")
+            TAGS+=("${REPO_NAME}:${GIT_TAG}")
           fi
 
           # Manual input tag
           if [[ -n "${{ github.event.inputs.tag }}" ]]; then
-            TAGS+=("${REPO_IMAGE}:${{ github.event.inputs.tag }}")
+            TAGS+=("${REPO_NAME}:${{ github.event.inputs.tag }}")
           fi
 
           # Output CSV
