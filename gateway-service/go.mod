@@ -5,7 +5,7 @@ go 1.24.4
 require (
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/golang-jwt/jwt/v5 v5.3.0
-	github.com/instr-labs/shared v0.0.0
+	github.com/instr-labs/shared v0.0.1
 	github.com/joho/godotenv v1.5.1
 	github.com/sirupsen/logrus v1.9.3
 )
@@ -46,6 +46,3 @@ require (
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 )
-
-
-replace github.com/instr-labs/shared => ../shared

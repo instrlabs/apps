@@ -5,7 +5,7 @@ go 1.24.4
 require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/gofiber/fiber/v2 v2.52.9
-	github.com/instr-labs/shared v0.0.0
+	github.com/instr-labs/shared v0.0.1
 	github.com/joho/godotenv v1.5.1
 	github.com/nats-io/nats.go v1.45.0
 	go.mongodb.org/mongo-driver v1.17.4
@@ -48,6 +48,3 @@ require (
 	golang.org/x/text v0.29.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-
-replace github.com/instr-labs/shared => ../shared
