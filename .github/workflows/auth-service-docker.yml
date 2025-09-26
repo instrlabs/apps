@@ -46,19 +46,19 @@ jobs:
       - name: Compute tags
         id: meta
         run: |
-          REPO_NAME="${{ env.DOCKERHUB_REPONAME }}"
+          DOCKERHUB_REPONAME="${{ env.DOCKERHUB_REPONAME }}"
+          REPO_NAME="${{ github.event.repository.name }}"
           SHA_TAG="sha-${GITHUB_SHA::7}"
-          TAGS=("${REPO_NAME}:${SHA_TAG}")
 
           # Git tag (release)
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             GIT_TAG="${GITHUB_REF#refs/tags/}"
-            TAGS+=("${REPO_NAME}:${GIT_TAG}")
+            TAGS=("${DOCKERHUB_REPONAME}:${REPO_NAME}-${GIT_TAG}")
           fi
 
           # Manual input tag
           if [[ -n "${{ github.event.inputs.tag }}" ]]; then
-            TAGS+=("${REPO_NAME}:${{ github.event.inputs.tag }}")
+            TAGS=("${DOCKERHUB_REPONAME}:${REPO_NAME}-${{ github.event.inputs.tag }}")
           fi
 
           # Output CSV
@@ -80,8 +80,3 @@ jobs:
         run: |
           echo "Pushed tags:" >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' >> $GITHUB_STEP_SUMMARY
-
-# Notes:
-# - Define repository secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN (token or password with write perms).
-# - Workflow triggers on pushes to auth-service/** in main/master/develop branches and on tags starting with v.
-# - You can run manually and provide a custom tag via the workflow dispatch input.
