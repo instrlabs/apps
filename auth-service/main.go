@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/arthadede/auth-service/internal"
-	initx "github.com/histweety-labs/shared/init"
+	"github.com/instr-labs/auth-service/internal"
+	initx "github.com/instr-labs/shared/init"
 
 	"github.com/gofiber/fiber/v2"
 )

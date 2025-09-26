@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/arthadede/notification-service/internal"
 	"github.com/gofiber/fiber/v2"
-	initx "github.com/histweety-labs/shared/init"
+	"github.com/instr-labs/notification-service/internal"
+	initx "github.com/instr-labs/shared/init"
 	natsgo "github.com/nats-io/nats.go"
 )
 

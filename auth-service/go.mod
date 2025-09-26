@@ -1,11 +1,11 @@
-module github.com/arthadede/auth-service
+module github.com/instr-labs/auth-service
 
 go 1.24.4
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/golang-jwt/jwt/v5 v5.3.0
-	github.com/histweety-labs/shared v0.0.0-20250909154448-0d8b369cc5d0
+	github.com/instr-labs/shared v0.0.0
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.17.4
 	golang.org/x/crypto v0.42.0
@@ -48,3 +48,6 @@ require (
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 )
+
+
+replace github.com/instr-labs/shared => ../shared

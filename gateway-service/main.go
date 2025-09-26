@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/arthadede/gateway-service/internal"
 	"github.com/gofiber/fiber/v2"
+	"github.com/instr-labs/gateway-service/internal"
 	log "github.com/sirupsen/logrus"
 )
 
