@@ -11,6 +11,9 @@ on:
     tags:
       - 'v*'
 
+env:
+  REPO_NAME: auth-service
+
 jobs:
   docker:
     name: Build and Push
@@ -40,7 +43,6 @@ jobs:
         id: meta
         run: |
           DOCKERHUB_REPONAME="${{ secrets.DOCKERHUB_REPONAME }}"
-          REPO_NAME="${{ github.event.repository.name }}"
           SHA_TAG="sha-${GITHUB_SHA::7}"
 
           # Git tag (release)
