@@ -43,7 +43,7 @@ jobs:
         id: meta
         run: |
           DOCKERHUB_REPONAME="${{ secrets.DOCKERHUB_REPONAME }}"
-          SHA_TAG="sha-${GITHUB_SHA::7}"
+          SHA_TAG="${GITHUB_SHA::7}"
 
           # Git tag (release)
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
