@@ -1,4 +1,4 @@
-name: auth-service
+name: gateway-service
 
 on:
   workflow_dispatch:
@@ -61,8 +61,8 @@ jobs:
       - name: Build and push (multi-arch)
         uses: docker/build-push-action@v6
         with:
-          context: ./auth-service
-          file: ./auth-service/Dockerfile
+          context: ./gateway-service
+          file: ./gateway-service/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
