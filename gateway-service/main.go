@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
-	initx "github.com/instrlabs/shared/init"
 	"github.com/instrlabs/gateway-service/internal"
+	initx "github.com/instrlabs/shared/init"
 	log "github.com/sirupsen/logrus"
 )
 

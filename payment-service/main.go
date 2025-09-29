@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
-	initx "github.com/instrlabs/shared/init"
 	"github.com/instrlabs/payment-service/internal"
+	initx "github.com/instrlabs/shared/init"
 )
 
 func main() {
@@ -17,8 +17,7 @@ func main() {
 	})
 	defer mongo.Close()
 
-	productRepo := internal.NewProductRepository(mongo)
-	productHandler := internal.NewProductHandler(productRepo)
+	// Product endpoints have been moved to image-service. No local product repository/handler.
 
 	app := fiber.New(fiber.Config{})
 
@@ -27,11 +26,7 @@ func main() {
 	initx.SetupServiceHealth(app)
 	initx.SetupAuthenticated(app, []string{})
 
-	app.Post("/products", productHandler.CreateProduct)
-	app.Get("/products", productHandler.ListProducts)
-	app.Get("/products/:id", productHandler.GetProduct)
-	app.Patch("/products/:id", productHandler.UpdateProduct)
-	app.Delete("/products/:id", productHandler.DeleteProduct)
+	// Product routes moved to image-service. This service no longer exposes /products endpoints.
 
 	log.Fatal(app.Listen(config.Port))
 }

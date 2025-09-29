@@ -19,7 +19,7 @@ type InstructionHandler struct {
 	nats        *initx.Nats
 	instrRepo   *InstructionRepository
 	fileRepo    *FileRepository
-	productServ *PaymentService
+	productRepo *ProductRepository
 	imageSvc    *ImageService
 }
 
@@ -29,15 +29,15 @@ func NewInstructionHandler(
 	nats *initx.Nats,
 	instrRepo *InstructionRepository,
 	fileRepo *FileRepository,
-	productServ *PaymentService,
+	productRepo *ProductRepository,
 	imageSvc *ImageService) *InstructionHandler {
-	return &InstructionHandler{cfg: cfg, s3: s3, nats: nats, instrRepo: instrRepo, fileRepo: fileRepo, productServ: productServ, imageSvc: imageSvc}
+	return &InstructionHandler{cfg: cfg, s3: s3, nats: nats, instrRepo: instrRepo, fileRepo: fileRepo, productRepo: productRepo, imageSvc: imageSvc}
 }
 
 func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 	productKey := c.Params("productKey")
 	userID, _ := c.Locals("UserID").(string)
-	product := h.productServ.GetProduct(userID, productKey)
+	product, _ := h.productRepo.FindByKey(productKey)
 	if product == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "product not found",
@@ -48,7 +48,7 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 
 	instructionID := primitive.NewObjectID()
 	objUserID, _ := primitive.ObjectIDFromHex(userID)
-	objProductID, _ := primitive.ObjectIDFromHex(product.ID)
+	objProductID := product.ID
 
 	instr := &Instruction{
 		ID:        instructionID,
@@ -243,7 +243,7 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	}
 
 	// 3. Find product by instruction's product ID
-	product := h.productServ.GetProduct(instr.UserID.Hex(), instr.ProductID.Hex())
+	product, _ := h.productRepo.FindByID(instr.ProductID)
 	if product == nil {
 		log.Printf("RunInstructionMessage: product not found: %s", instr.ProductID.Hex())
 		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)

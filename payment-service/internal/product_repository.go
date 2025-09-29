@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	initx "github.com/instr-instrlabs-apps/shared/init"
+	initx "github.com/instrlabs/shared/init"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -34,7 +34,6 @@ func (r *ProductRepository) Create(p *Product) error {
 	return err
 }
 
-// FindByID returns a product by its hex string ID, using ObjectID for the _id filter.
 func (r *ProductRepository) FindByID(id string) (*Product, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

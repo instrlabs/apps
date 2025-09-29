@@ -36,13 +36,14 @@ func main() {
 	initx.SetupServiceHealth(app)
 	initx.SetupAuthenticated(app, []string{})
 
+	productRepo := internal.NewProductRepository(mongo)
 	instrRepo := internal.NewInstructionRepository(mongo)
 	fileRepo := internal.NewFileRepository(mongo)
 
-	paymentSvc := internal.NewPaymentService(cfg)
-
 	imageSvc := internal.NewImageService()
-	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, fileRepo, paymentSvc, imageSvc)
+
+	productHandler := internal.NewProductHandler(productRepo)
+	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, fileRepo, productRepo, imageSvc)
 
 	_, _ = nats.Conn.Subscribe(cfg.NatsSubjectImagesRequests, func(m *natsgo.Msg) {
 		instrHandler.RunInstructionMessage(m.Data)
@@ -63,6 +64,8 @@ func main() {
 	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
 	app.Get("/instructions/:id/details", instrHandler.GetInstructionDetails)
 	app.Get("/instructions/:id/details/:fileId", instrHandler.GetInstructionFileBytes)
+
+	app.Get("/products", productHandler.ListProducts)
 
 	log.Fatal(app.Listen(cfg.Port))
 }
