@@ -2,33 +2,16 @@ package internal
 
 import (
 	"errors"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	log "github.com/sirupsen/logrus"
 )
 
-func SetupMiddleware(app *fiber.App) {
-	// INBOUND LOG
-	app.Use(func(c *fiber.Ctx) error {
-		start := time.Now().UTC()
-		err := c.Next()
-		log.WithFields(log.Fields{
-			"method":      c.Method(),
-			"path":        c.Path(),
-			"remote_addr": c.IP(),
-			"user_agent":  c.Get("User-Agent"),
-			"duration_ms": time.Since(start).Milliseconds(),
-		}).Info("Request processed")
-		return err
-	})
-
+func SetupMiddleware(app *fiber.App, cfg *Config) {
 	// CORS
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     os.Getenv("CORS_ALLOWED_ORIGINS"),
+		AllowOrigins:     cfg.Origins,
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
 		AllowHeaders:     "Origin, Accept, Content-Type, X-Authenticated, X-User-Id, X-User-Roles",
 		AllowCredentials: true,

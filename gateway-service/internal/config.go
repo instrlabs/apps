@@ -12,15 +12,19 @@ type ServiceConfig struct {
 }
 
 type Config struct {
-	Port     string
-	Services []ServiceConfig
+	Environment string
+	Port        string
+	Origins     string
+	Services    []ServiceConfig
 }
 
 func LoadConfig() *Config {
 	_ = godotenv.Load()
 
 	return &Config{
-		Port: initx.GetEnv("PORT", ":3000"),
+		Environment: initx.GetEnv("ENVIRONMENT", "development"),
+		Port:        initx.GetEnv("PORT", ":3000"),
+		Origins:     initx.GetEnv("CORS_ALLOWED_ORIGINS", "http://localhost:8000"),
 		Services: []ServiceConfig{
 			{
 				Name:   "auth-service",

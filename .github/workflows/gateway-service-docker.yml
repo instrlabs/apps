@@ -12,7 +12,7 @@ on:
       - 'v*'
 
 env:
-  REPO_NAME: gateway-service
+  REPO_NAME: instrlabs-gateway-service
 
 jobs:
   docker:
@@ -42,30 +42,30 @@ jobs:
       - name: Compute tags
         id: meta
         run: |
-          DOCKERHUB_REPONAME="${{ secrets.DOCKERHUB_REPONAME }}"
+          REPO_NAME="${{ secrets.DOCKERHUB_USERNAME }}/${REPO_NAME}"
           SHA_TAG="${GITHUB_SHA::7}"
 
           # Git tag (release)
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             GIT_TAG="${GITHUB_REF#refs/tags/}"
-            TAGS=("${DOCKERHUB_REPONAME}:${GIT_TAG}-${REPO_NAME}")
+            TAGS=("${REPO_NAME}:${GIT_TAG}")
           fi
 
           # Manual input tag
           if [[ -n "${{ github.event.inputs.tag }}" ]]; then
-            TAGS=("${DOCKERHUB_REPONAME}:${SHA_TAG}-${REPO_NAME}-${{ github.event.inputs.tag }}")
+            TAGS=("${REPO_NAME}:${SHA_TAG}-${{ github.event.inputs.tag }}")
           fi
 
           # Output CSV
           TCSV=$(IFS=, ; echo "${TAGS[*]}")
           echo "tags=$TCSV" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push (multi-arch)
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: ./gateway-service
           file: ./gateway-service/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
