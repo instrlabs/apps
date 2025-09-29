@@ -531,6 +531,7 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 	message := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", from, input.Email, subject, body)
 	auth := smtp.PlainAuth("", h.cfg.SMTPUsername, h.cfg.SMTPPassword, h.cfg.SMTPHost)
 	if err := smtp.SendMail(h.cfg.SMTPHost+":"+h.cfg.SMTPPort, auth, from, to, []byte(message)); err != nil {
+		log.Errorf("SendPin: Failed to send email: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
 			"errors":  nil,
