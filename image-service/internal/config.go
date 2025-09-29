@@ -8,8 +8,9 @@ import (
 type Config struct {
 	Environment string
 	Port        string
-	MongoURI    string
-	MongoDB     string
+
+	MongoURI string
+	MongoDB  string
 
 	S3Endpoint  string
 	S3Region    string
@@ -21,8 +22,6 @@ type Config struct {
 	NatsURI                     string
 	NatsSubjectImagesRequests   string
 	NatsSubjectNotificationsSSE string
-
-	PaymentServiceURL string
 }
 
 func LoadConfig() *Config {
@@ -31,8 +30,9 @@ func LoadConfig() *Config {
 	return &Config{
 		Environment: initx.GetEnv("ENVIRONMENT", "development"),
 		Port:        initx.GetEnv("PORT", ":3000"),
-		MongoURI:    initx.GetEnv("MONGO_URI", "mongodb://localhost:27017"),
-		MongoDB:     initx.GetEnv("MONGO_DB", "instrlabs-apps"),
+
+		MongoURI: initx.GetEnv("MONGO_URI", "mongodb://localhost:27017"),
+		MongoDB:  initx.GetEnv("MONGO_DB", "instrlabs-apps"),
 
 		S3Endpoint:  initx.GetEnv("S3_ENDPOINT", "localhost:9000"),
 		S3Region:    initx.GetEnv("S3_REGION", "us-east-1"),
@@ -44,7 +44,5 @@ func LoadConfig() *Config {
 		NatsURI:                     initx.GetEnv("NATS_URI", "nats://nats:4222"),
 		NatsSubjectImagesRequests:   initx.GetEnv("NATS_SUBJECT_IMAGES_REQUESTS", "images.requests"),
 		NatsSubjectNotificationsSSE: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS_SSE", "notifications.sse"),
-
-		PaymentServiceURL: initx.GetEnv("PAYMENT_SERVICE_URL", "http://payment-service:3000"),
 	}
 }

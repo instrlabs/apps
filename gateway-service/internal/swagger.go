@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func SetupGatewaySwaggerUI(app *fiber.App, config *Config) {
+func SetupGatewaySwaggerUI(app *fiber.App) {
 	app.Get("/swagger", func(c *fiber.Ctx) error {
 		return c.Type("html").SendString(`
 <!doctype html>
@@ -23,7 +23,7 @@ func SetupGatewaySwaggerUI(app *fiber.App, config *Config) {
 	const ui = SwaggerUIBundle({
       urls: [
         { url: "/auth/swagger", name: "Auth API v1" },
-		{ url: "/image/swagger", name: "Image API v1" }
+		{ url: "/images/swagger", name: "Image API v1" }
       ],
       dom_id: '#swagger-ui',
       deepLinking: true,

@@ -14,7 +14,7 @@ func main() {
 
 	initx.SetupLogger(app)
 	internal.SetupMiddleware(app, cfg)
-	internal.SetupGatewaySwaggerUI(app, cfg)
+	internal.SetupGatewaySwaggerUI(app)
 	internal.SetupGatewayRoutes(app, cfg)
 
 	log.Fatal(app.Listen(cfg.Port))

@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
-	initx "github.com/instrlabs/shared/init"
 	"github.com/instrlabs/notification-service/internal"
+	initx "github.com/instrlabs/shared/init"
 	natsgo "github.com/nats-io/nats.go"
 )
 
