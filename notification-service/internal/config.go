@@ -12,7 +12,7 @@ type Config struct {
 	Origins   string
 	JWTSecret string
 
-	NatsURL                     string
+	NatsURI                     string
 	NatsSubjectNotificationsSSE string
 }
 
@@ -26,7 +26,7 @@ func NewConfig() *Config {
 		Origins:   initx.GetEnv("CORS_ALLOWED_ORIGINS", "http://localhost:8000"),
 		JWTSecret: initx.GetEnv("JWT_SECRET", ""),
 
-		NatsURL:                     initx.GetEnv("NATS_URL", "nats://localhost:4222"),
+		NatsURI:                     initx.GetEnv("NATS_URI", "nats://localhost:4222"),
 		NatsSubjectNotificationsSSE: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS_SSE", "notifications.sse"),
 	}
 }

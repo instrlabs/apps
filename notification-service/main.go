@@ -12,7 +12,7 @@ import (
 func main() {
 	cfg := internal.NewConfig()
 
-	natsSrv := initx.NewNats(cfg.NatsURL)
+	natsSrv := initx.NewNats(cfg.NatsURI)
 	defer natsSrv.Close()
 
 	sseService := internal.NewSSEService(cfg)
