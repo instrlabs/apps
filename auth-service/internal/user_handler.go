@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"net/smtp"
 
 	"github.com/gofiber/fiber/v2/log"
 	"golang.org/x/crypto/bcrypt"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/instrlabs/shared/email"
 )
 
 type UserHandler struct {
@@ -524,13 +524,10 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 		})
 	}
 
-	from := h.cfg.EmailFrom
-	to := []string{input.Email}
 	subject := "Your Login PIN"
 	body := fmt.Sprintf("Your one-time PIN is: %s. It expires in 10 minutes.", pin)
-	message := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", from, input.Email, subject, body)
-	auth := smtp.PlainAuth("", h.cfg.SMTPUsername, h.cfg.SMTPPassword, h.cfg.SMTPHost)
-	if err := smtp.SendMail(h.cfg.SMTPHost+":"+h.cfg.SMTPPort, auth, from, to, []byte(message)); err != nil {
+
+	if err := email.SendEmail(input.Email, subject, body); err != nil {
 		log.Errorf("SendPin: Failed to send email: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
