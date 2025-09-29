@@ -11,6 +11,9 @@ on:
     tags:
       - 'v*'
 
+env:
+  REPO_NAME: auth-service
+
 jobs:
   docker:
     name: Build and Push
@@ -39,18 +42,18 @@ jobs:
       - name: Compute tags
         id: meta
         run: |
-          DOCKERHUB_REPONAME="${{ secrets.DOCKERHUB_REPONAME }}"
+          REPO_NAME="${{ secrets.DOCKERHUB_REPONAME }}-${REPO_NAME}"
           SHA_TAG="${GITHUB_SHA::7}"
 
           # Git tag (release)
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             GIT_TAG="${GITHUB_REF#refs/tags/}"
-            TAGS=("${DOCKERHUB_REPONAME}:${GIT_TAG}")
+            TAGS=("${REPO_NAME}:${GIT_TAG}")
           fi
 
           # Manual input tag
           if [[ -n "${{ github.event.inputs.tag }}" ]]; then
-            TAGS=("${DOCKERHUB_REPONAME}:${SHA_TAG}-${{ github.event.inputs.tag }}")
+            TAGS=("${REPO_NAME}:${SHA_TAG}-${{ github.event.inputs.tag }}")
           fi
 
           # Output CSV
@@ -62,7 +65,7 @@ jobs:
         with:
           context: ./auth-service
           file: ./auth-service/Dockerfile
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
