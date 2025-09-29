@@ -1,22 +1,18 @@
-name: service-docker
+name: builder
 
 on:
   workflow_dispatch:
     inputs:
       serviceName:
-        description: 'Service folder name (e.g., gateway-service, image-service, auth-service, notification-service)'
+        description: 'service name (e.g., auth-service)'
         required: true
+        default: 'gateway-service'
         type: string
-      tag:
-        description: 'Optional custom tag to append (e.g., v1.2.3)'
-        required: false
-        default: ''
+      enviroment:
+        description: 'environment name (e.g., dev, staging, production)'
+        required: true
+        default: 'dev'
         type: string
-
-permissions:
-  contents: read
-  packages: write
-  id-token: write
 
 env:
   SERVICE_NAME: ${{ inputs.serviceName }}
@@ -26,29 +22,14 @@ jobs:
   docker:
     name: Build and Push (${{ inputs.serviceName }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Validate service paths
-        id: validate
-        run: |
-          set -euo pipefail
-          SERVICE="${{ env.SERVICE_NAME }}"
-          if [[ -z "$SERVICE" ]]; then
-            echo '::error title=Missing input::serviceName is required.'
-            exit 1
-          fi
-          if [[ ! -d "$SERVICE" ]]; then
-            echo "::error title=Invalid serviceName::Directory '$SERVICE' does not exist at repo root."
-            echo "found=$(ls -1 | tr '\n' ',' | sed 's/,$//')" >> "$GITHUB_OUTPUT"
-            exit 1
-          fi
-          if [[ ! -f "$SERVICE/Dockerfile" ]]; then
-            echo "::error title=Missing Dockerfile::'$SERVICE/Dockerfile' was not found."
-            exit 1
-          fi
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -65,25 +46,12 @@ jobs:
       - name: Compute tags
         id: meta
         run: |
-          set -euo pipefail
           REPO_NAME="${{ secrets.DOCKERHUB_USERNAME }}/${{ env.REPO_NAME }}"
           SHA_TAG="${GITHUB_SHA::7}"
-          TAGS=()
-
-          # Git tag (release) if triggered by tag push (kept for future use)
-          if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
-            GIT_TAG="${GITHUB_REF#refs/tags/}"
-            TAGS+=("${REPO_NAME}:${GIT_TAG}")
-          fi
 
           # Manual input tag (preferred when provided)
-          if [[ -n "${{ github.event.inputs.tag }}" ]]; then
-            TAGS=("${REPO_NAME}:${SHA_TAG}-${{ github.event.inputs.tag }}")
-          fi
-
-          # Default to short SHA if nothing else produced a tag
-          if [[ ${#TAGS[@]} -eq 0 ]]; then
-            TAGS=("${REPO_NAME}:${SHA_TAG}")
+          if [[ -n "${{ github.event.inputs.enviroment }}" ]]; then
+            TAGS=("${REPO_NAME}:${SHA_TAG}-${{ github.event.inputs.enviroment }}")
           fi
 
           TCSV=$(IFS=, ; echo "${TAGS[*]}")
@@ -106,4 +74,3 @@ jobs:
           echo "Docker Repo: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.REPO_NAME }}" >> $GITHUB_STEP_SUMMARY
           echo "Pushed tags:" >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' >> $GITHUB_STEP_SUMMARY
-          echo "\nTip: Dispatch this workflow with inputs: serviceName=<folder> and optional tag=<marker> (e.g., v1.2.3)." >> $GITHUB_STEP_SUMMARY
