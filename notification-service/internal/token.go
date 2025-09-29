@@ -2,7 +2,6 @@ package internal
 
 import (
 	"errors"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -19,14 +18,13 @@ type TokenInfo struct {
 	Roles  []string
 }
 
-func ExtractTokenInfo(tokenString string) (*TokenInfo, error) {
+func ExtractTokenInfo(secret string, tokenString string) (*TokenInfo, error) {
 	if strings.TrimSpace(tokenString) == "" {
 		return nil, ErrTokenEmpty
 	}
 
-	secret := os.Getenv("AUTH_JWT_SECRET")
-	if secret == "" {
-		return nil, errors.New("missing AUTH_JWT_SECRET")
+	if strings.TrimSpace(secret) == "" {
+		return nil, errors.New("missing JWT_SECRET")
 	}
 
 	parser := jwt.NewParser(jwt.WithValidMethods([]string{"HS256", "HS384", "HS512"}))

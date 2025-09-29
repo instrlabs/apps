@@ -24,7 +24,7 @@ func main() {
 	app := fiber.New(fiber.Config{})
 	initx.SetupLogger(app)
 	initx.SetupServiceHealth(app)
-	internal.SetupMiddleware(app)
+	internal.SetupMiddleware(app, cfg)
 
 	app.Get("/sse", sseService.HandleSSE)
 

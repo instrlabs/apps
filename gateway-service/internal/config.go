@@ -15,6 +15,7 @@ type Config struct {
 	Environment string
 	Port        string
 	Origins     string
+	JWTSecret   string
 	Services    []ServiceConfig
 }
 
@@ -25,6 +26,7 @@ func LoadConfig() *Config {
 		Environment: initx.GetEnv("ENVIRONMENT", "development"),
 		Port:        initx.GetEnv("PORT", ":3000"),
 		Origins:     initx.GetEnv("CORS_ALLOWED_ORIGINS", "http://localhost:8000"),
+		JWTSecret:   initx.GetEnv("JWT_SECRET", ""),
 		Services: []ServiceConfig{
 			{
 				Name:   "auth-service",

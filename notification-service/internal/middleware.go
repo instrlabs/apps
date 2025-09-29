@@ -8,10 +8,10 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
-func SetupMiddleware(app *fiber.App) {
+func SetupMiddleware(app *fiber.App, cfg *Config) {
 	// CORS
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:8000",
+		AllowOrigins:     cfg.Origins,
 		AllowMethods:     "GET, OPTIONS",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, Cache-Control, Pragma",
 		AllowCredentials: true,
@@ -28,7 +28,7 @@ func SetupMiddleware(app *fiber.App) {
 		c.Request().Header.Del("X-User-Roles")
 
 		if token != "" {
-			if info, err := ExtractTokenInfo(token); err == nil {
+			if info, err := ExtractTokenInfo(cfg.JWTSecret, token); err == nil {
 				c.Locals("UserID", info.UserID)
 				c.Locals("Roles", info.Roles)
 			} else {
