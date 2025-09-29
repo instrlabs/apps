@@ -1,0 +1,58 @@
+services:
+  auth-service:
+    image: histweety/instrlabs-auth-service:latest
+    restart: unless-stopped
+    env_file:
+      - auth-service/.env
+    command: ["./app"]
+    networks:
+      - internal
+
+#
+#  payment-service:
+#    build:
+#      context: ./payment-service
+#      dockerfile: Dockerfile
+#    restart: unless-stopped
+#    env_file:
+#      - ./payment-service/.env
+#    command: [ "./app" ]
+#
+#  image-service:
+#    build:
+#      context: ./image-service
+#      dockerfile: Dockerfile
+#    restart: unless-stopped
+#    env_file:
+#      - ./image-service/.env
+#    command: [ "./app" ]
+#    dns:
+#      - 8.8.8.8
+#
+#  gateway-service:
+#    build:
+#      context: ./gateway-service
+#      dockerfile: Dockerfile
+#    restart: unless-stopped
+#    env_file:
+#      - ./gateway-service/.env
+#    command: [ "./app" ]
+#    ports:
+#      - "3000:3000"
+#
+#  notification-service:
+#    build:
+#      context: ./notification-service
+#      dockerfile: Dockerfile
+#    restart: unless-stopped
+#    env_file:
+#      - ./notification-service/.env
+#    command: [ "./app" ]
+#    ports:
+#      - "3001:3000"
+
+networks:
+  internal:
+    external: true
+  proxy:
+    external: true
