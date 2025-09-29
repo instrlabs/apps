@@ -1,0 +1,77 @@
+name: image-service
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Optional custom tag to push (e.g., v1.2.3)'
+        required: false
+        default: ''
+  push:
+    tags:
+      - 'v*'
+
+env:
+  REPO_NAME: instrlabs-image-service
+
+jobs:
+  docker:
+    name: Build and Push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Compute tags
+        id: meta
+        run: |
+          REPO_NAME="${{ secrets.DOCKERHUB_USERNAME }}/${REPO_NAME}"
+          SHA_TAG="${GITHUB_SHA::7}"
+
+          # Git tag (release)
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            GIT_TAG="${GITHUB_REF#refs/tags/}"
+            TAGS=("${REPO_NAME}:${GIT_TAG}")
+          fi
+
+          # Manual input tag
+          if [[ -n "${{ github.event.inputs.tag }}" ]]; then
+            TAGS=("${REPO_NAME}:${SHA_TAG}-${{ github.event.inputs.tag }}")
+          fi
+
+          # Output CSV
+          TCSV=$(IFS=, ; echo "${TAGS[*]}")
+          echo "tags=$TCSV" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./image-service
+          file: ./image-service/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Summary
+        run: |
+          echo "Pushed tags:" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' >> $GITHUB_STEP_SUMMARY
