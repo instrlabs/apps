@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/instr-labs/payment-service/internal"
-	initx "github.com/instr-labs/shared/init"
+	initx "github.com/instrlabs/shared/init"
+	"github.com/instrlabs/payment-service/internal"
 )
 
 func main() {

@@ -6,7 +6,8 @@
         "description": "Authentication service API documentation"
     },
     "servers": [
-      { "url": "http://localhost:3000/auth", "description": "Local" }
+      { "url": "http://localhost:3000/auth", "description": "Local" },
+      { "url": "https://api-instrlabs.arthadede.com/auth", "description": "Staging" }
     ],
     "paths": {
       "/health": {

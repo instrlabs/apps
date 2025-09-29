@@ -1,11 +1,11 @@
-module github.com/instr-labs/notification-service
+module github.com/instrlabs/notification-service
 
 go 1.24.4
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/golang-jwt/jwt/v5 v5.3.0
-	github.com/instr-labs/shared v0.0.1
+	github.com/instrlabs/shared v0.0.1
 	github.com/joho/godotenv v1.5.1
 	github.com/nats-io/nats.go v1.45.0
 )

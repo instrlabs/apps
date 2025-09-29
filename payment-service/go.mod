@@ -1,10 +1,10 @@
-module github.com/instr-labs/payment-service
+module github.com/instrlabs/payment-service
 
 go 1.24.4
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.9
-	github.com/instr-labs/shared v0.0.1
+	github.com/instrlabs/shared v0.0.1
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.17.4
 )
@@ -47,4 +47,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
 
-replace github.com/instr-labs/shared => ../shared
+replace github.com/instrlabs/shared => ../shared

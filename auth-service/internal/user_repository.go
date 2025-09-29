@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2/log"
-	initx "github.com/instr-labs/shared/init"
+	initx "github.com/instrlabs/shared/init"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go.mongodb.org/mongo-driver/bson"

@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/instr-labs/auth-service/internal"
-	initx "github.com/instr-labs/shared/init"
+	"github.com/instrlabs/auth-service/internal"
+	initx "github.com/instrlabs/shared/init"
 
 	"github.com/gofiber/fiber/v2"
 )

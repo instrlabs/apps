@@ -2,20 +2,20 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/instr-labs/gateway-service/internal"
-	initx "github.com/instr-labs/shared/init"
+	initx "github.com/instrlabs/shared/init"
+	"github.com/instrlabs/gateway-service/internal"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	config := internal.LoadConfig()
+	cfg := internal.LoadConfig()
 
 	app := fiber.New(fiber.Config{})
 
 	initx.SetupLogger(app)
-	internal.SetupMiddleware(app, config)
-	internal.SetupGatewaySwaggerUI(app, config)
-	internal.SetupGatewayRoutes(app, config)
+	internal.SetupMiddleware(app, cfg)
+	internal.SetupGatewaySwaggerUI(app, cfg)
+	internal.SetupGatewayRoutes(app, cfg)
 
-	log.Fatal(app.Listen(config.Port))
+	log.Fatal(app.Listen(cfg.Port))
 }
