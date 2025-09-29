@@ -34,11 +34,6 @@ func LoadConfig() *Config {
 				Prefix: "/auth",
 			},
 			{
-				Name:   "payment-service",
-				URL:    initx.GetEnv("PAYMENT_SERVICE_URL", "http://payment-service:3000"),
-				Prefix: "/payments",
-			},
-			{
 				Name:   "image-service",
 				URL:    initx.GetEnv("IMAGE_SERVICE_URL", "http://image-service:3000"),
 				Prefix: "/images",

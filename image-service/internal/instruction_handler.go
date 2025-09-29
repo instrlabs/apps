@@ -35,9 +35,27 @@ func NewInstructionHandler(
 }
 
 func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
-	productKey := c.Params("productKey")
+	type payload struct {
+		ProductKey string `json:"productKey"`
+	}
+	var body payload
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "invalid request body",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+	if body.ProductKey == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "productKey is required",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
 	userID, _ := c.Locals("UserID").(string)
-	product, _ := h.productRepo.FindByKey(productKey)
+	product, _ := h.productRepo.FindByKey(body.ProductKey)
 	if product == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "product not found",
@@ -74,8 +92,13 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 }
 
 func (h *InstructionHandler) ListInstructions(c *fiber.Ctx) error {
-	// Not implemented against new model yet; return empty list to keep API stable
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "ok", "errors": nil, "data": map[string]interface{}{"instructions": []Instruction{}}})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "ok",
+		"errors":  nil,
+		"data": map[string]interface{}{
+			"instructions": []Instruction{},
+		},
+	})
 }
 
 func (h *InstructionHandler) GetInstructionByID(c *fiber.Ctx) error {

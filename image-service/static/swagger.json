@@ -6,20 +6,36 @@
     "description": "Image processing service API documentation"
   },
   "servers": [
-    { "url": "http://localhost:3000/image", "description": "Local" }
+    { "url": "http://localhost:3000/image", "description": "Local" },
+    { "url": "https://api-instrlabs.arthadede.com/image", "description": "Staging" }
   ],
   "components": {
     "schemas": {
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "key": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "product_type": { "type": "string" },
+          "is_active": { "type": "boolean" },
+          "is_free": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
       "File": {
         "type": "object",
         "properties": {
+          "id": { "type": "string" },
+          "instruction_id": { "type": "string" },
+          "original_name": { "type": "string" },
           "file_name": { "type": "string" },
-          "size": { "type": "integer", "format": "int64" }
+          "size": { "type": "integer", "format": "int64" },
+          "status": { "type": "string", "enum": ["PENDING", "PROCESSING", "DONE", "FAILED"] },
+          "output_id": { "type": ["string", "null"], "nullable": true }
         }
-      },
-      "InstructionStatus": {
-        "type": "string",
-        "enum": ["PENDING", "PROCESSING", "COMPLETED", "FAILED"]
       },
       "Instruction": {
         "type": "object",
@@ -27,14 +43,8 @@
           "id": { "type": "string" },
           "user_id": { "type": "string" },
           "product_id": { "type": "string" },
-          "inputs": { "type": "array", "items": { "$ref": "#/components/schemas/File" } },
-          "outputs": { "type": "array", "items": { "$ref": "#/components/schemas/File" } },
-          "status": { "$ref": "#/components/schemas/InstructionStatus" },
           "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" },
-          "retry_count": { "type": "integer" },
-          "retry_lock_until": { "type": ["string", "null"], "format": "date-time", "nullable": true },
-          "last_retry_at": { "type": ["string", "null"], "format": "date-time", "nullable": true }
+          "updated_at": { "type": "string", "format": "date-time" }
         }
       }
     }
@@ -60,63 +70,65 @@
         }
       }
     },
-    "/compress": {
+    "/products": {
+      "get": {
+        "summary": "List active image products",
+        "tags": ["products"],
+        "responses": {
+          "200": {
+            "description": "List of products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "ok" },
+                    "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Product" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/instructions": {
       "post": {
-        "description": "Create a compression instruction by uploading one or more images.",
-        "tags": ["image"],
-        "summary": "Compress image(s)",
+        "summary": "Create an instruction",
+        "tags": ["instructions"],
         "requestBody": {
           "required": true,
           "content": {
-            "multipart/form-data": {
+            "application/json": {
               "schema": {
                 "type": "object",
-                "properties": {
-                  "files": {
-                    "type": "array",
-                    "description": "Multiple image files to compress. Use 'files' or 'file' field.",
-                    "items": { "type": "string", "format": "binary" }
-                  },
-                  "file": { "type": "string", "format": "binary", "description": "Single image file alternative to 'files'" }
-                }
+                "required": ["productKey"],
+                "properties": { "productKey": { "type": "string" } }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Upload accepted and instruction created",
+            "description": "Instruction created",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": { "type": "string", "example": "upload accepted" },
+                    "message": { "type": "string", "example": "instruction created" },
                     "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
-                    "data": {
-                      "type": ["object", "null"],
-                      "nullable": true,
-                      "properties": {
-                        "instruction_id": { "type": "string" }
-                      }
-                    }
+                    "data": { "type": "object", "properties": { "instruction": { "$ref": "#/components/schemas/Instruction" } } }
                   }
                 }
               }
             }
           },
-          "400": {
-            "description": "No file uploaded or invalid input",
-            "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string" }, "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true }, "data": { "type": ["object", "null"], "nullable": true } } } } }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string" } } } } }
-          }
+          "400": { "description": "Invalid request or productKey missing" },
+          "404": { "description": "Product not found" }
         }
-      }
-    },
-    "/instructions": {
+      },
       "get": {
         "summary": "List instructions for the authenticated user",
         "tags": ["instructions"],
@@ -130,13 +142,12 @@
                   "properties": {
                     "message": { "type": "string", "example": "ok" },
                     "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
-                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Instruction" } }
+                    "data": { "type": "object", "properties": { "instructions": { "type": "array", "items": { "$ref": "#/components/schemas/Instruction" } } } }
                   }
                 }
               }
             }
-          },
-          "401": { "description": "Unauthorized" }
+          }
         }
       }
     },
@@ -144,130 +155,57 @@
       "get": {
         "summary": "Get instruction by ID",
         "tags": ["instructions"],
-        "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
-        ],
+        "parameters": [ { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } } ],
         "responses": {
-          "200": {
-            "description": "Found",
-            "content": {
-              "application/json": {
-                "schema": { "type": "object", "properties": { "message": { "type": "string", "example": "ok" }, "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true }, "data": { "$ref": "#/components/schemas/Instruction" } } }
-              }
-            }
-          },
+          "200": { "description": "Found", "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string", "example": "ok" }, "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true }, "data": { "type": "object", "properties": { "instruction": { "$ref": "#/components/schemas/Instruction" } } } } } } } },
           "400": { "description": "Invalid id" },
           "404": { "description": "Not found" }
         }
       }
     },
-    "/instructions/{id}/status": {
-      "patch": {
-        "summary": "Update instruction status",
-        "tags": ["instructions"],
-        "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["status"],
-                "properties": { "status": { "$ref": "#/components/schemas/InstructionStatus" } }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Updated", "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string", "example": "updated" }, "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true }, "data": { "$ref": "#/components/schemas/Instruction" } } } } } },
-          "400": { "description": "Invalid" },
-          "404": { "description": "Not found" }
-        }
-      }
-    },
-    "/instructions/{id}/outputs": {
-      "patch": {
-        "summary": "Update instruction outputs",
-        "tags": ["instructions"],
-        "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["outputs"],
-                "properties": { "outputs": { "type": "array", "items": { "$ref": "#/components/schemas/File" } } }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Outputs updated", "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string", "example": "outputs updated" }, "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true }, "data": { "$ref": "#/components/schemas/Instruction" } } } } } },
-          "400": { "description": "Invalid" },
-          "404": { "description": "Not found" }
-        }
-      }
-    },
-    "/instructions/{id}/files": {
+    "/instructions/{id}/details": {
       "get": {
-        "summary": "List all files for an instruction (inputs and outputs)",
+        "summary": "List files for an instruction",
         "tags": ["instructions", "files"],
-        "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
-        ],
+        "parameters": [ { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } } ],
         "responses": {
           "200": {
-            "description": "A list of files grouped by inputs and outputs",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": { "type": "string", "example": "ok" },
-                    "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "inputs": { "type": "array", "items": { "$ref": "#/components/schemas/File" } },
-                        "outputs": { "type": "array", "items": { "$ref": "#/components/schemas/File" } }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            "description": "Files listed",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string", "example": "ok" }, "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true }, "data": { "type": "object", "properties": { "files": { "type": "array", "items": { "$ref": "#/components/schemas/File" } } } } } } } }
           },
           "400": { "description": "Invalid id" },
           "403": { "description": "Forbidden" },
-          "404": { "description": "Not found" }
+          "404": { "description": "Instruction not found" }
+        }
+      },
+      "post": {
+        "summary": "Upload a file to an instruction",
+        "tags": ["instructions", "files"],
+        "parameters": [ { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } } ],
+        "requestBody": { "required": true, "content": { "multipart/form-data": { "schema": { "type": "object", "properties": { "file": { "type": "string", "format": "binary" } } } } } },
+        "responses": {
+          "200": { "description": "File created", "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string", "example": "file created" }, "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true }, "data": { "type": "object", "properties": { "input": { "$ref": "#/components/schemas/File" }, "output": { "$ref": "#/components/schemas/File" } } } } } } } },
+          "400": { "description": "Invalid request or no file uploaded" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Instruction not found" },
+          "500": { "description": "Upload failed or server error" }
         }
       }
     },
-    "/instructions/{id}/{file_name}": {
+    "/instructions/{id}/details/{fileId}": {
       "get": {
-        "summary": "Download a specific file of an instruction",
-        "description": "Streams raw file bytes from S3 if the authenticated user owns the instruction and the file is part of its inputs or outputs.",
+        "summary": "Download a file by ID",
         "tags": ["instructions", "files"],
         "parameters": [
           { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } },
-          { "in": "path", "name": "file_name", "required": true, "schema": { "type": "string" } }
+          { "in": "path", "name": "fileId", "required": true, "schema": { "type": "string" } }
         ],
         "responses": {
           "200": {
             "description": "The file bytes",
-            "content": {
-              "application/octet-stream": { "schema": { "type": "string", "format": "binary" } },
-              "image/jpeg": { "schema": { "type": "string", "format": "binary" } },
-              "image/png": { "schema": { "type": "string", "format": "binary" } },
-              "image/webp": { "schema": { "type": "string", "format": "binary" } }
-            }
+            "content": { "application/octet-stream": { "schema": { "type": "string", "format": "binary" } } }
           },
-          "400": { "description": "Invalid id" },
+          "400": { "description": "Invalid id or file id" },
           "403": { "description": "Forbidden" },
           "404": { "description": "Not found" }
         }

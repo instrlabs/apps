@@ -27,7 +27,7 @@ func main() {
 		MongoDB:  cfg.MongoDB,
 	})
 	defer mongo.Close()
-	nats := initx.NewNats(cfg.NatsURL)
+	nats := initx.NewNats(cfg.NatsURI)
 	defer nats.Close()
 
 	app := fiber.New(fiber.Config{})
@@ -57,7 +57,7 @@ func main() {
 		}
 	}()
 
-	app.Post("/instructions/:productKey", instrHandler.CreateInstruction)
+	app.Post("/instructions", instrHandler.CreateInstruction)
 	app.Post("/instructions/:id/details", instrHandler.CreateInstructionDetails)
 
 	app.Get("/instructions", instrHandler.ListInstructions)

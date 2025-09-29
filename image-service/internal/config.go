@@ -18,7 +18,7 @@ type Config struct {
 	S3Bucket    string
 	S3UseSSL    bool
 
-	NatsURL                     string
+	NatsURI                     string
 	NatsSubjectImagesRequests   string
 	NatsSubjectNotificationsSSE string
 
@@ -41,7 +41,7 @@ func LoadConfig() *Config {
 		S3Bucket:    initx.GetEnv("S3_BUCKET", "instrlabs-apps"),
 		S3UseSSL:    initx.GetEnvBool("S3_USE_SSL", false),
 
-		NatsURL:                     initx.GetEnv("NATS_URL", "nats://nats:4222"),
+		NatsURI:                     initx.GetEnv("NATS_URI", "nats://nats:4222"),
 		NatsSubjectImagesRequests:   initx.GetEnv("NATS_SUBJECT_IMAGES_REQUESTS", "images.requests"),
 		NatsSubjectNotificationsSSE: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS_SSE", "notifications.sse"),
 

@@ -23,9 +23,7 @@ func SetupGatewaySwaggerUI(app *fiber.App, config *Config) {
 	const ui = SwaggerUIBundle({
       urls: [
         { url: "/auth/swagger", name: "Auth API v1" },
-		{ url: "/payment/swagger", name: "Payment API v1" },
-		{ url: "/image/swagger", name: "Image API v1" },
-        { url: "https://petstore.swagger.io/v2/swagger.json", name: "Petstore" }
+		{ url: "/image/swagger", name: "Image API v1" }
       ],
       dom_id: '#swagger-ui',
       deepLinking: true,

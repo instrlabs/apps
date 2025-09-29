@@ -327,26 +327,6 @@
                     }
                 }
             }
-        },
-        "/users/by-email": {
-            "get": {
-                "description": "Find a user by email",
-                "tags": ["user"],
-                "summary": "Find user by email",
-                "parameters": [
-                    {"name": "email", "in": "query", "required": true, "schema": {"type": "string", "format": "email"}}
-                ],
-                "responses": {
-                    "200": {
-                        "description": "User found",
-                        "content": {"application/json": {"schema": {"type": "object", "properties": {"data": {"type": "object"}, "message": {"type": "string"}}}}}
-                    },
-                    "404": {
-                        "description": "User not found",
-                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
-                    }
-                }
-            }
         }
     }
 }
