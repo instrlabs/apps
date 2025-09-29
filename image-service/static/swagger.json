@@ -7,7 +7,7 @@
   },
   "servers": [
     { "url": "http://localhost:3000/image", "description": "Local" },
-    { "url": "https://api-instrlabs.arthadede.com/image", "description": "Staging" }
+    { "url": "https://api-instrlabs.arthadede.com/images", "description": "Staging" }
   ],
   "components": {
     "schemas": {
