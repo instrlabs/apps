@@ -1,10 +1,10 @@
-name: builder
+name: image-builder
 
 on:
   workflow_dispatch:
     inputs:
       serviceName:
-        description: 'Service name(s), comma-separated for multiple (e.g., auth-service or auth-service,gateway-service,image-service)'
+        description: 'service name (e.g., auth-service)'
         required: true
         default: 'gateway-service'
         type: string
@@ -14,21 +14,18 @@ on:
         default: 'dev'
         type: string
 
+env:
+  SERVICE_NAME: ${{ inputs.serviceName }}
+  REPO_NAME: instrlabs-${{ inputs.serviceName }}
+
 jobs:
   docker:
-    name: Build and Push (${{ matrix.service }})
+    name: Build and Push (${{ inputs.serviceName }})
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        service: ${{ fromJSON(format('["{0}"]', replace(inputs.serviceName, ',', '","'))) }}
     permissions:
       contents: read
       packages: write
       id-token: write
-    env:
-      SERVICE_NAME: ${{ matrix.service }}
-      REPO_NAME: instrlabs-${{ matrix.service }}
 
     steps:
       - name: Checkout
