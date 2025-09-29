@@ -6,25 +6,24 @@ import (
 )
 
 type Config struct {
-	Environment           string
-	Port                  string
-	MongoURI              string
-	MongoDB               string
-	JWTSecret             string
-	TokenExpiryHours      int
-	SMTPHost              string
-	SMTPPort              string
-	SMTPUsername          string
-	SMTPPassword          string
-	EmailFrom             string
-	ResetTokenExpiryHours int
-	GoogleClientID        string
-	GoogleClientSecret    string
-	GoogleRedirectUrl     string
-	FEResetPassword       string
-	FEOAuthRedirect       string
-	CORSAllowedOrigins    string
-	Domain                string
+	Environment        string
+	Port               string
+	MongoURI           string
+	MongoDB            string
+	JWTSecret          string
+	CookieDomain       string
+	TokenExpiryHours   int
+	RefreshExpiryHours int
+	SMTPHost           string
+	SMTPPort           string
+	SMTPUsername       string
+	SMTPPassword       string
+	EmailFrom          string
+	GoogleClientID     string
+	GoogleClientSecret string
+	GoogleRedirectUrl  string
+	ApiUrl             string
+	WebUrl             string
 }
 
 func LoadConfig() *Config {
@@ -33,15 +32,14 @@ func LoadConfig() *Config {
 	return &Config{
 		Environment: initx.GetEnv("ENVIRONMENT", ""),
 		Port:        initx.GetEnv("PORT", ""),
-		Domain:      initx.GetEnv("DOMAIN", ".localhost"),
 
 		MongoURI: initx.GetEnv("MONGO_URI", ""),
 		MongoDB:  initx.GetEnv("MONGO_DB", ""),
 
-		JWTSecret: initx.GetEnv("JWT_SECRET", ""),
-
-		TokenExpiryHours:      initx.GetEnvInt("TOKEN_EXPIRY_HOURS", 1),
-		ResetTokenExpiryHours: initx.GetEnvInt("RESET_TOKEN_EXPIRY_HOURS", 24),
+		JWTSecret:          initx.GetEnv("JWT_SECRET", ""),
+		CookieDomain:       initx.GetEnv("COOKIE_DOMAIN", ""),
+		TokenExpiryHours:   initx.GetEnvInt("TOKEN_EXPIRY_HOURS", 1),
+		RefreshExpiryHours: initx.GetEnvInt("REFRESH_EXPIRY_HOURS", 720),
 
 		SMTPHost:     initx.GetEnv("SMTP_HOST", ""),
 		SMTPPort:     initx.GetEnv("SMTP_PORT", ""),
@@ -53,7 +51,7 @@ func LoadConfig() *Config {
 		GoogleClientSecret: initx.GetEnv("GOOGLE_CLIENT_SECRET", ""),
 		GoogleRedirectUrl:  initx.GetEnv("GOOGLE_REDIRECT_URL", ""),
 
-		FEResetPassword: initx.GetEnv("FE_RESET_PASSWORD", ""),
-		FEOAuthRedirect: initx.GetEnv("FE_OAUTH_REDIRECT", ""),
+		ApiUrl: initx.GetEnv("API_URL", ""),
+		WebUrl: initx.GetEnv("WEB_URL", ""),
 	}
 }

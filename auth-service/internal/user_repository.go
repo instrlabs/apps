@@ -96,18 +96,22 @@ func (r *UserRepository) FindByID(id string) *User {
 	return &user
 }
 
-func (r *UserRepository) FindByRefreshToken(refreshToken string) *User {
+func (r *UserRepository) FindByRefreshToken(userId, refreshToken string) *User {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	var user User
-	err := r.collection.FindOne(ctx, bson.M{"refresh_token": refreshToken}).Decode(&user)
+	objectID, _ := primitive.ObjectIDFromHex(userId)
+	err := r.collection.FindOne(ctx, bson.M{
+		"_id":           objectID,
+		"refresh_token": refreshToken,
+	}).Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			log.Warnf("Refresh token not found for user: %s", refreshToken)
+			log.Warnf("Refresh token not found for user %s", userId)
 			return nil
 		}
-		log.Errorf("Failed to find user by refresh token: %v", err)
+		log.Errorf("Failed to find user by userId and refresh token: %v", err)
 		return nil
 	}
 
@@ -197,11 +201,11 @@ func (r *UserRepository) SetPinWithExpiry(email, hashedPin string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	hashedExpiry := time.Now().UTC().Add(10 * time.Minute)
+	expiry := time.Now().UTC().Add(10 * time.Minute)
 	update := bson.M{
 		"$set": bson.M{
 			"pin_hash":    hashedPin,
-			"pin_expires": hashedExpiry,
+			"pin_expires": expiry,
 			"updated_at":  time.Now().UTC(),
 		},
 	}

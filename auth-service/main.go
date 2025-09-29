@@ -10,16 +10,13 @@ import (
 )
 
 func main() {
-	config := internal.LoadConfig()
+	cfg := internal.LoadConfig()
 
-	mongo := initx.NewMongo(&initx.MongoConfig{
-		MongoURI: config.MongoURI,
-		MongoDB:  config.MongoDB,
-	})
+	mongo := initx.NewMongo(&initx.MongoConfig{MongoURI: cfg.MongoURI, MongoDB: cfg.MongoDB})
 	defer mongo.Close()
 
 	userRepo := internal.NewUserRepository(mongo)
-	userHandler := internal.NewUserHandler(config, userRepo)
+	userHandler := internal.NewUserHandler(cfg, userRepo)
 
 	app := fiber.New(fiber.Config{})
 
@@ -27,11 +24,12 @@ func main() {
 	initx.SetupServiceSwagger(app)
 	initx.SetupServiceHealth(app)
 	initx.SetupAuthenticated(app, []string{
-		"/check",
 		"/login",
 		"/refresh",
-		"/google",
 		"/send-pin",
+		"/check",
+		"/google",
+		"/google/callback",
 	})
 
 	app.Post("/login", userHandler.Login)
@@ -45,5 +43,5 @@ func main() {
 	app.Get("/google", userHandler.GoogleLogin)
 	app.Get("/google/callback", userHandler.GoogleCallback)
 
-	log.Fatal(app.Listen(config.Port))
+	log.Fatal(app.Listen(cfg.Port))
 }
