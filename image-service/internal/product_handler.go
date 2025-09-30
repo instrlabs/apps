@@ -24,6 +24,8 @@ func (h *ProductHandler) ListProducts(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Products retrieved successfully",
 		"errors":  nil,
-		"data":    products,
+		"data": map[string]interface{}{
+			"products": products,
+		},
 	})
 }
