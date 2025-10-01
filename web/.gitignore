@@ -1,0 +1,26 @@
+# IDE/editor
+.idea
+
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+
+# production
+/build
+
+# misc
+.env
+.DS_Store
+*.pem
+
+# logs
+npm-debug.log*
+.eslintcache
+
+# typescript
+*.tsbuildinfo
+
+# turbopack cache (if generated)
+.turbo
