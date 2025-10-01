@@ -15,7 +15,7 @@ export async function login({ email, pin }: {
   email: string,
   pin: string
 }) {
-  const res = await fetch(process.env.API_URL + `${API_AUTH}/login`, {
+  const res = await fetch(process.env.GATEWAY_URL + `${API_AUTH}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, pin }),
@@ -47,7 +47,7 @@ export async function login({ email, pin }: {
 
 export async function refresh() {
   const refresh_token = (await cookies()).get("RefreshToken")?.value
-  const res = await fetch(process.env.API_URL + `${API_AUTH}/refresh`, {
+  const res = await fetch(process.env.GATEWAY_URL + `${API_AUTH}/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refresh_token })
@@ -87,6 +87,6 @@ export async function getProfile() {
 }
 
 export async function loginByGoogle(): Promise<ApiResponse<User>> {
-  return redirect(`${process.env.API_URL}${API_AUTH}/google`);
+  return redirect(`${process.env.GATEWAY_URL}${API_AUTH}/google`);
 }
 

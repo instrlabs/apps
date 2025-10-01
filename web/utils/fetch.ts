@@ -20,7 +20,7 @@ export async function fetchGET<T>(
   path: string,
   queries: Record<string, string> = {}
 ): Promise<ApiResponse<T>> {
-  let url = process.env.API_URL + path;
+  let url = process.env.GATEWAY_URL + path;
 
   const params = new URLSearchParams(queries);
   if (queries) url += "?" + params.toString();
@@ -49,7 +49,7 @@ export async function fetchPOST<T>(
   path: string,
   body?: unknown
 ): Promise<ApiResponse<T>> {
-  const url = process.env.API_URL + path;
+  const url = process.env.GATEWAY_URL + path;
 
   const res = await fetch(url, {
     method: "POST",
@@ -74,7 +74,7 @@ export async function fetchPUT<T>(
   path: string,
   body: unknown
 ): Promise<ApiResponse<T>> {
-  const url = process.env.API_URL + path;
+  const url = process.env.GATEWAY_URL + path;
 
   const res = await fetch(url, {
     method: "PUT",
@@ -99,7 +99,7 @@ export async function fetchPATCH<T>(
   path: string,
   body: unknown
 ): Promise<ApiResponse<T>> {
-  const url = process.env.API_URL + path;
+  const url = process.env.GATEWAY_URL + path;
 
   const res = await fetch(url, {
     method: "PATCH",
@@ -124,7 +124,7 @@ export async function fetchGETBytes(
   path: string,
   queries: Record<string, string> = {}
 ): Promise<ApiResponse<ArrayBuffer>> {
-  let url = process.env.API_URL + path;
+  let url = process.env.GATEWAY_URL + path;
   const params = new URLSearchParams(queries);
   if (queries && Object.keys(queries).length > 0) url += "?" + params.toString();
 
@@ -168,7 +168,7 @@ export async function fetchPOSTFormData<T>(
   path: string,
   formData: FormData
 ): Promise<ApiResponse<T>> {
-  const url = process.env.API_URL + path;
+  const url = process.env.GATEWAY_URL + path;
 
   const res = await fetch(url, {
     method: "POST",

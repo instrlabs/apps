@@ -50,7 +50,7 @@ func LoadConfig() *Config {
 		GoogleClientSecret: initx.GetEnv("GOOGLE_CLIENT_SECRET", ""),
 		GoogleRedirectUrl:  initx.GetEnv("GOOGLE_REDIRECT_URL", ""),
 
-		ApiUrl: initx.GetEnv("API_URL", ""),
+		ApiUrl: initx.GetEnv("GATEWAY_URL", ""),
 		WebUrl: initx.GetEnv("WEB_URL", ""),
 
 		PinFlag: initx.GetEnvBool("PIN_FLAG", false),
