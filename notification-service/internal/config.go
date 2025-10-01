@@ -23,7 +23,7 @@ func NewConfig() *Config {
 		Environment: initx.GetEnv("ENVIRONMENT", "development"),
 		Port:        initx.GetEnv("PORT", ":3001"),
 
-		Origins:   initx.GetEnv("CORS_ALLOWED_ORIGINS", "http://localhost:8000"),
+		Origins:   initx.GetEnv("ORIGINS_ALLOWED", "http://localhost:8000"),
 		JWTSecret: initx.GetEnv("JWT_SECRET", ""),
 
 		NatsURI:                     initx.GetEnv("NATS_URI", "nats://localhost:4222"),

@@ -24,7 +24,7 @@ type Config struct {
 	GoogleRedirectUrl  string
 	ApiUrl             string
 	WebUrl             string
-	MockSendMail       bool
+	PinFlag            bool
 }
 
 func LoadConfig() *Config {
@@ -55,6 +55,6 @@ func LoadConfig() *Config {
 		ApiUrl: initx.GetEnv("API_URL", ""),
 		WebUrl: initx.GetEnv("WEB_URL", ""),
 
-		MockSendMail: initx.GetEnvBool("MOCK_SENDMAIL", false),
+		PinFlag: initx.GetEnvBool("PIN_FLAG", false),
 	}
 }

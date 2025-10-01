@@ -537,7 +537,7 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 	}
 
 	pin := "000000"
-	if !h.cfg.MockSendMail {
+	if !h.cfg.PinFlag {
 		pin = generateSixDigitPIN()
 	}
 
@@ -550,8 +550,8 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 		})
 	}
 
-	if h.cfg.MockSendMail {
-		log.Infof("SendPin: MOCK_SENDMAIL enabled. Using fixed PIN 000000 for email: %s", input.Email)
+	if h.cfg.PinFlag {
+		log.Infof("SendPin: PIN_FLAG enabled. Using fixed PIN 000000 for email: %s", input.Email)
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"message": "PIN sent",
 			"errors":  nil,

@@ -1,10 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   reactStrictMode: true,
-  // image: {
-  //   remotePatterns: [new URL('http://localhost:3000/image/instructions/**')],
-  // },
   experimental: {
     serverActions: {
       bodySizeLimit: '5mb',
