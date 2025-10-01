@@ -1,5 +1,6 @@
 import React from "react";
 import { notFound } from "next/navigation";
+import { SSEProvider } from "@/hooks/useSSE";
 
 export const dynamic = "force-dynamic";
 
@@ -9,5 +10,9 @@ export default function DebugLayout({ children }: { children: React.ReactNode })
     notFound();
   }
 
-  return <>{children}</>;
+  return (
+    <SSEProvider>
+      {children}
+    </SSEProvider>
+  );
 }

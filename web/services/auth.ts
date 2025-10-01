@@ -3,7 +3,7 @@
 import {cookies} from "next/headers";
 import { ResponseCookie, ResponseCookies } from "next/dist/compiled/@edge-runtime/cookies";
 import { API_AUTH } from "@/constants/api";
-import { ApiResponse, EmptyBody, FormErrors, fetchGET, fetchPOST } from "@/utils/fetch";
+import { ApiResponse, EmptyBody, FormErrors, fetchGET, fetchPOST, getRequestOrigin } from "@/utils/fetch";
 import {redirect} from "next/navigation";
 
 export interface User {
@@ -17,7 +17,7 @@ export async function login({ email, pin }: {
 }) {
   const res = await fetch(process.env.GATEWAY_URL + `${API_AUTH}/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Origin": await getRequestOrigin() },
     body: JSON.stringify({ email, pin }),
   });
 
@@ -49,7 +49,10 @@ export async function refresh() {
   const refresh_token = (await cookies()).get("RefreshToken")?.value
   const res = await fetch(process.env.GATEWAY_URL + `${API_AUTH}/refresh`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Origin": await getRequestOrigin()
+    },
     body: JSON.stringify({ refresh_token })
   });
 

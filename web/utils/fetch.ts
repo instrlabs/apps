@@ -1,6 +1,6 @@
 "use server"
 
-import {cookies} from "next/headers";
+import { cookies, headers } from "next/headers";
 
 export type ApiResponse<TBody> = {
   success: boolean;
@@ -15,6 +15,13 @@ export type FormErrors = {
 }[] | null;
 
 export type EmptyBody = Record<string, unknown>;
+
+export async function getRequestOrigin(): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
 
 export async function fetchGET<T>(
   path: string,
@@ -31,7 +38,8 @@ export async function fetchGET<T>(
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      "Cookie": storeCookie.toString()
+      "Cookie": storeCookie.toString(),
+      "Origin": await getRequestOrigin(),
     },
   });
 
@@ -50,12 +58,12 @@ export async function fetchPOST<T>(
   body?: unknown
 ): Promise<ApiResponse<T>> {
   const url = process.env.GATEWAY_URL + path;
-
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Cookie": (await cookies()).toString()
+      "Cookie": (await cookies()).toString(),
+      "Origin": await getRequestOrigin(),
     },
     body: JSON.stringify(body),
   });
@@ -80,7 +88,8 @@ export async function fetchPUT<T>(
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      "Cookie": (await cookies()).toString()
+      "Cookie": (await cookies()).toString(),
+      "Origin": await getRequestOrigin(),
     },
     body: JSON.stringify(body),
   });
@@ -105,7 +114,8 @@ export async function fetchPATCH<T>(
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      "Cookie": (await cookies()).toString()
+      "Cookie": (await cookies()).toString(),
+      "Origin": await getRequestOrigin(),
     },
     body: JSON.stringify(body),
   });
@@ -132,6 +142,7 @@ export async function fetchGETBytes(
     method: "GET",
     headers: {
       "Cookie": (await cookies()).toString(),
+      "Origin": await getRequestOrigin(),
     },
   });
 
@@ -174,6 +185,7 @@ export async function fetchPOSTFormData<T>(
     method: "POST",
     headers: {
       "Cookie": (await cookies()).toString(),
+      "Origin": await getRequestOrigin(),
     },
     body: formData,
   });
