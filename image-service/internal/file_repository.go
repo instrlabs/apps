@@ -28,7 +28,7 @@ func (r *FileRepository) GetByID(id primitive.ObjectID) *File {
 func NewFileRepository(db *initx.Mongo) *FileRepository {
 	return &FileRepository{
 		db:         db,
-		collection: db.DB.Collection("images_files"),
+		collection: db.DB.Collection("image_files"),
 	}
 }
 

@@ -18,7 +18,7 @@ type InstructionRepository struct {
 func NewInstructionRepository(db *initx.Mongo) *InstructionRepository {
 	return &InstructionRepository{
 		db:         db,
-		collection: db.DB.Collection("images_instructions"),
+		collection: db.DB.Collection("image_instructions"),
 	}
 }
 

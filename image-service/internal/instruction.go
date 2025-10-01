@@ -17,16 +17,6 @@ const (
 
 type InstructionType string
 
-type File struct {
-	ID            primitive.ObjectID  `json:"id" bson:"_id,omitempty"`
-	InstructionID primitive.ObjectID  `json:"instruction_id" bson:"instruction_id"`
-	OriginalName  string              `json:"original_name" bson:"original_name"`
-	FileName      string              `json:"file_name" bson:"file_name"`
-	Size          int64               `json:"size" bson:"size"`
-	Status        FileStatus          `json:"status" bson:"status"`
-	OutputID      *primitive.ObjectID `json:"output_id,omitempty" bson:"output_id,omitempty"`
-}
-
 type Instruction struct {
 	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	UserID    primitive.ObjectID `json:"user_id" bson:"user_id"`
@@ -35,8 +25,7 @@ type Instruction struct {
 	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
-type FileNotification struct {
+type InstructionNotification struct {
 	UserID        string `json:"user_id"`
 	InstructionID string `json:"instruction_id"`
-	FileID        string `json:"file_id"`
 }

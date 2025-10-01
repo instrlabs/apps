@@ -45,7 +45,7 @@ func main() {
 	productHandler := internal.NewProductHandler(productRepo)
 	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, fileRepo, productRepo, imageSvc)
 
-	_, _ = nats.Conn.Subscribe(cfg.NatsSubjectImagesRequests, func(m *natsgo.Msg) {
+	_, _ = nats.Conn.Subscribe(cfg.NatsSubjectImageRequests, func(m *natsgo.Msg) {
 		instrHandler.RunInstructionMessage(m.Data)
 	})
 

@@ -310,17 +310,44 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		},
 		Endpoint: google.Endpoint,
 	}
-	token, _ := conf.Exchange(context.Background(), code)
+	token, err := conf.Exchange(context.Background(), code)
+	if err != nil {
+		log.Errorf("GoogleCallback: Failed to exchange token: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": ErrInternalServer,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
 	client := conf.Client(context.Background(), token)
-	resp, _ := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+	if err != nil {
+		log.Errorf("GoogleCallback: Failed to get user info: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": ErrInternalServer,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
 	defer resp.Body.Close()
-	data, _ := io.ReadAll(resp.Body)
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Errorf("GoogleCallback: Failed to read response body: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": ErrInternalServer,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
 
 	var googleInfo struct {
 		ID    string `json:"id"`
 		Email string `json:"email"`
 	}
 	if err := json.Unmarshal(data, &googleInfo); err != nil {
+		log.Errorf("GoogleCallback: Failed to unmarshal user info: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
 			"errors":  nil,
@@ -355,6 +382,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 
 	accessToken, err := h.generateAccessToken(user.ID.Hex(), []string{"user"})
 	if err != nil {
+		log.Errorf("GoogleCallback: Failed to generate access token: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
 			"errors":  nil,
@@ -363,6 +391,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	}
 	refreshToken, err := h.generateRefreshToken()
 	if err != nil {
+		log.Errorf("GoogleCallback: Failed to generate refresh token: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
 			"errors":  nil,
@@ -370,6 +399,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		})
 	}
 	if err := h.userRepo.UpdateRefreshToken(user.ID.Hex(), refreshToken); err != nil {
+		log.Errorf("GoogleCallback: Failed to update refresh token: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
 			"errors":  nil,
@@ -399,7 +429,8 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		MaxAge:   h.cfg.RefreshExpiryHours * 3600,
 	})
 
-	return c.Redirect(h.cfg.WebUrl)
+	log.Infof("GoogleCallback: User logged in successfully: %s", googleInfo.Email)
+	return c.Redirect(h.cfg.WebUrl, fiber.StatusFound)
 }
 
 func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
@@ -505,7 +536,11 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 		}
 	}
 
-	pin := generateSixDigitPIN()
+	pin := "000000"
+	if !h.cfg.MockSendMail {
+		pin = generateSixDigitPIN()
+	}
+
 	hash, _ := bcrypt.GenerateFromPassword([]byte(pin), bcrypt.DefaultCost)
 	if err := h.userRepo.SetPinWithExpiry(input.Email, string(hash)); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -515,8 +550,8 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 		})
 	}
 
-	if h.cfg.Environment == "development" {
-		log.Infof("SendPin: Successfully sent pin with email: %s and pin: %s", input.Email, pin)
+	if h.cfg.MockSendMail {
+		log.Infof("SendPin: MOCK_SENDMAIL enabled. Using fixed PIN 000000 for email: %s", input.Email)
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"message": "PIN sent",
 			"errors":  nil,
@@ -526,7 +561,6 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 
 	subject := "Your Login PIN"
 	body := fmt.Sprintf("Your one-time PIN is: %s. It expires in 10 minutes.", pin)
-
 	if err := email.SendEmail(input.Email, subject, body); err != nil {
 		log.Errorf("SendPin: Failed to send email: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

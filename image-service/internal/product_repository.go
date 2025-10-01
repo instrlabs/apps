@@ -28,7 +28,7 @@ func (r *ProductRepository) List() ([]*Product, error) {
 	defer cancel()
 
 	filter := bson.M{
-		"product_type": "images",
+		"product_type": "image",
 		"is_active":    true,
 	}
 	cursor, err := r.collection.Find(ctx, filter)
@@ -37,21 +37,21 @@ func (r *ProductRepository) List() ([]*Product, error) {
 	}
 	defer cursor.Close(ctx)
 
-	var products []*Product
+	products := make([]*Product, 0)
 	if err := cursor.All(ctx, &products); err != nil {
 		return nil, err
 	}
+
 	return products, nil
 }
 
-// FindByKey returns an active 'images' product by its key or nil if not found.
 func (r *ProductRepository) FindByKey(key string) (*Product, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	filter := bson.M{
 		"key":          key,
-		"product_type": "images",
+		"product_type": "image",
 		"is_active":    true,
 	}
 	var p Product
@@ -65,14 +65,13 @@ func (r *ProductRepository) FindByKey(key string) (*Product, error) {
 	return &p, nil
 }
 
-// FindByID returns an active 'images' product by its ObjectID or nil if not found.
 func (r *ProductRepository) FindByID(id primitive.ObjectID) (*Product, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	filter := bson.M{
 		"_id":          id,
-		"product_type": "images",
+		"product_type": "image",
 		"is_active":    true,
 	}
 	var p Product
