@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"net/url"
 
 	"github.com/gofiber/fiber/v2/log"
 	"golang.org/x/crypto/bcrypt"
@@ -29,6 +30,12 @@ func NewUserHandler(cfg *Config, userRepo *UserRepository) *UserHandler {
 		cfg:      cfg,
 		userRepo: userRepo,
 	}
+}
+
+func getCookieDomain(c *fiber.Ctx) string {
+	origin := c.Get("X-Origin")
+	u, _ := url.Parse(origin)
+	return u.Hostname()
 }
 
 func generateSixDigitPIN() string {
@@ -143,7 +150,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 
 	log.Info("Login: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.cfg.CookieDomain,
+		Domain:   getCookieDomain(c),
 		Name:     "AccessToken",
 		Value:    accessToken,
 		HTTPOnly: true,
@@ -155,7 +162,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 
 	log.Info("Login: Setting refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.cfg.CookieDomain,
+		Domain:   getCookieDomain(c),
 		Name:     "RefreshToken",
 		Value:    refreshToken,
 		HTTPOnly: true,
@@ -176,30 +183,9 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	log.Info("RefreshToken: Processing token refresh request")
 
-	var input struct {
-		RefreshToken string `json:"refresh_token" validate:"required"`
-	}
-
-	if err := c.BodyParser(&input); err != nil {
-		log.Errorf("RefreshToken: Invalid request body: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": ErrInvalidRequestBody,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	if input.RefreshToken == "" {
-		log.Info("RefreshToken: Refresh token cookie is missing")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": ErrRefreshTokenRequired,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
+	refreshToken := c.Cookies("RefreshToken")
 	userID, _ := c.Locals("UserID").(string)
-	user := h.userRepo.FindByRefreshToken(userID, input.RefreshToken)
+	user := h.userRepo.FindByRefreshToken(userID, refreshToken)
 	if user == nil || user.ID.IsZero() {
 		log.Infof("RefreshToken: Invalid refresh token for user %s", userID)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -235,7 +221,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 
 	log.Info("RefreshToken: Update access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.cfg.CookieDomain,
+		Domain:   getCookieDomain(c),
 		Name:     "AccessToken",
 		Value:    newAccessToken,
 		HTTPOnly: true,
@@ -247,7 +233,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 
 	log.Info("RefreshToken: Setting new refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.cfg.CookieDomain,
+		Domain:   getCookieDomain(c),
 		Name:     "RefreshToken",
 		Value:    newRefreshToken,
 		HTTPOnly: true,
@@ -408,7 +394,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	}
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.cfg.CookieDomain,
+		Domain:   getCookieDomain(c),
 		Name:     "AccessToken",
 		Value:    accessToken,
 		HTTPOnly: true,
@@ -419,7 +405,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	})
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.cfg.CookieDomain,
+		Domain:   getCookieDomain(c),
 		Name:     "RefreshToken",
 		Value:    refreshToken,
 		HTTPOnly: true,
@@ -469,7 +455,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 	}
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.cfg.CookieDomain,
+		Domain:   getCookieDomain(c),
 		Name:     "AccessToken",
 		Value:    "",
 		HTTPOnly: true,
@@ -480,7 +466,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 	})
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   h.cfg.CookieDomain,
+		Domain:   getCookieDomain(c),
 		Name:     "RefreshToken",
 		Value:    "",
 		HTTPOnly: true,
@@ -537,7 +523,7 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 	}
 
 	pin := "000000"
-	if !h.cfg.PinFlag {
+	if h.cfg.PinFlag {
 		pin = generateSixDigitPIN()
 	}
 
@@ -550,7 +536,7 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 		})
 	}
 
-	if h.cfg.PinFlag {
+	if !h.cfg.PinFlag {
 		log.Infof("SendPin: PIN_FLAG enabled. Using fixed PIN 000000 for email: %s", input.Email)
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"message": "PIN sent",
@@ -574,28 +560,5 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 		"message": "PIN sent",
 		"errors":  nil,
 		"data":    nil,
-	})
-}
-
-func (h *UserHandler) CheckEmail(c *fiber.Ctx) error {
-	var input struct {
-		Email string `json:"email"`
-	}
-
-	if err := c.BodyParser(&input); err != nil || input.Email == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": ErrInvalidRequestBody,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	user := h.userRepo.FindByEmail(input.Email)
-	exists := user != nil && !user.ID.IsZero()
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "Email checked successfully",
-		"errors":  nil,
-		"data":    map[string]interface{}{"exists": exists},
 	})
 }

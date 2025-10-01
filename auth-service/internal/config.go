@@ -11,7 +11,6 @@ type Config struct {
 	MongoURI           string
 	MongoDB            string
 	JWTSecret          string
-	CookieDomain       string
 	TokenExpiryHours   int
 	RefreshExpiryHours int
 	SMTPHost           string
@@ -38,7 +37,6 @@ func LoadConfig() *Config {
 		MongoDB:  initx.GetEnv("MONGO_DB", ""),
 
 		JWTSecret:          initx.GetEnv("JWT_SECRET", ""),
-		CookieDomain:       initx.GetEnv("COOKIE_DOMAIN", ""),
 		TokenExpiryHours:   initx.GetEnvInt("TOKEN_EXPIRY_HOURS", 1),
 		RefreshExpiryHours: initx.GetEnvInt("REFRESH_EXPIRY_HOURS", 720),
 

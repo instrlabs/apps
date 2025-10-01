@@ -36,7 +36,6 @@ func main() {
 	app.Post("/logout", userHandler.Logout)
 	app.Post("/refresh", userHandler.RefreshToken)
 	app.Post("/send-pin", userHandler.SendPin)
-	app.Post("/check", userHandler.CheckEmail)
 
 	app.Get("/profile", userHandler.GetProfile)
 
