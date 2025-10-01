@@ -9,6 +9,7 @@ import (
 	"io"
 	"math/big"
 	"net/url"
+	"strings"
 
 	"github.com/gofiber/fiber/v2/log"
 	"golang.org/x/crypto/bcrypt"
@@ -35,7 +36,18 @@ func NewUserHandler(cfg *Config, userRepo *UserRepository) *UserHandler {
 func getCookieDomain(c *fiber.Ctx) string {
 	origin := c.Get("X-Origin")
 	u, _ := url.Parse(origin)
-	return u.Hostname()
+	hostname := u.Hostname()
+
+	if hostname == "localhost" {
+		return hostname
+	}
+
+	parts := strings.Split(hostname, ".")
+	if len(parts) >= 2 {
+		return "." + strings.Join(parts[len(parts)-2:], ".")
+	}
+
+	return hostname
 }
 
 func generateSixDigitPIN() string {
