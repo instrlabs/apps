@@ -33,13 +33,12 @@ func NewUserHandler(cfg *Config, userRepo *UserRepository) *UserHandler {
 	}
 }
 
-func getCookieDomain(c *fiber.Ctx) string {
-	origin := c.Get("X-Origin")
+func getCookieDomain(origin string) string {
 	u, _ := url.Parse(origin)
 	hostname := u.Hostname()
 
-	if hostname == "localhost" {
-		return hostname
+	if hostname == "localhost" || hostname == "" {
+		return "localhost"
 	}
 
 	parts := strings.Split(hostname, ".")
@@ -160,9 +159,10 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
+	origin := c.Get("X-Origin")
 	log.Info("Login: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c),
+		Domain:   getCookieDomain(origin),
 		Name:     "AccessToken",
 		Value:    accessToken,
 		HTTPOnly: true,
@@ -174,7 +174,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 
 	log.Info("Login: Setting refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c),
+		Domain:   getCookieDomain(origin),
 		Name:     "RefreshToken",
 		Value:    refreshToken,
 		HTTPOnly: true,
@@ -231,9 +231,10 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
+	origin := c.Get("X-Origin")
 	log.Info("RefreshToken: Update access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c),
+		Domain:   getCookieDomain(origin),
 		Name:     "AccessToken",
 		Value:    newAccessToken,
 		HTTPOnly: true,
@@ -245,7 +246,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 
 	log.Info("RefreshToken: Setting new refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c),
+		Domain:   getCookieDomain(origin),
 		Name:     "RefreshToken",
 		Value:    newRefreshToken,
 		HTTPOnly: true,
@@ -269,10 +270,17 @@ func (h *UserHandler) GoogleLogin(c *fiber.Ctx) error {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
 	state := base64.StdEncoding.EncodeToString(b)
+
+	origin := c.Get("X-Origin")
+	redirectURL, _ := url.Parse(h.cfg.GoogleRedirectUrl)
+	queryParams := redirectURL.Query()
+	queryParams.Set("X-Origin", origin)
+	redirectURL.RawQuery = queryParams.Encode()
+
 	conf := &oauth2.Config{
 		ClientID:     h.cfg.GoogleClientID,
 		ClientSecret: h.cfg.GoogleClientSecret,
-		RedirectURL:  h.cfg.GoogleRedirectUrl,
+		RedirectURL:  redirectURL.String(),
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			"https://www.googleapis.com/auth/userinfo.profile",
@@ -299,10 +307,16 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		})
 	}
 
+	origin := c.Get("X-Origin")
+	redirectURL, _ := url.Parse(h.cfg.GoogleRedirectUrl)
+	queryParams := redirectURL.Query()
+	queryParams.Set("X-Origin", origin)
+	redirectURL.RawQuery = queryParams.Encode()
+
 	conf := &oauth2.Config{
 		ClientID:     h.cfg.GoogleClientID,
 		ClientSecret: h.cfg.GoogleClientSecret,
-		RedirectURL:  h.cfg.GoogleRedirectUrl,
+		RedirectURL:  redirectURL.String(),
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			"https://www.googleapis.com/auth/userinfo.profile",
@@ -407,7 +421,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	}
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c),
+		Domain:   getCookieDomain(origin),
 		Name:     "AccessToken",
 		Value:    accessToken,
 		HTTPOnly: true,
@@ -418,7 +432,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	})
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c),
+		Domain:   getCookieDomain(origin),
 		Name:     "RefreshToken",
 		Value:    refreshToken,
 		HTTPOnly: true,
@@ -467,8 +481,9 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 		})
 	}
 
+	origin := c.Get("X-Origin")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c),
+		Domain:   getCookieDomain(origin),
 		Name:     "AccessToken",
 		Value:    "",
 		HTTPOnly: true,
@@ -479,7 +494,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 	})
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c),
+		Domain:   getCookieDomain(origin),
 		Name:     "RefreshToken",
 		Value:    "",
 		HTTPOnly: true,
