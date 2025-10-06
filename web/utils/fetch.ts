@@ -1,6 +1,8 @@
 "use server"
 
 import { cookies, headers } from "next/headers";
+import { API_AUTH } from "@/constants/api";
+import { redirect } from "next/navigation";
 
 export type ApiResponse<TBody> = {
   success: boolean;
@@ -45,6 +47,7 @@ export async function fetchGET<T>(
 
   const isOK = res.ok;
   const resBody = await res.json();
+
   return {
     success: isOK,
     message: resBody.message,

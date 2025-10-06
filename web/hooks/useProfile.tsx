@@ -1,14 +1,12 @@
 "use client";
 
 import React, {createContext, useContext, useEffect, useMemo, useState} from "react";
-import { redirect } from "next/navigation";
 
-import { User, getProfile, refresh as refreshToken } from "@/services/auth";
+import { User, logout } from "@/services/auth";
 
 
 type ProfileContextType = {
   profile: User | null;
-  loading: boolean;
   setProfile: (p: User) => void;
 };
 
@@ -19,25 +17,14 @@ export function ProfileProvider({ children, data }: {
   data: User | null
 }) {
   const [profileData, setProfileData] = useState<User | null>(data);
-  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    async function refreshProfile() {
-      await refreshToken();
-      const { success, data } = await getProfile();
-
-      if (!success) redirect("/login");
-      setProfileData((data as { user: User } | null)?.user ?? null);
-    }
-
-    if (!profileData) {
-      refreshProfile().then();
-    }
-  }, [profileData])
+    if (!data) logout().then()
+  }, [data])
 
   const value = useMemo(
-    () => ({ profile: profileData, loading, setProfile: setProfileData }),
-    [profileData, loading]
+    () => ({ profile: profileData, setProfile: setProfileData }),
+    [profileData]
   );
 
   if (!profileData) {

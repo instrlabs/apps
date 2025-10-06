@@ -1,7 +1,7 @@
 'use server';
 
 import { cookies } from "next/headers";
-import AuthAction from "@/app/debug/AuthAction";
+import AuthAction from "@/app/debug/auth/AuthAction";
 
 export default async function DebugAuthPage() {
   const cookieStore = await cookies();

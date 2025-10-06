@@ -1,11 +1,13 @@
 'use client'
 
 import Button from "@/components/actions/button";
-import { login, logout, sendPin } from "@/services/auth";
+import { login, logout, refresh, sendPin } from "@/services/auth";
 import useNotification from "@/hooks/useNotification";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function AuthAction() {
   const { showNotification } = useNotification();
+  const { profile } = useProfile();
 
   async function handleSendPin() {
     const res = await sendPin({ email: "arthadede@gmail.com" });
@@ -41,17 +43,27 @@ export default function AuthAction() {
     await logout();
   }
 
+  async function handleRefreshToken() {
+    await refresh();
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      <Button onClick={handleSendPin} xVariant="solid" xSize="sm">
-        Send Pin
-      </Button>
-      <Button onClick={handleLogin} xVariant="solid" xSize="sm">
-        Login
-      </Button>
-      <Button onClick={handleLogout} xVariant="solid" xSize="sm">
-        Logout
-      </Button>
-    </div>
+    <>
+      <p className="text-sm truncate">Profile: {profile?.email}</p>
+      <div className="flex flex-col gap-4">
+        <Button onClick={handleSendPin} xVariant="solid" xSize="sm">
+          Send Pin
+        </Button>
+        <Button onClick={handleLogin} xVariant="solid" xSize="sm">
+          Login
+        </Button>
+        <Button onClick={handleLogout} xVariant="solid" xSize="sm">
+          Logout
+        </Button>
+        <Button onClick={handleRefreshToken} xVariant="solid" xSize="sm">
+          Refresh Token - Client
+        </Button>
+      </div>
+    </>
   )
 }

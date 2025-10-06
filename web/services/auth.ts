@@ -26,19 +26,14 @@ export async function login({ email, pin }: {
 
   const isOK = res.ok;
   const resBody = await res.json();
-  if (!isOK) {
-    return {
-      success: isOK,
-      message: resBody.message,
-      data: null,
-      errors: (resBody.errors as FormErrors) ?? null,
-    }
+
+  if (isOK) {
+    const reqSetCookie = new ResponseCookies(res.headers);
+    const storeCookie = await cookies();
+    storeCookie.set(reqSetCookie.get("AccessToken") as ResponseCookie);
+    storeCookie.set(reqSetCookie.get("RefreshToken") as ResponseCookie);
   }
 
-  const reqSetCookie = new ResponseCookies(res.headers);
-  const storeCookie = await cookies();
-  storeCookie.set(reqSetCookie.get("AccessToken") as ResponseCookie);
-  storeCookie.set(reqSetCookie.get("RefreshToken") as ResponseCookie);
 
   return {
     success: isOK,
@@ -49,22 +44,24 @@ export async function login({ email, pin }: {
 }
 
 export async function refresh() {
-  const refresh_token = (await cookies()).get("RefreshToken")?.value
   const res = await fetch(process.env.GATEWAY_URL + `${API_AUTH}/refresh`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Origin": await getRequestOrigin()
-    },
-    body: JSON.stringify({ refresh_token })
+      "Origin": await getRequestOrigin(),
+      "Cookie": (await cookies()).toString()
+    }
   });
 
   const isOK = res.ok;
   const resBody = await res.json();
-  const reqSetCookie = new ResponseCookies(res.headers);
-  const storeCookie = await cookies();
-  storeCookie.set(reqSetCookie.get("AccessToken") as ResponseCookie);
-  storeCookie.set(reqSetCookie.get("RefreshToken") as ResponseCookie);
+
+  if (isOK) {
+    const reqSetCookie = new ResponseCookies(res.headers);
+    const storeCookie = await cookies();
+    storeCookie.set(reqSetCookie.get("AccessToken") as ResponseCookie);
+    storeCookie.set(reqSetCookie.get("RefreshToken") as ResponseCookie);
+  }
 
   return {
     success: isOK,
