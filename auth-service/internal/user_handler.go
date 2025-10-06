@@ -33,19 +33,29 @@ func NewUserHandler(cfg *Config, userRepo *UserRepository) *UserHandler {
 	}
 }
 
-func getCookieDomain(origin string) string {
+func getCookieDomain(c *fiber.Ctx, defaultOrigin string) string {
+
+	origin := c.Get("X-Origin")
+	if origin == "" {
+		origin = defaultOrigin
+	}
+
 	u, _ := url.Parse(origin)
 	hostname := u.Hostname()
 
 	if hostname == "localhost" || hostname == "" {
+		log.Info("getCookieDomain: Using localhost domain")
 		return "localhost"
 	}
 
 	parts := strings.Split(hostname, ".")
 	if len(parts) >= 2 {
-		return "." + strings.Join(parts[len(parts)-2:], ".")
+		domain := "." + strings.Join(parts[len(parts)-2:], ".")
+		log.Infof("getCookieDomain: Using domain: %s", domain)
+		return domain
 	}
 
+	log.Infof("getCookieDomain: Using hostname as domain: %s", hostname)
 	return hostname
 }
 
@@ -159,10 +169,9 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	origin := c.Get("X-Origin")
 	log.Info("Login: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(origin),
+		Domain:   getCookieDomain(c, h.cfg.WebUrl),
 		Name:     "AccessToken",
 		Value:    accessToken,
 		HTTPOnly: true,
@@ -174,7 +183,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 
 	log.Info("Login: Setting refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(origin),
+		Domain:   getCookieDomain(c, h.cfg.WebUrl),
 		Name:     "RefreshToken",
 		Value:    refreshToken,
 		HTTPOnly: true,
@@ -231,10 +240,9 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
-	origin := c.Get("X-Origin")
 	log.Info("RefreshToken: Update access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(origin),
+		Domain:   getCookieDomain(c, h.cfg.WebUrl),
 		Name:     "AccessToken",
 		Value:    newAccessToken,
 		HTTPOnly: true,
@@ -246,7 +254,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 
 	log.Info("RefreshToken: Setting new refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(origin),
+		Domain:   getCookieDomain(c, h.cfg.WebUrl),
 		Name:     "RefreshToken",
 		Value:    newRefreshToken,
 		HTTPOnly: true,
@@ -270,17 +278,10 @@ func (h *UserHandler) GoogleLogin(c *fiber.Ctx) error {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
 	state := base64.StdEncoding.EncodeToString(b)
-
-	origin := c.Get("X-Origin")
-	redirectURL, _ := url.Parse(h.cfg.GoogleRedirectUrl)
-	queryParams := redirectURL.Query()
-	queryParams.Set("X-Origin", origin)
-	redirectURL.RawQuery = queryParams.Encode()
-
 	conf := &oauth2.Config{
 		ClientID:     h.cfg.GoogleClientID,
 		ClientSecret: h.cfg.GoogleClientSecret,
-		RedirectURL:  redirectURL.String(),
+		RedirectURL:  h.cfg.GoogleRedirectUrl,
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			"https://www.googleapis.com/auth/userinfo.profile",
@@ -307,16 +308,10 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		})
 	}
 
-	origin := c.Get("X-Origin")
-	redirectURL, _ := url.Parse(h.cfg.GoogleRedirectUrl)
-	queryParams := redirectURL.Query()
-	queryParams.Set("X-Origin", origin)
-	redirectURL.RawQuery = queryParams.Encode()
-
 	conf := &oauth2.Config{
 		ClientID:     h.cfg.GoogleClientID,
 		ClientSecret: h.cfg.GoogleClientSecret,
-		RedirectURL:  redirectURL.String(),
+		RedirectURL:  h.cfg.GoogleRedirectUrl,
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			"https://www.googleapis.com/auth/userinfo.profile",
@@ -421,7 +416,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	}
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(origin),
+		Domain:   getCookieDomain(c, h.cfg.WebUrl),
 		Name:     "AccessToken",
 		Value:    accessToken,
 		HTTPOnly: true,
@@ -432,7 +427,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	})
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(origin),
+		Domain:   getCookieDomain(c, h.cfg.WebUrl),
 		Name:     "RefreshToken",
 		Value:    refreshToken,
 		HTTPOnly: true,
@@ -481,9 +476,8 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 		})
 	}
 
-	origin := c.Get("X-Origin")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(origin),
+		Domain:   getCookieDomain(c, h.cfg.WebUrl),
 		Name:     "AccessToken",
 		Value:    "",
 		HTTPOnly: true,
@@ -494,7 +488,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 	})
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(origin),
+		Domain:   getCookieDomain(c, h.cfg.WebUrl),
 		Name:     "RefreshToken",
 		Value:    "",
 		HTTPOnly: true,
