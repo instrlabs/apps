@@ -55,7 +55,7 @@ export default function ImageCompress() {
   useEffect(() => {
     if (!message) return;
     const {eventName, data} = message;
-    console.log("message", eventName, data);
+
     if (eventName === "message") {
       const payload = data as { instruction_id: string; file_id: string; };
       const debouncedProcessFiles = debounce(async () => {
