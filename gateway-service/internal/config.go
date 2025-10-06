@@ -16,6 +16,7 @@ type Config struct {
 	Port        string
 	Origins     string
 	JWTSecret   string
+	CSRFEnabled bool
 	Services    []ServiceConfig
 }
 
@@ -27,6 +28,7 @@ func LoadConfig() *Config {
 		Port:        initx.GetEnv("PORT", ":3000"),
 		Origins:     initx.GetEnv("ORIGINS_ALLOWED", "http://localhost:8000"),
 		JWTSecret:   initx.GetEnv("JWT_SECRET", ""),
+		CSRFEnabled: initx.GetEnvBool("CSRF_ENABLED", true),
 		Services: []ServiceConfig{
 			{
 				Name:   "auth-service",

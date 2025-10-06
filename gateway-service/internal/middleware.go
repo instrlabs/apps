@@ -39,7 +39,7 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 
 		if method == fiber.MethodPost || method == fiber.MethodPut || method == fiber.MethodPatch || method == fiber.MethodDelete {
 			origin := c.Get("Origin")
-			if !isAllowedOrigin(origin, cfg.Origins) {
+			if !isAllowedOrigin(origin, cfg.Origins) && cfg.CSRFEnabled {
 				log.Warnf("CSRF protection: Forbidden origin: %s", origin)
 				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 					"message": ErrForbiddenOrigin.Error(),

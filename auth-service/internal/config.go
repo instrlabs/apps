@@ -23,7 +23,7 @@ type Config struct {
 	GoogleRedirectUrl  string
 	ApiUrl             string
 	WebUrl             string
-	PinFlag            bool
+	PinEnabled         bool
 }
 
 func LoadConfig() *Config {
@@ -53,6 +53,6 @@ func LoadConfig() *Config {
 		ApiUrl: initx.GetEnv("GATEWAY_URL", ""),
 		WebUrl: initx.GetEnv("WEB_URL", ""),
 
-		PinFlag: initx.GetEnvBool("PIN_FLAG", false),
+		PinEnabled: initx.GetEnvBool("PIN_ENABLED", false),
 	}
 }
