@@ -72,7 +72,7 @@ func (h *UserHandler) generateRefreshToken() (string, error) {
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
-	return base64.StdEncoding.EncodeToString(b), nil
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
 func (h *UserHandler) Login(c *fiber.Ctx) error {
@@ -195,11 +195,9 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	log.Info("RefreshToken: Processing token refresh request")
 
-	raw := c.Get("X-User-Refresh")
-	refreshToken := strings.TrimSpace(raw)
-	decodedRefreshToken, _ := url.QueryUnescape(refreshToken)
-	log.Infof("RefreshToken: Refresh token: %s", decodedRefreshToken)
-	user := h.userRepo.FindByRefreshToken(decodedRefreshToken)
+	refreshToken := c.Get("X-User-Refresh")
+	log.Infof("RefreshToken: Refresh token: %s", refreshToken)
+	user := h.userRepo.FindByRefreshToken(refreshToken)
 	if user == nil || user.ID.IsZero() {
 		log.Warn("RefreshToken: Invalid refresh token")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
