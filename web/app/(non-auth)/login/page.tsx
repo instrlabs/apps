@@ -1,11 +1,8 @@
 import React from "react";
 import type { Metadata } from "next";
 
-import { ROUTE_REGISTER } from "@/constants/routes";
 import GoogleSignInButton from "@/components/actions/google-signin";
-import LinkText from "@/components/actions/link-text";
 import LoginForm from "./LoginForm";
-import Button from "@/components/actions/button";
 
 export const metadata: Metadata = {
   title: "Login - Labs",
@@ -19,12 +16,6 @@ export default function LoginPage() {
         <LoginForm />
         <hr/>
         <GoogleSignInButton />
-        <Button xVariant="transparent">
-          <p className="font-light">
-            Don&apos;t have an account? {" "}
-            <LinkText href={ROUTE_REGISTER}>Sign up</LinkText>
-          </p>
-        </Button>
       </div>
     </div>
   );
