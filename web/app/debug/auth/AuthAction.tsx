@@ -1,7 +1,7 @@
 'use client'
 
 import Button from "@/components/actions/button";
-import { login, logout, refresh, sendPin } from "@/services/auth";
+import { getProfile, login, logout, refresh, sendPin } from "@/services/auth";
 import useNotification from "@/hooks/useNotification";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -47,6 +47,10 @@ export default function AuthAction() {
     await refresh();
   }
 
+  async function handleUpdateProfile() {
+    await getProfile();
+  }
+
   return (
     <>
       <p className="text-sm truncate">Profile: {profile?.email}</p>
@@ -62,6 +66,9 @@ export default function AuthAction() {
         </Button>
         <Button onClick={handleRefreshToken} xVariant="solid" xSize="sm">
           Refresh Token - Client
+        </Button>
+        <Button onClick={handleUpdateProfile} xVariant="solid" xSize="sm">
+          Update Profile - Client
         </Button>
       </div>
     </>

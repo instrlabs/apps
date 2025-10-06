@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { ResponseCookie, ResponseCookies } from "next/dist/compiled/@edge-runtime/cookies";
-import { store } from "next/dist/build/output/store";
 
 export async function middleware(request: NextRequest) {
   const next = NextResponse.next();
