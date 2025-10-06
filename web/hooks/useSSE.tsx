@@ -24,7 +24,7 @@ export const SSEProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     async function start() {
-      const url = "/api/notifications/sse";
+      const url = "/api/sse";
       const res = await fetch(url, {
         cache: "no-store",
       });

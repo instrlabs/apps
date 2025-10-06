@@ -11,10 +11,15 @@ export interface User {
   email: string
 }
 
+
 export async function login({ email, pin }: {
   email: string,
   pin: string
 }) {
+  if (typeof window !== "undefined") {
+    throw new Error("Function: login() must be call on client component");
+  }
+
   const res = await fetch(process.env.GATEWAY_URL + `${API_AUTH}/login`, {
     method: "POST",
     headers: {
@@ -44,6 +49,10 @@ export async function login({ email, pin }: {
 }
 
 export async function refresh() {
+  if (typeof window !== "undefined") {
+    throw new Error("Function: refresh() must be call on client component");
+  }
+
   const res = await fetch(process.env.GATEWAY_URL + `${API_AUTH}/refresh`, {
     method: "POST",
     headers: {
