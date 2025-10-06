@@ -47,13 +47,13 @@ services:
     ports:
       - "3003:3000"
 
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-    container_name: instrlabs-web
-    restart: unless-stopped
-    env_file:
-      - ./web/.env
-    ports:
-      - "8000:3000"
+#  web:
+#    build:
+#      context: ./web
+#      dockerfile: Dockerfile
+#    container_name: instrlabs-web
+#    restart: unless-stopped
+#    env_file:
+#      - ./web/.env
+#    ports:
+#      - "8000:3000"

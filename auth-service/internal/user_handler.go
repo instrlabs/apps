@@ -195,12 +195,13 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	log.Info("RefreshToken: Processing token refresh request")
 
-	refreshToken := c.Cookies("RefreshToken")
-	userID, _ := c.Locals("UserID").(string)
-	user := h.userRepo.FindByRefreshToken(userID, refreshToken)
+	refreshToken := c.Get("X-User-Refresh")
+	decodedToken, _ := url.QueryUnescape(refreshToken)
+	log.Infof("RefreshToken: Refresh token: %s", decodedToken)
+	user := h.userRepo.FindByRefreshToken(decodedToken)
 	if user == nil || user.ID.IsZero() {
-		log.Infof("RefreshToken: Invalid refresh token for user %s", userID)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		log.Warn("RefreshToken: Invalid refresh token")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrInvalidToken,
 			"errors":  nil,
 			"data":    nil,
@@ -279,10 +280,11 @@ func (h *UserHandler) GoogleLogin(c *fiber.Ctx) error {
 		},
 		Endpoint: google.Endpoint,
 	}
-	url := conf.AuthCodeURL(state)
-	log.Infof("GoogleLogin: Redirecting to Google OAuth URL: %s", url)
 
-	return c.Redirect(url)
+	redirectUrl := conf.AuthCodeURL(state)
+	log.Infof("GoogleLogin: Redirecting to Google OAuth URL: %s", redirectUrl)
+
+	return c.Redirect(redirectUrl)
 }
 
 func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {

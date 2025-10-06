@@ -5,14 +5,14 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
+var ErrForbiddenOrigin = errors.New("FORBIDDEN_ORIGIN")
+
 func isAllowedOrigin(origin, allowlist string) bool {
 	origin = strings.TrimSpace(origin)
-	if origin == "" {
-		return false
-	}
 	for _, a := range strings.Split(allowlist, ",") {
 		if strings.TrimSpace(a) == origin {
 			return true
@@ -26,7 +26,7 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.Origins,
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
-		AllowHeaders:     "Origin, Accept, Content-Type, X-Authenticated, X-User-Id, X-User-Roles",
+		AllowHeaders:     "Origin, Content-Type, Cookie, Set-Cookie",
 		AllowCredentials: true,
 	}))
 
@@ -40,8 +40,11 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		if method == fiber.MethodPost || method == fiber.MethodPut || method == fiber.MethodPatch || method == fiber.MethodDelete {
 			origin := c.Get("Origin")
 			if !isAllowedOrigin(origin, cfg.Origins) {
+				log.Warnf("CSRF protection: Forbidden origin: %s", origin)
 				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-					"error": "FORBIDDEN_ORIGIN",
+					"message": ErrForbiddenOrigin.Error(),
+					"errors":  nil,
+					"data":    nil,
 				})
 			}
 		}
@@ -52,7 +55,8 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 	// AUTH
 	app.Use(func(c *fiber.Ctx) error {
 		origin := c.Get("Origin")
-		token := c.Cookies("AccessToken")
+		accessToken := c.Cookies("AccessToken")
+		refreshToken := c.Cookies("RefreshToken")
 
 		c.Request().Header.Del("Cookie")
 		c.Request().Header.Del("X-Authenticated")
@@ -60,21 +64,28 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		c.Request().Header.Del("X-User-Roles")
 		c.Request().Header.Del("X-Origin")
 
-		if token != "" {
-			if info, err := ExtractTokenInfo(cfg.JWTSecret, token); err == nil {
+		if accessToken != "" {
+			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
 				c.Request().Header.Set("X-Authenticated", "true")
 				c.Request().Header.Set("X-User-Id", info.UserID)
 				c.Request().Header.Set("X-User-Roles", strings.Join(info.Roles, ","))
 				c.Request().Header.Set("X-Origin", origin)
 			} else {
-				if errors.Is(err, ErrTokenExpired) {
+				log.Warnf("ExtractTokenInfo: Failed to extract token info: %v", err)
+				if !errors.Is(err, ErrTokenEmpty) {
 					return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-						"error": "EXPIRED_TOKEN",
+						"message": err.Error(),
+						"errors":  nil,
+						"data":    nil,
 					})
 				}
 
 				c.Request().Header.Set("X-Authenticated", "false")
 			}
+		}
+
+		if refreshToken != "" && c.Path() == "/auth/refresh" {
+			c.Request().Header.Set("X-User-Refresh", refreshToken)
 		}
 
 		c.Request().Header.Set("X-Gateway", "true")

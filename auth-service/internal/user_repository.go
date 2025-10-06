@@ -96,19 +96,17 @@ func (r *UserRepository) FindByID(id string) *User {
 	return &user
 }
 
-func (r *UserRepository) FindByRefreshToken(userId, refreshToken string) *User {
+func (r *UserRepository) FindByRefreshToken(refreshToken string) *User {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	var user User
-	objectID, _ := primitive.ObjectIDFromHex(userId)
 	err := r.collection.FindOne(ctx, bson.M{
-		"_id":           objectID,
 		"refresh_token": refreshToken,
 	}).Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			log.Warnf("Refresh token not found for user %s", userId)
+			log.Warn("Refresh token not found")
 			return nil
 		}
 		log.Errorf("Failed to find user by userId and refresh token: %v", err)

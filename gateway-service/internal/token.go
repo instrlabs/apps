@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	log "github.com/sirupsen/logrus"
 )
 
 var ErrTokenExpired = errors.New("TOKEN_EXPIRED")
@@ -23,32 +24,32 @@ func ExtractTokenInfo(secret string, tokenString string) (*TokenInfo, error) {
 		return nil, ErrTokenEmpty
 	}
 
-	if strings.TrimSpace(secret) == "" {
-		return nil, errors.New("missing JWT_SECRET")
-	}
-
 	parser := jwt.NewParser(jwt.WithValidMethods([]string{"HS256", "HS384", "HS512"}))
 
 	claims := jwt.MapClaims{}
-	token, err := parser.ParseWithClaims(tokenString, claims,
+	token, err := parser.ParseWithClaims(
+		tokenString, claims,
 		func(token *jwt.Token) (interface{}, error) {
 			return []byte(secret), nil
 		},
 	)
 
 	if err != nil {
+		log.Errorf("ExtractTokenInfo: Failed to parse token: %v", err)
 		return nil, err
 	}
 
 	if !token.Valid {
+		log.Errorf("ExtractTokenInfo: Invalid token: %v", token)
 		return nil, ErrTokenInvalid
 	}
 
 	userID := toString(claims["user_id"])
 	roles := extractRoles(claims["roles"])
 
-	if t, err := claims.GetExpirationTime(); err == nil && t != nil {
-		if time.Now().UTC().After(t.Time) {
+	if date, err := claims.GetExpirationTime(); err == nil && date != nil {
+		if time.Now().UTC().After(date.Time) {
+			log.Warnf("ExtractTokenInfo: Token expired: %v", token)
 			return nil, ErrTokenExpired
 		}
 	}

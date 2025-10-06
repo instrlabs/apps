@@ -17,7 +17,10 @@ export async function login({ email, pin }: {
 }) {
   const res = await fetch(process.env.GATEWAY_URL + `${API_AUTH}/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Origin": await getRequestOrigin() },
+    headers: {
+      "Content-Type": "application/json",
+      "Origin": await getRequestOrigin()
+    },
     body: JSON.stringify({ email, pin }),
   });
 
