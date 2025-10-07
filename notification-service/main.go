@@ -25,9 +25,7 @@ func main() {
 	initx.SetupLogger(app)
 	internal.SetupMiddleware(app, cfg)
 	initx.SetupServiceHealth(app)
-	initx.SetupAuthenticated(app, []string{
-		"/sse",
-	})
+	initx.SetupAuthenticated(app, []string{})
 
 	app.Get("/sse", sseService.HandleSSE)
 
