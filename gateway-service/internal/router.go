@@ -41,12 +41,11 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 			queryString := string(c.Request().URI().QueryString())
 
 			log.WithFields(log.Fields{
-				"service":      srv.Name,
-				"method":       c.Method(),
-				"path":         forwardPath,
-				"query":        queryString,
-				"forwarded_to": targetURL.String(),
-			}).Info("Forwarding request")
+				"service": srv.Name,
+				"method":  c.Method(),
+				"path":    forwardPath,
+				"query":   queryString,
+			}).Info("Request received")
 
 			parsedUrl := targetURL.String() + forwardPath
 			if queryString != "" {
@@ -58,8 +57,8 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 					"service": srv.Name,
 					"method":  c.Method(),
 					"path":    forwardPath,
-					"error":   err.Error(),
-				}).Error("Proxy error")
+					"query":   queryString,
+				}).Error(err.Error())
 
 				return c.Status(fiber.StatusBadGateway).JSON(map[string]string{
 					"error":   "Bad Gateway",
@@ -72,9 +71,8 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 
 		log.WithFields(log.Fields{
 			"service": srv.Name,
-			"prefix":  prefix,
 			"target":  srv.URL,
-		}).Info("Registered route")
+		}).Info("Service registered")
 	}
 
 	app.Use(func(c *fiber.Ctx) error {
