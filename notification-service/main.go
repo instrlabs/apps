@@ -23,8 +23,11 @@ func main() {
 
 	app := fiber.New(fiber.Config{})
 	initx.SetupLogger(app)
-	initx.SetupServiceHealth(app)
 	internal.SetupMiddleware(app, cfg)
+	initx.SetupServiceHealth(app)
+	initx.SetupAuthenticated(app, []string{
+		"/sse",
+	})
 
 	app.Get("/sse", sseService.HandleSSE)
 

@@ -54,7 +54,6 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 	c.Set("Content-Type", "text/event-stream")
 	c.Set("Cache-Control", "no-cache")
 	c.Set("Connection", "keep-alive")
-	c.Set("Access-Control-Allow-Origin", s.cfg.Origins)
 
 	messageChan := make(chan []byte, 16)
 	doneChan := make(chan bool)

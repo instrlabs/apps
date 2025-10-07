@@ -3,10 +3,17 @@ package internal
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/etag"
+	"github.com/gofiber/fiber/v2/middleware/helmet"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 )
 
 var ErrForbiddenOrigin = errors.New("FORBIDDEN_ORIGIN")
@@ -22,6 +29,16 @@ func isAllowedOrigin(origin, allowlist string) bool {
 }
 
 func SetupMiddleware(app *fiber.App, cfg *Config) {
+	app.Use(helmet.New())
+	app.Use(requestid.New())
+	app.Use(recover.New())
+	app.Use(limiter.New(limiter.Config{
+		Max:        100,
+		Expiration: time.Duration(60) * time.Second,
+	}))
+	app.Use(etag.New())
+	app.Use(compress.New())
+
 	// CORS
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.Origins,
