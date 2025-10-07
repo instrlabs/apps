@@ -1,12 +1,10 @@
 package main
 
 import (
-	"log"
-
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/instrlabs/auth-service/internal"
 	initx "github.com/instrlabs/shared/init"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 func main() {

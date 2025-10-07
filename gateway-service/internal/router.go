@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/fiber/v2/middleware/proxy"
-	log "github.com/sirupsen/logrus"
 )
 
 func SetupGatewayRoutes(app *fiber.App, config *Config) {
@@ -40,12 +40,7 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 			forwardPath := c.Path()[len(prefix):]
 			queryString := string(c.Request().URI().QueryString())
 
-			log.WithFields(log.Fields{
-				"service": srv.Name,
-				"method":  c.Method(),
-				"path":    forwardPath,
-				"query":   queryString,
-			}).Info("Request received")
+			log.Infof("Forwarding request to %s%s", srv.URL, forwardPath)
 
 			parsedUrl := targetURL.String() + forwardPath
 			if queryString != "" {
@@ -53,12 +48,7 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 			}
 
 			if err := proxy.DoTimeout(c, parsedUrl, 30*time.Second); err != nil {
-				log.WithFields(log.Fields{
-					"service": srv.Name,
-					"method":  c.Method(),
-					"path":    forwardPath,
-					"query":   queryString,
-				}).Error(err.Error())
+				log.Errorf("proxy error: service=%s method=%s path=%s query=%s err=%v", srv.Name, c.Method(), forwardPath, queryString, err)
 
 				return c.Status(fiber.StatusBadGateway).JSON(map[string]string{
 					"error":   "Bad Gateway",
@@ -69,17 +59,11 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 			return nil
 		})
 
-		log.WithFields(log.Fields{
-			"service": srv.Name,
-			"target":  srv.URL,
-		}).Info("Service registered")
+		log.Infof("Service registered: service=%s target=%s", srv.Name, srv.URL)
 	}
 
 	app.Use(func(c *fiber.Ctx) error {
-		log.WithFields(log.Fields{
-			"method": c.Method(),
-			"path":   c.Path(),
-		}).Warn("No route matched")
+		log.Warnf("No route matched: method=%s path=%s", c.Method(), c.Path())
 
 		return c.Status(fiber.StatusNotFound).JSON(map[string]string{
 			"error":   "Not Found",

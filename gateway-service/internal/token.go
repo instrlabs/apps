@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/golang-jwt/jwt/v5"
-	log "github.com/sirupsen/logrus"
 )
 
 var ErrTokenExpired = errors.New("TOKEN_EXPIRED")

@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/instrlabs/gateway-service/internal"
 	initx "github.com/instrlabs/shared/init"
-	log "github.com/sirupsen/logrus"
 )
 
 func main() {

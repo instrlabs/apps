@@ -1,10 +1,10 @@
 package main
 
 import (
-	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 	initx "github.com/instrlabs/shared/init"
 	natsgo "github.com/nats-io/nats.go"
 

@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
 	"path/filepath"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 	initx "github.com/instrlabs/shared/init"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -238,27 +238,27 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	fileIDHex := string(bytes.TrimSpace(data))
 	fileID, err := primitive.ObjectIDFromHex(fileIDHex)
 	if err != nil {
-		log.Printf("RunInstructionMessage: invalid file id: %q err=%v", fileIDHex, err)
+		log.Infof("RunInstructionMessage: invalid file id: %q err=%v", fileIDHex, err)
 		return
 	}
 
 	// 1. Find file by ID
 	input := h.fileRepo.GetByID(fileID)
 	if input == nil || input.ID.IsZero() {
-		log.Printf("RunInstructionMessage: input file not found: %s", fileIDHex)
+		log.Infof("RunInstructionMessage: input file not found: %s", fileIDHex)
 		return
 	}
 
 	output := h.fileRepo.GetByID(*input.OutputID)
 	if output == nil || output.ID.IsZero() {
-		log.Printf("RunInstructionMessage: output file not found: %s", fileIDHex)
+		log.Infof("RunInstructionMessage: output file not found: %s", fileIDHex)
 		return
 	}
 
 	// 2. Find instruction
 	instr := h.instrRepo.GetByID(input.InstructionID)
 	if instr == nil || instr.ID.IsZero() {
-		log.Printf("RunInstructionMessage: instruction not found: %s", fileIDHex)
+		log.Infof("RunInstructionMessage: instruction not found: %s", fileIDHex)
 		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
 		_ = h.fileRepo.UpdateStatus(output.ID, FileStatusFailed)
 		h.publishFileNotification(primitive.NilObjectID, input.InstructionID)
@@ -268,7 +268,7 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	// 3. Find product by instruction's product ID
 	product, _ := h.productRepo.FindByID(instr.ProductID)
 	if product == nil {
-		log.Printf("RunInstructionMessage: product not found: %s", instr.ProductID.Hex())
+		log.Infof("RunInstructionMessage: product not found: %s", instr.ProductID.Hex())
 		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
 		_ = h.fileRepo.UpdateStatus(output.ID, FileStatusFailed)
 		h.publishFileNotification(instr.UserID, instr.ID)
@@ -280,7 +280,7 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	h.publishFileNotification(instr.UserID, instr.ID)
 	inputBytes := h.s3.Get(input.FileName)
 	if inputBytes == nil {
-		log.Printf("RunInstructionMessage: input file missing on S3: %s", input.FileName)
+		log.Infof("RunInstructionMessage: input file missing on S3: %s", input.FileName)
 		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
 		_ = h.fileRepo.UpdateStatus(output.ID, FileStatusFailed)
 		h.publishFileNotification(instr.UserID, instr.ID)
@@ -293,14 +293,14 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	case "image-compress":
 		outputBytes, err = h.imageSvc.Compress(inputBytes)
 		if err != nil {
-			log.Printf("RunInstructionMessage: image-compress failed: %v", err)
+			log.Infof("RunInstructionMessage: image-compress failed: %v", err)
 			_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
 			_ = h.fileRepo.UpdateStatus(output.ID, FileStatusFailed)
 			h.publishFileNotification(instr.UserID, instr.ID)
 			return
 		}
 	default:
-		log.Printf("RunInstructionMessage: unsupported product key: %s", product.Key)
+		log.Infof("RunInstructionMessage: unsupported product key: %s", product.Key)
 		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
 		_ = h.fileRepo.UpdateStatus(output.ID, FileStatusFailed)
 		h.publishFileNotification(instr.UserID, instr.ID)
@@ -313,7 +313,7 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 
 	// 6. Upload output to S3
 	if err := h.s3.Put(output.FileName, outputBytes); err != nil {
-		log.Printf("RunInstructionMessage: failed to upload output to S3: %v", err)
+		log.Infof("RunInstructionMessage: failed to upload output to S3: %v", err)
 		_ = h.fileRepo.UpdateStatus(output.ID, FileStatusFailed)
 		h.publishFileNotification(instr.UserID, instr.ID)
 		return
@@ -327,16 +327,16 @@ func (h *InstructionHandler) publishFileNotification(userID, instrID primitive.O
 	n := InstructionNotification{UserID: userID.Hex(), InstructionID: instrID.Hex()}
 	b, err := json.Marshal(n)
 	if err != nil {
-		log.Printf("publishFileNotification: marshal error: %v", err)
+		log.Infof("publishFileNotification: marshal error: %v", err)
 		return
 	}
 	if err := h.nats.Conn.Publish(h.cfg.NatsSubjectNotificationsSSE, b); err != nil {
-		log.Printf("publishFileNotification: publish error: %v", err)
+		log.Infof("publishFileNotification: publish error: %v", err)
 	}
 }
 
 func (h *InstructionHandler) CleanInstruction(c *fiber.Ctx) error {
-	log.Printf("CleanInstruction invoked")
+	log.Infof("CleanInstruction invoked")
 	return nil
 }
 

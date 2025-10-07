@@ -2,8 +2,8 @@ package internal
 
 import (
 	"context"
-	"log"
 
+	"github.com/gofiber/fiber/v2/log"
 	initx "github.com/instrlabs/shared/init"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -19,7 +19,7 @@ func (r *FileRepository) GetByID(id primitive.ObjectID) *File {
 	ctx := context.Background()
 	var f File
 	if err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&f); err != nil {
-		log.Printf("file_repository.GetByID: FindOne failed for id=%s: %v", id.Hex(), err)
+		log.Infof("file_repository.GetByID: FindOne failed for id=%s: %v", id.Hex(), err)
 		return nil
 	}
 	return &f
@@ -44,7 +44,7 @@ func (r *FileRepository) CreateMany(files []*File) error {
 
 	_, err := r.collection.InsertMany(context.Background(), docs)
 	if err != nil {
-		log.Printf("file_repository.CreateMany: InsertMany failed: %v", err)
+		log.Infof("file_repository.CreateMany: InsertMany failed: %v", err)
 	}
 
 	return err
@@ -53,7 +53,7 @@ func (r *FileRepository) CreateMany(files []*File) error {
 func (r *FileRepository) CreateOne(f *File) error {
 	_, err := r.collection.InsertOne(context.Background(), f)
 	if err != nil {
-		log.Printf("file_repository.CreateOne: InsertOne failed: %v", err)
+		log.Infof("file_repository.CreateOne: InsertOne failed: %v", err)
 		return err
 	}
 
@@ -64,7 +64,7 @@ func (r *FileRepository) ListByInstruction(instrID primitive.ObjectID) []File {
 	ctx := context.Background()
 	cur, err := r.collection.Find(ctx, bson.M{"instruction_id": instrID})
 	if err != nil {
-		log.Printf("file_repository.ListByInstruction: Find failed for instruction_id=%s: %v", instrID.Hex(), err)
+		log.Infof("file_repository.ListByInstruction: Find failed for instruction_id=%s: %v", instrID.Hex(), err)
 		return []File{}
 	}
 	defer cur.Close(ctx)
@@ -73,7 +73,7 @@ func (r *FileRepository) ListByInstruction(instrID primitive.ObjectID) []File {
 	for cur.Next(ctx) {
 		var f File
 		if err := cur.Decode(&f); err != nil {
-			log.Printf("file_repository.ListByInstruction: cursor decode failed for instruction_id=%s: %v", instrID.Hex(), err)
+			log.Infof("file_repository.ListByInstruction: cursor decode failed for instruction_id=%s: %v", instrID.Hex(), err)
 			continue
 		}
 		out = append(out, f)
@@ -88,7 +88,7 @@ func (r *FileRepository) UpdateStatus(id primitive.ObjectID, st FileStatus) erro
 		},
 	})
 	if err != nil {
-		log.Printf("file_repository.UpdateStatus: UpdateByID failed for id=%s status=%v: %v", id.Hex(), st, err)
+		log.Infof("file_repository.UpdateStatus: UpdateByID failed for id=%s status=%v: %v", id.Hex(), st, err)
 	}
 	return err
 }
@@ -102,7 +102,7 @@ func (r *FileRepository) UpdateStatusAndSize(id primitive.ObjectID, st FileStatu
 		},
 	})
 	if err != nil {
-		log.Printf("file_repository.UpdateStatusAndSize: UpdateByID failed for id=%s status=%v size=%d: %v", id.Hex(), st, size, err)
+		log.Infof("file_repository.UpdateStatusAndSize: UpdateByID failed for id=%s status=%v size=%d: %v", id.Hex(), st, size, err)
 	}
 	return err
 }
