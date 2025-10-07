@@ -5,13 +5,14 @@ go 1.24.4
 require (
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/golang-jwt/jwt/v5 v5.3.0
-	github.com/instrlabs/shared v0.0.4
+	github.com/instrlabs/shared v0.0.5
 	github.com/joho/godotenv v1.5.1
-	github.com/nats-io/nats.go v1.46.0
+	github.com/nats-io/nats.go v1.46.1
 )
 
 require (
 	github.com/andybalholm/brotli v1.2.0 // indirect
+	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
@@ -21,7 +22,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.17 // indirect
+	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/minio/crc64nvme v1.1.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v7 v7.0.95 // indirect
