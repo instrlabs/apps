@@ -9,7 +9,6 @@ import (
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/etag"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -24,7 +23,6 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		Max:        100,
 		Expiration: time.Duration(60) * time.Second,
 	}))
-	app.Use(etag.New())
 	app.Use(compress.New())
 
 	// CORS
