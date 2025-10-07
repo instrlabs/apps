@@ -5,7 +5,7 @@ go 1.24.4
 require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/gofiber/fiber/v2 v2.52.9
-	github.com/instrlabs/shared v0.0.5
+	github.com/instrlabs/shared v0.0.6
 	github.com/joho/godotenv v1.5.1
 	github.com/nats-io/nats.go v1.46.1
 	go.mongodb.org/mongo-driver v1.17.4
