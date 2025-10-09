@@ -1,38 +1,40 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { ResponseCookie, ResponseCookies } from "next/dist/compiled/@edge-runtime/cookies";
 
-export async function middleware(request: NextRequest) {
-  const next = NextResponse.next();
+export async function middleware(req: NextRequest) {
+  const apiUrl = process.env.GATEWAY_URL;
+  const next = NextResponse.next({ request: req });
 
-  if (!request.nextUrl.pathname.startsWith("/login")) {
-    const accessToken = request.cookies.get("AccessToken");
-    const refreshToken = request.cookies.get("RefreshToken");
+  const time = new Date().toUTCString();
+  const ip = req.headers.get("X-Forwarded-For");
+  const path = req.nextUrl.pathname;
+
+  if (!req.nextUrl.pathname.startsWith("/login")) {
+    const accessToken = req.cookies.get("AccessToken");
+    const refreshToken = req.cookies.get("RefreshToken");
 
     if (!accessToken && !refreshToken) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      console.log(`[instrlabs-web]: time="${time}" ip="${ip}" path="${path}" message="redirect to /login"`);
+      return NextResponse.redirect(new URL("/login", req.url));
     }
 
     if (!accessToken && refreshToken) {
-      console.log("RefreshToken: Trying to refresh");
-      const baseUrl = process.env.GATEWAY_URL;
-      const resRefresh = await fetch(`${baseUrl}/auth/refresh`, {
+      console.log(`[instrlabs-web]: time="${time}" ip="${ip}" path="${path}" message="trying to refresh token"`);
+      const headers = req.headers;
+      const resRefresh = await fetch(`${apiUrl}/auth/refresh`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Origin": request.headers.get("origin") ?? "",
-          "Cookie": request.headers.get("cookie") ?? ""
-        }
+        headers: { "Content-Type": "application/json", ...headers }
       });
 
       if (resRefresh.ok) {
-        console.log("RefreshToken: Success");
+        console.log(`[instrlabs-web]: time="${time}" ip="${ip}" path="${path}" message="trying to refresh token"`);
         const reqSetCookie = new ResponseCookies(resRefresh.headers);
         const storeCookie = next.cookies;
         storeCookie.set(reqSetCookie.get("AccessToken") as ResponseCookie);
         storeCookie.set(reqSetCookie.get("RefreshToken") as ResponseCookie);
       } else {
-        console.log("RefreshToken: Failed");
-        return NextResponse.redirect(new URL("/login", request.url));
+        console.log(`[instrlabs-web]: time="${time}" ip="${ip}" path="${path}" message="failed to refresh token"`);
+        return NextResponse.redirect(new URL("/login", req.url));
       }
     }
   }
