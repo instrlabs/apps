@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { Product } from "@/services/images";
+import { logout } from "@/services/auth";
 
 type ProductContextType = {
   products: Product[];
@@ -14,10 +15,14 @@ const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
 export function ProductProvider({ children, data }: {
   children: React.ReactNode,
-  data: Product[]
+  data: Product[] | null
 }) {
   const [products, setProducts] = useState<Product[]>(data ?? []);
   const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!data) logout().then()
+  }, [data])
 
   const productsByType = useMemo(() => {
     return products.reduce((acc, product) => {

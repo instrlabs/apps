@@ -35,8 +35,8 @@ export default async function SiteLayout({ children }: Readonly<{
   const { data: productData } = await getProducts();
 
   return (
-    <ProfileProvider data={profileData!.user}>
-    <ProductProvider data={productData!.products}>
+    <ProfileProvider data={profileData?.user || null}>
+    <ProductProvider data={productData?.products || null}>
     <SSEProvider>
     <NotificationProvider>
     <ModalProvider>
