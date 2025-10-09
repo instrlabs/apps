@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 )
 
 type SSEClient struct {
@@ -67,13 +67,13 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 
 	s.mutex.Lock()
 	if existingClient, exists := s.clients[userId]; exists {
-		log.Printf("Closing existing connection for user %s", userId)
+		log.Infof("Closing existing connection for user %s", userId)
 		existingClient.done <- true
 	}
 	s.clients[userId] = client
 	s.mutex.Unlock()
 
-	log.Printf("New SSE client connected for user %s. Total clients: %d", userId, len(s.clients))
+	log.Infof("New SSE client connected for user %s. Total clients: %d", userId, len(s.clients))
 
 	ctx := c.Context()
 
@@ -102,12 +102,12 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 				}
 				s.mutex.Unlock()
 				client.done <- true
-				log.Printf("SSE client disconnected for user %s. Total clients: %d", userId, len(s.clients))
+				log.Infof("SSE client disconnected for user %s. Total clients: %d", userId, len(s.clients))
 				return
 			case data := <-client.connection:
 				var msg InstructionNotification
 				if err := json.Unmarshal(data, &msg); err != nil {
-					log.Printf("RunInstructionMessage: unmarshal error: %v", err)
+					log.Infof("RunInstructionMessage: unmarshal error: %v", err)
 					return
 				}
 

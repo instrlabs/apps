@@ -1,9 +1,8 @@
 package main
 
 import (
-	"log"
-
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/instrlabs/notification-service/internal"
 	initx "github.com/instrlabs/shared/init"
 	natsgo "github.com/nats-io/nats.go"
@@ -29,5 +28,5 @@ func main() {
 
 	app.Get("/sse", sseService.HandleSSE)
 
-	log.Println(app.Listen(cfg.Port))
+	log.Fatal(app.Listen(cfg.Port))
 }
