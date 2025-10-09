@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { ResponseCookie, ResponseCookies } from "next/dist/compiled/@edge-runtime/cookies";
-import { webLog } from "@/utils/log";
+import { info } from "@/utils/log";
 
 export async function middleware(req: NextRequest) {
   console.log("MIDDLEWARE: ", req.url, req.method, req.headers.get("Content-Type"))
@@ -14,12 +14,12 @@ export async function middleware(req: NextRequest) {
     const refreshToken = req.cookies.get("RefreshToken");
 
     if (!accessToken && !refreshToken) {
-      webLog("redirect to /login", req);
+      info("redirect to /login", req);
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
     if (!accessToken && refreshToken) {
-      webLog("trying to refresh token", req);
+      info("trying to refresh token", req);
       const headers = req.headers;
       const resRefresh = await fetch(`${apiUrl}/auth/refresh`, {
         method: "POST",
@@ -27,13 +27,13 @@ export async function middleware(req: NextRequest) {
       });
 
       if (resRefresh.ok) {
-        webLog("successfully refreshed token", req);
+        info("successfully refreshed token", req);
         const reqSetCookie = new ResponseCookies(resRefresh.headers);
         const storeCookie = next.cookies;
         storeCookie.set(reqSetCookie.get("AccessToken") as ResponseCookie);
         storeCookie.set(reqSetCookie.get("RefreshToken") as ResponseCookie);
       } else {
-        webLog("failed to refresh token", req);
+        info("failed to refresh token", req);
         return NextResponse.redirect(new URL("/login", req.url));
       }
     }
