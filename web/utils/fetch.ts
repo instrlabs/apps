@@ -23,7 +23,6 @@ const REFRESH_TOKEN = "RefreshToken";
 async function getHeaders(): Promise<Headers> {
   const h = await headers();
   const customHeaders = new Headers();
-  customHeaders.set("Content-Type", "application/json");
   customHeaders.set("X-Forwarded-For", h.get("X-Forwarded-For")!);
   customHeaders.set("X-Forwarded-Host", h.get("X-Forwarded-Host")!);
   customHeaders.set("X-Forwarded-Proto", h.get("X-Forwarded-Proto")!);
@@ -41,9 +40,11 @@ export async function fetchGET<T>(
   const params = new URLSearchParams(queries);
   if (queries) url += "?" + params.toString();
 
+  const headers = await getHeaders();
+  headers.set("Content-Type", "application/json");
   const res = await fetch(url, {
     method: "GET",
-    headers: await getHeaders(),
+    headers: headers,
   });
 
   const isOK = res.ok;
@@ -62,9 +63,12 @@ export async function fetchPOST<T>(
   body?: unknown
 ): Promise<ApiResponse<T>> {
   const url = process.env.GATEWAY_URL + path;
+
+  const headers = await getHeaders();
+  headers.set("Content-Type", "application/json");
   const res = await fetch(url, {
     method: "POST",
-    headers: await getHeaders(),
+    headers: headers,
     body: JSON.stringify(body)
   });
 
@@ -93,9 +97,11 @@ export async function fetchPUT<T>(
 ): Promise<ApiResponse<T>> {
   const url = process.env.GATEWAY_URL + path;
 
+  const headers = await getHeaders();
+  headers.set("Content-Type", "application/json");
   const res = await fetch(url, {
     method: "PUT",
-    headers: await getHeaders(),
+    headers: headers,
     body: JSON.stringify(body),
   });
 
@@ -115,9 +121,11 @@ export async function fetchPATCH<T>(
 ): Promise<ApiResponse<T>> {
   const url = process.env.GATEWAY_URL + path;
 
+  const headers = await getHeaders();
+  headers.set("Content-Type", "application/json");
   const res = await fetch(url, {
     method: "PATCH",
-    headers: await getHeaders(),
+    headers: headers,
     body: JSON.stringify(body),
   });
 
