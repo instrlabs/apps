@@ -1,6 +1,7 @@
 "use server"
 
 import React, { Suspense } from "react";
+import { cookies } from "next/headers";
 
 import { getProfile } from "@/services/auth";
 import { getProducts } from "@/services/images";
@@ -18,22 +19,24 @@ import OverlayRight from "@/components/layouts/overlay-right";
 export default async function SiteLayout({ children }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { data: profileData } = await getProfile();
-  const { data: productData } = await getProducts();
+  const cookieStore = await cookies();
 
-  if (!profileData?.user || !productData?.products) {
+  if (!cookieStore.has('AccessToken')) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <p className="text-lg font-semibold">Loading...</p>
+          <p className="text-lg font-semibold">Please login first</p>
         </div>
       </div>
     );
   }
 
+  const { data: profileData } = await getProfile();
+  const { data: productData } = await getProducts();
+
   return (
-    <ProfileProvider data={profileData.user}>
-    <ProductProvider data={productData.products}>
+    <ProfileProvider data={profileData!.user}>
+    <ProductProvider data={productData!.products}>
     <SSEProvider>
     <NotificationProvider>
     <ModalProvider>

@@ -1,13 +1,11 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { ResponseCookie, ResponseCookies } from "next/dist/compiled/@edge-runtime/cookies";
 import { info } from "@/utils/log";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function middleware(req: NextRequest) {
-  console.log("MIDDLEWARE: ", req.url, req.method, req.headers.get("Content-Type"))
   const apiUrl = process.env.GATEWAY_URL;
   const next = NextResponse.next({ request: req });
-  // next.headers.set("X-Testing", "testing")
-
 
   if (!req.nextUrl.pathname.startsWith("/login")) {
     const accessToken = req.cookies.get("AccessToken");
@@ -21,9 +19,11 @@ export async function middleware(req: NextRequest) {
     if (!accessToken && refreshToken) {
       info("trying to refresh token", req);
       const headers = req.headers;
+      headers.set("Content-Type", "application/json");
+      headers.set("X-User-Agent", req.headers.get("user-agent")!);
       const resRefresh = await fetch(`${apiUrl}/auth/refresh`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...headers }
+        headers: headers,
       });
 
       if (resRefresh.ok) {

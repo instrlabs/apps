@@ -13,7 +13,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/gofiber/fiber/v2/middleware/requestid"
 )
 
 var ErrForbiddenOrigin = errors.New("FORBIDDEN_ORIGIN")
@@ -30,20 +29,19 @@ func isAllowedOrigin(origin, allowlist string) bool {
 
 func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(helmet.New())
-	app.Use(requestid.New())
 	app.Use(recover.New())
+	app.Use(etag.New())
+	app.Use(compress.New())
 	app.Use(limiter.New(limiter.Config{
 		Max:        100,
 		Expiration: time.Duration(60) * time.Second,
 	}))
-	app.Use(etag.New())
-	app.Use(compress.New())
 
 	// CORS
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.Origins,
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
-		AllowHeaders:     "Origin, Content-Type, Cookie, Set-Cookie",
+		AllowHeaders:     "Content-Type, Cookie",
 		AllowCredentials: true,
 	}))
 
@@ -55,7 +53,9 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		}
 
 		if method == fiber.MethodPost || method == fiber.MethodPut || method == fiber.MethodPatch || method == fiber.MethodDelete {
-			origin := c.Get("Origin")
+			host := c.Get("X-Forwarded-Host")
+			scheme := c.Get("X-Forwarded-Proto")
+			origin := scheme + "://" + host
 			if !isAllowedOrigin(origin, cfg.Origins) && cfg.CSRFEnabled {
 				log.Warnf("CSRF protection: Forbidden origin: %s", origin)
 				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{

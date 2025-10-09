@@ -27,7 +27,7 @@ async function getHeaders(): Promise<Headers> {
   customHeaders.set("X-Forwarded-For", h.get("X-Forwarded-For")!);
   customHeaders.set("X-Forwarded-Host", h.get("X-Forwarded-Host")!);
   customHeaders.set("X-Forwarded-Proto", h.get("X-Forwarded-Proto")!);
-  customHeaders.set("X-Forwarded-Port", h.get("X-Forwarded-Port")!);
+  customHeaders.set("X-User-Agent", h.get("user-agent")!);
   customHeaders.set("Cookie", h.get("Cookie")!);
   return customHeaders;
 }
@@ -43,7 +43,7 @@ export async function fetchGET<T>(
 
   const res = await fetch(url, {
     method: "GET",
-    headers: await getHeaders()
+    headers: await getHeaders(),
   });
 
   const isOK = res.ok;
@@ -61,7 +61,6 @@ export async function fetchPOST<T>(
   path: string,
   body?: unknown
 ): Promise<ApiResponse<T>> {
-
   const url = process.env.GATEWAY_URL + path;
   const res = await fetch(url, {
     method: "POST",
@@ -120,6 +119,67 @@ export async function fetchPATCH<T>(
     method: "PATCH",
     headers: await getHeaders(),
     body: JSON.stringify(body),
+  });
+
+  const isOK = res.ok;
+  const resBody = await res.json();
+  return {
+    success: isOK,
+    message: resBody.message,
+    data: isOK ? resBody.data : null,
+    errors: !isOK ? resBody.errors : null,
+  };
+}
+
+export async function fetchGETBytes(
+  path: string
+): Promise<ApiResponse<ArrayBuffer>> {
+  const url = process.env.GATEWAY_URL + path;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: await getHeaders(),
+  });
+
+  const isOK = res.ok;
+
+  if (isOK) {
+    const data = await res.arrayBuffer();
+    return {
+      success: true,
+      message: "OK",
+      data,
+      errors: null,
+    };
+  } else {
+    let message = res.statusText;
+    let errors: FormErrors = null;
+    try {
+      const resBody = await res.json();
+      message = resBody.message ?? message;
+      errors = resBody.errors ?? null;
+    } catch {
+      // ignore parse error
+    }
+    return {
+      success: false,
+      message,
+      data: null,
+      errors,
+    };
+  }
+}
+
+export async function fetchPOSTFormData<T>(
+  path: string,
+  formData: FormData
+): Promise<ApiResponse<T>> {
+  const url = process.env.GATEWAY_URL + path;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: await getHeaders(),
+    body: formData,
   });
 
   const isOK = res.ok;
