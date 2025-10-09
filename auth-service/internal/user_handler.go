@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2/log"
 	"golang.org/x/crypto/bcrypt"
@@ -34,7 +35,6 @@ func NewUserHandler(cfg *Config, userRepo *UserRepository) *UserHandler {
 }
 
 func getCookieDomain(c *fiber.Ctx, defaultOrigin string) string {
-
 	origin := c.Get("X-Origin")
 	if origin == "" {
 		origin = defaultOrigin
@@ -170,6 +170,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	log.Info("Login: Setting access token cookie")
+	now := time.Now().UTC()
 	c.Cookie(&fiber.Cookie{
 		Domain:   getCookieDomain(c, h.cfg.WebUrl),
 		Name:     "AccessToken",
@@ -178,6 +179,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		SameSite: "None",
 		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
+		Expires:  now.Add(time.Duration(h.cfg.TokenExpiryHours) * time.Hour),
 		MaxAge:   h.cfg.TokenExpiryHours * 3600,
 	})
 
@@ -190,6 +192,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		SameSite: "None",
 		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
+		Expires:  now.Add(time.Duration(h.cfg.RefreshExpiryHours) * time.Hour),
 		MaxAge:   h.cfg.RefreshExpiryHours * 3600,
 	})
 
@@ -241,6 +244,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	}
 
 	log.Info("RefreshToken: Update access token cookie")
+	now := time.Now().UTC()
 	c.Cookie(&fiber.Cookie{
 		Domain:   getCookieDomain(c, h.cfg.WebUrl),
 		Name:     "AccessToken",
@@ -249,6 +253,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		SameSite: "None",
 		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
+		Expires:  now.Add(time.Duration(h.cfg.TokenExpiryHours) * time.Hour),
 		MaxAge:   h.cfg.TokenExpiryHours * 3600,
 	})
 
@@ -261,6 +266,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		SameSite: "None",
 		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
+		Expires:  now.Add(time.Duration(h.cfg.RefreshExpiryHours) * time.Hour),
 		MaxAge:   h.cfg.RefreshExpiryHours * 3600,
 	})
 
@@ -415,6 +421,8 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		})
 	}
 
+	log.Info("GoogleCallback: Setting access token cookie")
+	now := time.Now().UTC()
 	c.Cookie(&fiber.Cookie{
 		Domain:   getCookieDomain(c, h.cfg.WebUrl),
 		Name:     "AccessToken",
@@ -423,6 +431,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		SameSite: "None",
 		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
+		Expires:  now.Add(time.Duration(h.cfg.TokenExpiryHours) * time.Hour),
 		MaxAge:   h.cfg.TokenExpiryHours * 3600,
 	})
 
@@ -434,6 +443,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		SameSite: "None",
 		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
+		Expires:  now.Add(time.Duration(h.cfg.RefreshExpiryHours) * time.Hour),
 		MaxAge:   h.cfg.RefreshExpiryHours * 3600,
 	})
 
@@ -484,6 +494,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 		SameSite: "None",
 		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
+		Expires:  time.Unix(0, 0).UTC(),
 		MaxAge:   -1,
 	})
 
@@ -495,6 +506,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 		SameSite: "None",
 		Secure:   h.cfg.Environment == "production",
 		Path:     "/",
+		Expires:  time.Unix(0, 0).UTC(),
 		MaxAge:   -1,
 	})
 
