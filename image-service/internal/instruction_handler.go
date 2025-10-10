@@ -190,6 +190,7 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 	inName := "images/" + inputID.Hex() + ext
 	outName := "images/" + outputID.Hex() + ext
 
+	now := time.Now().UTC()
 	input := &File{
 		ID:            inputID,
 		InstructionID: instr.ID,
@@ -198,6 +199,8 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 		Size:          int64(len(b)),
 		Status:        FileStatusPending,
 		OutputID:      &outputID,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 
 	output := &File{
@@ -207,6 +210,8 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 		FileName:      outName,
 		Size:          0,
 		Status:        FileStatusPending,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 
 	if err := h.fileRepo.CreateMany([]*File{input, output}); err != nil {
@@ -344,12 +349,59 @@ func (h *InstructionHandler) publishFileNotification(userID, instrID primitive.O
 	}
 }
 
-func (h *InstructionHandler) CleanInstruction(c *fiber.Ctx) error {
-	log.Infof("CleanInstruction invoked")
+func (h *InstructionHandler) CleanInstruction() error {
+	cutoff := time.Now().Add(-1 * time.Hour)
+
+	files := h.fileRepo.ListOlderThan(cutoff)
+	if len(files) > 0 {
+		for _, f := range files {
+			if f.FileName == "" {
+				continue
+			}
+			if err := h.s3.Delete(f.FileName); err != nil {
+				log.Infof("CleanInstruction: failed to delete S3 object %s: %v", f.FileName, err)
+			}
+		}
+
+		ids := make([]primitive.ObjectID, 0, len(files))
+		for _, f := range files {
+			if !f.ID.IsZero() {
+				ids = append(ids, f.ID)
+			}
+		}
+		if err := h.fileRepo.MarkCleaned(ids); err != nil {
+			log.Infof("CleanInstruction: MarkCleaned failed for %d files: %v", len(ids), err)
+		}
+		log.Infof("CleanInstruction: marked cleaned %d files older than %s", len(ids), cutoff.UTC().Format(time.RFC3339))
+	} else {
+		log.Infof("CleanInstruction: no files older than %s", cutoff.UTC().Format(time.RFC3339))
+	}
+
+	stale := h.fileRepo.ListPendingUpdatedBefore(cutoff)
+	if len(stale) > 0 {
+		for _, f := range stale {
+			if f.FileName != "" {
+				if err := h.s3.Delete(f.FileName); err != nil {
+					log.Infof("CleanInstruction: failed to delete stale PENDING S3 object %s: %v", f.FileName, err)
+				}
+			}
+			_ = h.fileRepo.UpdateStatus(f.ID, FileStatusFailed)
+		}
+		ids := make([]primitive.ObjectID, 0, len(stale))
+		for _, f := range stale {
+			if !f.ID.IsZero() {
+				ids = append(ids, f.ID)
+			}
+		}
+		if err := h.fileRepo.MarkCleaned(ids); err != nil {
+			log.Infof("CleanInstruction: MarkCleaned failed for stale PENDING %d files: %v", len(ids), err)
+		}
+		log.Infof("CleanInstruction: marked FAILED and cleaned %d stale PENDING files (updated_at < %s)", len(ids), cutoff.UTC().Format(time.RFC3339))
+	}
+
 	return nil
 }
 
-// GetInstructionFileBytes finds a file by instructionId and fileId and returns its bytes
 func (h *InstructionHandler) GetInstructionFileBytes(c *fiber.Ctx) error {
 	instrIDHex := c.Params("id", "")
 	fileIDHex := c.Params("fileId", "")
@@ -371,7 +423,6 @@ func (h *InstructionHandler) GetInstructionFileBytes(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "instruction not found", "errors": nil, "data": nil})
 	}
 
-	// authorization: ensure the requester owns the instruction
 	localUserID, _ := c.Locals("UserID").(string)
 	userID, _ := primitive.ObjectIDFromHex(localUserID)
 	if instr.UserID != userID {

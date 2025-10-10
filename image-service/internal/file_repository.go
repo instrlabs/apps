@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"time"
 
 	"github.com/gofiber/fiber/v2/log"
 	initx "github.com/instrlabs/shared/init"
@@ -50,16 +51,6 @@ func (r *FileRepository) CreateMany(files []*File) error {
 	return err
 }
 
-func (r *FileRepository) CreateOne(f *File) error {
-	_, err := r.collection.InsertOne(context.Background(), f)
-	if err != nil {
-		log.Infof("file_repository.CreateOne: InsertOne failed: %v", err)
-		return err
-	}
-
-	return nil
-}
-
 func (r *FileRepository) ListByInstruction(instrID primitive.ObjectID) []File {
 	ctx := context.Background()
 	cur, err := r.collection.Find(ctx, bson.M{"instruction_id": instrID})
@@ -84,7 +75,8 @@ func (r *FileRepository) ListByInstruction(instrID primitive.ObjectID) []File {
 func (r *FileRepository) UpdateStatus(id primitive.ObjectID, st FileStatus) error {
 	_, err := r.collection.UpdateByID(context.Background(), id, bson.M{
 		"$set": bson.M{
-			"status": st,
+			"status":     st,
+			"updated_at": time.Now().UTC(),
 		},
 	})
 	if err != nil {
@@ -93,16 +85,89 @@ func (r *FileRepository) UpdateStatus(id primitive.ObjectID, st FileStatus) erro
 	return err
 }
 
-// UpdateStatusAndSize updates both the status and size fields for a file in a single operation.
 func (r *FileRepository) UpdateStatusAndSize(id primitive.ObjectID, st FileStatus, size int64) error {
 	_, err := r.collection.UpdateByID(context.Background(), id, bson.M{
 		"$set": bson.M{
-			"status": st,
-			"size":   size,
+			"status":     st,
+			"size":       size,
+			"updated_at": time.Now().UTC(),
 		},
 	})
 	if err != nil {
 		log.Infof("file_repository.UpdateStatusAndSize: UpdateByID failed for id=%s status=%v size=%d: %v", id.Hex(), st, size, err)
+	}
+	return err
+}
+
+func (r *FileRepository) ListOlderThan(before time.Time) []File {
+	ctx := context.Background()
+	filter := bson.M{
+		"created_at": bson.M{"$lt": before},
+		"is_cleaned": bson.M{"$ne": true},
+	}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		log.Infof("file_repository.ListOlderThan: Find failed for before=%s: %v", before.UTC().Format(time.RFC3339), err)
+		return []File{}
+	}
+	defer cur.Close(ctx)
+
+	var out []File
+	for cur.Next(ctx) {
+		var f File
+		if err := cur.Decode(&f); err != nil {
+			log.Infof("file_repository.ListOlderThan: cursor decode failed: %v", err)
+			continue
+		}
+		out = append(out, f)
+	}
+	return out
+}
+
+func (r *FileRepository) DeleteMany(ids []primitive.ObjectID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	_, err := r.collection.DeleteMany(context.Background(), bson.M{"_id": bson.M{"$in": ids}})
+	if err != nil {
+		log.Infof("file_repository.DeleteMany: DeleteMany failed for count=%d: %v", len(ids), err)
+	}
+	return err
+}
+
+func (r *FileRepository) ListPendingUpdatedBefore(before time.Time) []File {
+	ctx := context.Background()
+	filter := bson.M{
+		"status":     FileStatusPending,
+		"updated_at": bson.M{"$lt": before},
+		"is_cleaned": bson.M{"$ne": true},
+	}
+	cur, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		log.Infof("file_repository.ListPendingUpdatedBefore: Find failed for before=%s: %v", before.UTC().Format(time.RFC3339), err)
+		return []File{}
+	}
+	defer cur.Close(ctx)
+
+	var out []File
+	for cur.Next(ctx) {
+		var f File
+		if err := cur.Decode(&f); err != nil {
+			log.Infof("file_repository.ListPendingUpdatedBefore: cursor decode failed: %v", err)
+			continue
+		}
+		out = append(out, f)
+	}
+	return out
+}
+
+func (r *FileRepository) MarkCleaned(ids []primitive.ObjectID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	_, err := r.collection.UpdateMany(context.Background(), bson.M{"_id": bson.M{"$in": ids}}, bson.M{"$set": bson.M{"is_cleaned": true}})
+	if err != nil {
+		log.Infof("file_repository.MarkCleaned: UpdateMany failed for count=%d: %v", len(ids), err)
 	}
 	return err
 }
