@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"net/url"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2/log"
@@ -32,31 +30,6 @@ func NewUserHandler(cfg *Config, userRepo *UserRepository) *UserHandler {
 		cfg:      cfg,
 		userRepo: userRepo,
 	}
-}
-
-func getCookieDomain(c *fiber.Ctx, defaultOrigin string) string {
-	origin := c.Get("X-Origin")
-	if origin == "" {
-		origin = defaultOrigin
-	}
-
-	u, _ := url.Parse(origin)
-	hostname := u.Hostname()
-
-	if hostname == "localhost" || hostname == "" {
-		log.Info("getCookieDomain: Using localhost domain")
-		return "localhost"
-	}
-
-	parts := strings.Split(hostname, ".")
-	if len(parts) >= 2 {
-		domain := "." + strings.Join(parts[len(parts)-2:], ".")
-		log.Infof("getCookieDomain: Using domain: %s", domain)
-		return domain
-	}
-
-	log.Infof("getCookieDomain: Using hostname as domain: %s", hostname)
-	return hostname
 }
 
 func generateSixDigitPIN() string {
@@ -169,11 +142,14 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Info("Login: Setting access token cookie")
 	now := time.Now().UTC()
+	origin := c.Get("x-user-origin")
+	domain := "." + origin
+
+	log.Info("Login: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c, h.cfg.WebUrl),
-		Name:     "AccessToken",
+		Domain:   domain,
+		Name:     "access_token",
 		Value:    accessToken,
 		HTTPOnly: true,
 		SameSite: "None",
@@ -185,8 +161,8 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 
 	log.Info("Login: Setting refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c, h.cfg.WebUrl),
-		Name:     "RefreshToken",
+		Domain:   domain,
+		Name:     "refresh_token",
 		Value:    refreshToken,
 		HTTPOnly: true,
 		SameSite: "None",
@@ -207,7 +183,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	log.Info("RefreshToken: Processing token refresh request")
 
-	refreshToken := c.Get("X-User-Refresh")
+	refreshToken := c.Get("x-user-refresh")
 	log.Infof("RefreshToken: Refresh token: %s", refreshToken)
 	user := h.userRepo.FindByRefreshToken(refreshToken)
 	if user == nil || user.ID.IsZero() {
@@ -243,11 +219,14 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Info("RefreshToken: Update access token cookie")
 	now := time.Now().UTC()
+	origin := c.Get("x-user-origin")
+	domain := "." + origin
+
+	log.Info("RefreshToken: Update access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c, h.cfg.WebUrl),
-		Name:     "AccessToken",
+		Domain:   domain,
+		Name:     "access_token",
 		Value:    newAccessToken,
 		HTTPOnly: true,
 		SameSite: "None",
@@ -259,8 +238,8 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 
 	log.Info("RefreshToken: Setting new refresh token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c, h.cfg.WebUrl),
-		Name:     "RefreshToken",
+		Domain:   domain,
+		Name:     "refresh_token",
 		Value:    newRefreshToken,
 		HTTPOnly: true,
 		SameSite: "None",
@@ -421,11 +400,14 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Info("GoogleCallback: Setting access token cookie")
 	now := time.Now().UTC()
+	origin := c.Get("x-user-origin")
+	domain := "." + origin
+
+	log.Info("GoogleCallback: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c, h.cfg.WebUrl),
-		Name:     "AccessToken",
+		Domain:   domain,
+		Name:     "access_token",
 		Value:    accessToken,
 		HTTPOnly: true,
 		SameSite: "None",
@@ -436,8 +418,8 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	})
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c, h.cfg.WebUrl),
-		Name:     "RefreshToken",
+		Domain:   domain,
+		Name:     "refresh_token",
 		Value:    refreshToken,
 		HTTPOnly: true,
 		SameSite: "None",
@@ -452,12 +434,12 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
-	log.Info("GetProfile: Processing profile request using Locals UserID")
+	log.Info("GetProfile: Processing profile request using locals.userId")
 
-	userID, _ := c.Locals("UserID").(string)
-	user := h.userRepo.FindByID(userID)
+	userId, _ := c.Locals("userId").(string)
+	user := h.userRepo.FindByID(userId)
 	if user == nil || user.ID.IsZero() {
-		log.Infof("GetProfile: User not found for UserID %s", userID)
+		log.Infof("GetProfile: User not found for userId %s", userId)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrUserNotFound,
 			"errors":  nil,
@@ -476,8 +458,8 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 func (h *UserHandler) Logout(c *fiber.Ctx) error {
 	log.Info("Logout: Processing logout request using Locals UserID")
 
-	userID, _ := c.Locals("UserID").(string)
-	if err := h.userRepo.ClearRefreshToken(userID); err != nil {
+	userId, _ := c.Locals("userId").(string)
+	if err := h.userRepo.ClearRefreshToken(userId); err != nil {
 		log.Errorf("Logout: Failed to logout user: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to logout user",
@@ -486,9 +468,12 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 		})
 	}
 
+	origin := c.Get("x-user-origin")
+	domain := "." + origin
+
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c, h.cfg.WebUrl),
-		Name:     "AccessToken",
+		Domain:   domain,
+		Name:     "access_token",
 		Value:    "",
 		HTTPOnly: true,
 		SameSite: "None",
@@ -499,8 +484,8 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 	})
 
 	c.Cookie(&fiber.Cookie{
-		Domain:   getCookieDomain(c, h.cfg.WebUrl),
-		Name:     "RefreshToken",
+		Domain:   domain,
+		Name:     "refresh_token",
 		Value:    "",
 		HTTPOnly: true,
 		SameSite: "None",
@@ -510,7 +495,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 		MaxAge:   -1,
 	})
 
-	log.Infof("Logout: User logged out successfully: %s", userID)
+	log.Infof("Logout: User logged out successfully: %s", userId)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Logout successful",
 		"errors":  nil,

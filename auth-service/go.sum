@@ -32,6 +32,8 @@ github.com/instrlabs/shared v0.0.6 h1:qEzbgRUnSORsHqoUCsz3JUva0MwjcOJvgi2sp6ckJs
 github.com/instrlabs/shared v0.0.6/go.mod h1:PltjoLcxDpx+ke7D3nvwxj6kF0ut9plj7o9g5QlA32k=
 github.com/instrlabs/shared v0.0.7 h1:ww5Pr2FincqsL8NcRHMPqUJmBQQYnmJpyqnwzjAWp2c=
 github.com/instrlabs/shared v0.0.7/go.mod h1:PltjoLcxDpx+ke7D3nvwxj6kF0ut9plj7o9g5QlA32k=
+github.com/instrlabs/shared v0.0.9 h1:ngnMnS5rtuNfB058dlfUJONZeIqNmhc+Fw8QwxWWx0c=
+github.com/instrlabs/shared v0.0.9/go.mod h1:PltjoLcxDpx+ke7D3nvwxj6kF0ut9plj7o9g5QlA32k=
 github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
 github.com/joho/godotenv v1.5.1/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=
 github.com/klauspost/compress v1.18.0 h1:c/Cqfb0r+Yi+JtIEq73FWXVkRonBlf0CRNYc8Zttxdo=

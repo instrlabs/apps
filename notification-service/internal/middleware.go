@@ -19,39 +19,34 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(helmet.New())
 	app.Use(requestid.New())
 	app.Use(recover.New())
+	app.Use(compress.New())
 	app.Use(limiter.New(limiter.Config{
 		Max:        100,
 		Expiration: time.Duration(60) * time.Second,
 	}))
-	app.Use(compress.New())
 
 	// CORS
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.Origins,
 		AllowMethods:     "GET, OPTIONS",
-		AllowHeaders:     "Origin, Content-Type, Cookie, Set-Cookie",
+		AllowHeaders:     "content-type, cookie",
 		AllowCredentials: true,
 	}))
 
 	// AUTH
 	app.Use(func(c *fiber.Ctx) error {
-		host := c.Get("X-Forwarded-Host")
-		scheme := c.Get("X-Forwarded-Proto")
-		origin := scheme + "://" + host
-		accessToken := c.Cookies("AccessToken")
+		accessToken := c.Cookies("access_token")
 
-		c.Request().Header.Del("Cookie")
-		c.Request().Header.Del("X-Authenticated")
-		c.Request().Header.Del("X-User-Id")
-		c.Request().Header.Del("X-User-Roles")
-		c.Request().Header.Del("X-Origin")
+		c.Request().Header.Del("cookie")
+		c.Request().Header.Del("x-authenticated")
+		c.Request().Header.Del("x-user-id")
+		c.Request().Header.Del("x-user-roles")
 
 		if accessToken != "" {
 			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
-				c.Request().Header.Set("X-Authenticated", "true")
-				c.Request().Header.Set("X-User-Id", info.UserID)
-				c.Request().Header.Set("X-User-Roles", strings.Join(info.Roles, ","))
-				c.Request().Header.Set("X-Origin", origin)
+				c.Request().Header.Set("x-authenticated", "true")
+				c.Request().Header.Set("x-user-id", info.UserID)
+				c.Request().Header.Set("x-user-roles", strings.Join(info.Roles, ","))
 			} else {
 				log.Warnf("ExtractTokenInfo: Failed to extract token info: %v", err)
 				if !errors.Is(err, ErrTokenEmpty) {
@@ -62,7 +57,7 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 					})
 				}
 
-				c.Request().Header.Set("X-Authenticated", "false")
+				c.Request().Header.Set("x-authenticated", "false")
 			}
 		}
 

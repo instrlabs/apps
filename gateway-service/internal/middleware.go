@@ -41,7 +41,7 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.Origins,
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
-		AllowHeaders:     "Content-Type, Cookie",
+		AllowHeaders:     "content-type, cookie",
 		AllowCredentials: true,
 	}))
 
@@ -53,9 +53,7 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		}
 
 		if method == fiber.MethodPost || method == fiber.MethodPut || method == fiber.MethodPatch || method == fiber.MethodDelete {
-			host := c.Get("X-Forwarded-Host")
-			scheme := c.Get("X-Forwarded-Proto")
-			origin := scheme + "://" + host
+			origin := c.Get("x-user-origin")
 			if !isAllowedOrigin(origin, cfg.Origins) && cfg.CSRFEnabled {
 				log.Warnf("CSRF protection: Forbidden origin: %s", origin)
 				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
@@ -71,24 +69,19 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 
 	// AUTH
 	app.Use(func(c *fiber.Ctx) error {
-		host := c.Get("X-Forwarded-Host")
-		scheme := c.Get("X-Forwarded-Proto")
-		origin := scheme + "://" + host
-		accessToken := c.Cookies("AccessToken")
-		refreshToken := c.Cookies("RefreshToken")
+		accessToken := c.Cookies("access_token")
+		refreshToken := c.Cookies("refresh_token")
 
-		c.Request().Header.Del("Cookie")
-		c.Request().Header.Del("X-Authenticated")
-		c.Request().Header.Del("X-User-Id")
-		c.Request().Header.Del("X-User-Roles")
-		c.Request().Header.Del("X-Origin")
+		c.Request().Header.Del("cookie")
+		c.Request().Header.Del("x-authenticated")
+		c.Request().Header.Del("x-user-id")
+		c.Request().Header.Del("x-user-roles")
 
 		if accessToken != "" {
 			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
-				c.Request().Header.Set("X-Authenticated", "true")
-				c.Request().Header.Set("X-User-Id", info.UserID)
-				c.Request().Header.Set("X-User-Roles", strings.Join(info.Roles, ","))
-				c.Request().Header.Set("X-Origin", origin)
+				c.Request().Header.Set("x-authenticated", "true")
+				c.Request().Header.Set("x-user-id", info.UserID)
+				c.Request().Header.Set("x-user-roles", strings.Join(info.Roles, ","))
 			} else {
 				log.Warnf("ExtractTokenInfo: Failed to extract token info: %v", err)
 				if !errors.Is(err, ErrTokenEmpty) {
@@ -99,15 +92,15 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 					})
 				}
 
-				c.Request().Header.Set("X-Authenticated", "false")
+				c.Request().Header.Set("x-authenticated", "false")
 			}
 		}
 
 		if refreshToken != "" && c.Path() == "/auth/refresh" {
-			c.Request().Header.Set("X-User-Refresh", refreshToken)
+			c.Request().Header.Set("x-user-refresh", refreshToken)
 		}
 
-		c.Request().Header.Set("X-Gateway", "true")
+		c.Request().Header.Set("x-gateway", "true")
 
 		return c.Next()
 	})

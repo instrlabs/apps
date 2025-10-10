@@ -54,7 +54,7 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 		})
 	}
 
-	userID, _ := c.Locals("UserID").(string)
+	userID, _ := c.Locals("userId").(string)
 	product, _ := h.productRepo.FindByKey(body.ProductKey)
 	if product == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -139,7 +139,7 @@ func (h *InstructionHandler) GetInstructionDetails(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "instruction not found", "errors": nil, "data": nil})
 	}
 
-	localUserID, _ := c.Locals("UserID").(string)
+	localUserID, _ := c.Locals("userId").(string)
 	userID, _ := primitive.ObjectIDFromHex(localUserID)
 	if instr.UserID != userID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden", "errors": nil, "data": nil})
@@ -168,7 +168,7 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "instruction not found", "errors": nil, "data": nil})
 	}
 
-	localUserID, _ := c.Locals("UserID").(string)
+	localUserID, _ := c.Locals("userId").(string)
 	userID, _ := primitive.ObjectIDFromHex(localUserID)
 	if instr.UserID != userID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden", "errors": nil, "data": nil})
@@ -423,7 +423,7 @@ func (h *InstructionHandler) GetInstructionFileBytes(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "instruction not found", "errors": nil, "data": nil})
 	}
 
-	localUserID, _ := c.Locals("UserID").(string)
+	localUserID, _ := c.Locals("userId").(string)
 	userID, _ := primitive.ObjectIDFromHex(localUserID)
 	if instr.UserID != userID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden", "errors": nil, "data": nil})
@@ -439,7 +439,7 @@ func (h *InstructionHandler) GetInstructionFileBytes(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "file blob not found", "errors": nil, "data": nil})
 	}
 
-	c.Set("Content-Type", "application/octet-stream")
-	c.Set("Content-Disposition", "attachment; filename="+filepath.Base(f.FileName))
+	c.Set("content-type", "application/octet-stream")
+	c.Set("content-disposition", "attachment; filename="+filepath.Base(f.FileName))
 	return c.Status(fiber.StatusOK).Send(b)
 }

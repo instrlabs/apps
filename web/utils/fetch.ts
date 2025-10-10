@@ -23,11 +23,16 @@ const REFRESH_TOKEN = "RefreshToken";
 async function getHeaders(): Promise<Headers> {
   const h = await headers();
   const customHeaders = new Headers();
-  customHeaders.set("X-Forwarded-For", h.get("X-Forwarded-For")!);
-  customHeaders.set("X-Forwarded-Host", h.get("X-Forwarded-Host")!);
-  customHeaders.set("X-Forwarded-Proto", h.get("X-Forwarded-Proto")!);
-  customHeaders.set("X-User-Agent", h.get("user-agent")!);
-  customHeaders.set("Cookie", h.get("Cookie")!);
+  customHeaders.set("x-user-ip", h.get("x-user-ip")!);
+  customHeaders.set("x-user-agent", h.get("x-user-agent")!);
+  customHeaders.set("x-user-host", h.get("x-user-host")!);
+  customHeaders.set("x-user-origin", h.get("x-user-origin")!);
+
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("access_token");
+  const refreshToken = cookieStore.get("refresh_token");
+  customHeaders.set("cookie", "access_token=" + accessToken + "; refresh_token=" + refreshToken + ";");
+
   return customHeaders;
 }
 
@@ -41,7 +46,7 @@ export async function fetchGET<T>(
   if (queries) url += "?" + params.toString();
 
   const headers = await getHeaders();
-  headers.set("Content-Type", "application/json");
+  headers.set("content-type", "application/json");
   const res = await fetch(url, {
     method: "GET",
     headers: headers,
@@ -65,7 +70,7 @@ export async function fetchPOST<T>(
   const url = process.env.GATEWAY_URL + path;
 
   const headers = await getHeaders();
-  headers.set("Content-Type", "application/json");
+  headers.set("content-type", "application/json");
   const res = await fetch(url, {
     method: "POST",
     headers: headers,
@@ -98,7 +103,7 @@ export async function fetchPUT<T>(
   const url = process.env.GATEWAY_URL + path;
 
   const headers = await getHeaders();
-  headers.set("Content-Type", "application/json");
+  headers.set("content-type", "application/json");
   const res = await fetch(url, {
     method: "PUT",
     headers: headers,
@@ -122,7 +127,7 @@ export async function fetchPATCH<T>(
   const url = process.env.GATEWAY_URL + path;
 
   const headers = await getHeaders();
-  headers.set("Content-Type", "application/json");
+  headers.set("content-type", "application/json");
   const res = await fetch(url, {
     method: "PATCH",
     headers: headers,

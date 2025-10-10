@@ -50,10 +50,10 @@ func NewSSEService(cfg *Config) *SSEService {
 }
 
 func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
-	userId := c.Locals("UserID").(string)
-	c.Set("Content-Type", "text/event-stream")
-	c.Set("Cache-Control", "no-cache")
-	c.Set("Connection", "keep-alive")
+	userId := c.Locals("userId").(string)
+	c.Set("content-type", "text/event-stream")
+	c.Set("cache-control", "no-cache")
+	c.Set("connection", "keep-alive")
 
 	messageChan := make(chan []byte, 16)
 	doneChan := make(chan bool)
