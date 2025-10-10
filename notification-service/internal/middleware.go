@@ -35,7 +35,9 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 
 	// AUTH
 	app.Use(func(c *fiber.Ctx) error {
-		origin := c.Get("Origin")
+		host := c.Get("X-Forwarded-Host")
+		scheme := c.Get("X-Forwarded-Proto")
+		origin := scheme + "://" + host
 		accessToken := c.Cookies("AccessToken")
 
 		c.Request().Header.Del("Cookie")
