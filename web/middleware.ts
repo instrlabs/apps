@@ -8,20 +8,15 @@ export async function middleware(req: NextRequest) {
   headers.set("x-user-ip", req.headers.get("x-forwarded-for")!);
   headers.set("x-user-agent", req.headers.get("user-agent")!);
   const forwardedHost = req.headers.get("x-forwarded-host")!;
-  const hostWithoutPort = forwardedHost.split(":")[0];
-  const domainParts = hostWithoutPort.split(".");
-  const mainDomain = domainParts.length > 2 ? domainParts.slice(-2).join(".") : hostWithoutPort;
   headers.set("x-user-host", forwardedHost);
-  headers.set("x-user-origin", mainDomain);
-
-  const accessToken = req.cookies.get("access_token");
-  const refreshToken = req.cookies.get("refresh_token")
-  headers.set("cookie", "access_token=" + accessToken + "; refresh_token=" + refreshToken + ";");
-
+  const forwardedProto = req.headers.get("x-forwarded-proto")!;
+  headers.set("x-user-origin", forwardedProto + "://" + forwardedHost);
+  headers.set("cookie", req.headers.get("cookie")!);
   const next = NextResponse.next({ headers });
 
-
   if (!req.nextUrl.pathname.startsWith("/login")) {
+    const accessToken = req.cookies.get("access_token");
+    const refreshToken = req.cookies.get("refresh_token");
     if (!accessToken && !refreshToken) {
       info("redirect to /login", req);
       return NextResponse.redirect(new URL("/login", req.url));
@@ -32,17 +27,17 @@ export async function middleware(req: NextRequest) {
 
       try {
         headers.set("content-type", "application/json");
-        const resRefresh = await fetch(`${apiUrl}/auth/refresh`, {
+        const res = await fetch(`${apiUrl}/auth/refresh`, {
           method: "POST",
           headers: headers,
         });
 
-        if (resRefresh.ok) {
+        if (res.ok) {
           info("successfully refreshed token", req);
-          const reqSetCookie = new ResponseCookies(resRefresh.headers);
+          const reqSetCookie = new ResponseCookies(res.headers);
           const storeCookie = next.cookies;
-          storeCookie.set(reqSetCookie.get("AccessToken") as ResponseCookie);
-          storeCookie.set(reqSetCookie.get("RefreshToken") as ResponseCookie);
+          storeCookie.set(reqSetCookie.get("access_token") as ResponseCookie);
+          storeCookie.set(reqSetCookie.get("refresh_token") as ResponseCookie);
         } else {
           info("failed to refresh token", req);
           return NextResponse.redirect(new URL("/login", req.url));

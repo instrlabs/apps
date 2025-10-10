@@ -143,8 +143,12 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	now := time.Now().UTC()
-	origin := c.Get("x-user-origin")
-	domain := "." + origin
+	var domain string
+	if h.cfg.Environment == "production" {
+		domain = ".arthadede.com"
+	} else {
+		domain = ".localhost"
+	}
 
 	log.Info("Login: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
@@ -220,8 +224,12 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	}
 
 	now := time.Now().UTC()
-	origin := c.Get("x-user-origin")
-	domain := "." + origin
+	var domain string
+	if h.cfg.Environment == "production" {
+		domain = ".arthadede.com"
+	} else {
+		domain = ".localhost"
+	}
 
 	log.Info("RefreshToken: Update access token cookie")
 	c.Cookie(&fiber.Cookie{
@@ -401,8 +409,12 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	}
 
 	now := time.Now().UTC()
-	origin := c.Get("x-user-origin")
-	domain := "." + origin
+	var domain string
+	if h.cfg.Environment == "production" {
+		domain = ".arthadede.com"
+	} else {
+		domain = ".localhost"
+	}
 
 	log.Info("GoogleCallback: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
@@ -468,8 +480,12 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 		})
 	}
 
-	origin := c.Get("x-user-origin")
-	domain := "." + origin
+	var domain string
+	if h.cfg.Environment == "production" {
+		domain = ".arthadede.com"
+	} else {
+		domain = ".localhost"
+	}
 
 	c.Cookie(&fiber.Cookie{
 		Domain:   domain,

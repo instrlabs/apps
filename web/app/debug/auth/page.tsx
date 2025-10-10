@@ -5,8 +5,8 @@ import AuthAction from "@/app/debug/auth/AuthAction";
 
 export default async function DebugAuthPage() {
   const cookieStore = await cookies();
-  const accessToken = cookieStore.get('AccessToken');
-  const refreshToken = cookieStore.get('RefreshToken');
+  const accessToken = cookieStore.get('access_token');
+  const refreshToken = cookieStore.get('refresh_token');
 
   return (
     <div className="flex flex-col gap-4 w-lg mx-auto my-10">

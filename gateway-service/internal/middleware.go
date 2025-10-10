@@ -76,7 +76,6 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		c.Request().Header.Del("x-authenticated")
 		c.Request().Header.Del("x-user-id")
 		c.Request().Header.Del("x-user-roles")
-
 		if accessToken != "" {
 			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
 				c.Request().Header.Set("x-authenticated", "true")

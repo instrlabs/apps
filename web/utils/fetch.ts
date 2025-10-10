@@ -17,8 +17,8 @@ export type FormErrors = {
 
 export type EmptyBody = Record<string, unknown>;
 
-const ACCESS_TOKEN = "AccessToken";
-const REFRESH_TOKEN = "RefreshToken";
+const ACCESS_TOKEN = "access_token";
+const REFRESH_TOKEN = "refresh_token";
 
 async function getHeaders(): Promise<Headers> {
   const h = await headers();
@@ -27,11 +27,7 @@ async function getHeaders(): Promise<Headers> {
   customHeaders.set("x-user-agent", h.get("x-user-agent")!);
   customHeaders.set("x-user-host", h.get("x-user-host")!);
   customHeaders.set("x-user-origin", h.get("x-user-origin")!);
-
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("access_token");
-  const refreshToken = cookieStore.get("refresh_token");
-  customHeaders.set("cookie", "access_token=" + accessToken + "; refresh_token=" + refreshToken + ";");
+  customHeaders.set("cookie", h.get("cookie")!);
 
   return customHeaders;
 }

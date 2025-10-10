@@ -33,8 +33,8 @@ export async function refresh() {
 export async function logout() {
   await fetchPOST<EmptyBody>(`${API_AUTH}/logout`, {});
   const storeCookie = await cookies();
-  storeCookie.delete("AccessToken");
-  storeCookie.delete("RefreshToken");
+  storeCookie.delete("access_token");
+  storeCookie.delete("refresh_token");
   redirect("/login")
 }
 

@@ -21,7 +21,7 @@ export default async function SiteLayout({ children }: Readonly<{
 }>) {
   const cookieStore = await cookies();
 
-  if (!cookieStore.has('AccessToken')) {
+  if (!cookieStore.has('access_token')) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
