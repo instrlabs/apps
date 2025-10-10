@@ -92,11 +92,20 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 }
 
 func (h *InstructionHandler) ListInstructions(c *fiber.Ctx) error {
+	instructions, err := h.instrRepo.ListLatest(10)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "failed to list instructions",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "ok",
 		"errors":  nil,
 		"data": map[string]interface{}{
-			"instructions": []Instruction{},
+			"instructions": instructions,
 		},
 	})
 }
