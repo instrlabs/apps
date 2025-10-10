@@ -1,6 +1,10 @@
 package internal
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type File struct {
 	ID            primitive.ObjectID  `json:"id" bson:"_id,omitempty"`
@@ -10,4 +14,7 @@ type File struct {
 	Size          int64               `json:"size" bson:"size"`
 	Status        FileStatus          `json:"status" bson:"status"`
 	OutputID      *primitive.ObjectID `json:"output_id,omitempty" bson:"output_id,omitempty"`
+	CreatedAt     time.Time           `json:"created_at" bson:"created_at"`
+	UpdatedAt     time.Time           `json:"updated_at" bson:"updated_at"`
+	IsCleaned     bool                `json:"is_cleaned" bson:"is_cleaned"`
 }

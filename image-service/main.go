@@ -50,10 +50,13 @@ func main() {
 	})
 
 	go func() {
-		ticker := time.NewTicker(1 * time.Hour)
+		ticker := time.NewTicker(30 * time.Minute)
 		defer ticker.Stop()
 		for range ticker.C {
-			_ = instrHandler.CleanInstruction(nil)
+			err := instrHandler.CleanInstruction()
+			if err != nil {
+				log.Errorf("CleanInstruction: %v", err)
+			}
 		}
 	}()
 
