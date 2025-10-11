@@ -13,6 +13,7 @@ func main() {
 	app := fiber.New(fiber.Config{})
 
 	initx.SetupLogger(app)
+	initx.SetupPrometheus(app)
 	internal.SetupMiddleware(app, cfg)
 	internal.SetupGatewaySwaggerUI(app)
 	internal.SetupGatewayRoutes(app, cfg)
