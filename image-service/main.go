@@ -31,10 +31,11 @@ func main() {
 	defer nats.Close()
 
 	app := fiber.New(fiber.Config{})
+
+	initx.SetupPrometheus(app)
 	initx.SetupLogger(app)
 	initx.SetupServiceSwagger(app)
 	initx.SetupServiceHealth(app)
-	initx.SetupPrometheus(app)
 	initx.SetupAuthenticated(app, []string{})
 
 	productRepo := internal.NewProductRepository(mongo)

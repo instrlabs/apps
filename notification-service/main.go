@@ -21,10 +21,12 @@ func main() {
 	})
 
 	app := fiber.New(fiber.Config{})
+
+	initx.SetupPrometheus(app)
+	initx.SetupServiceHealth(app)
 	initx.SetupLogger(app)
 	internal.SetupMiddleware(app, cfg)
-	initx.SetupServiceHealth(app)
-	initx.SetupPrometheus(app)
+	//internal.SetupGatewaySwaggerUI(app)
 	initx.SetupAuthenticated(app, []string{})
 
 	app.Get("/sse", sseService.HandleSSE)
