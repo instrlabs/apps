@@ -444,3 +444,14 @@ func (h *InstructionHandler) GetInstructionFileBytes(c *fiber.Ctx) error {
 	c.Set("content-disposition", "attachment; filename="+filepath.Base(f.FileName))
 	return c.Status(fiber.StatusOK).Send(b)
 }
+
+func (h *InstructionHandler) ListUncleanedFiles(c *fiber.Ctx) error {
+	files := h.fileRepo.ListUncleaned()
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "ok",
+		"errors":  nil,
+		"data": fiber.Map{
+			"files": files,
+		},
+	})
+}

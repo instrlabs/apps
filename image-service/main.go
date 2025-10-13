@@ -70,6 +70,8 @@ func main() {
 	app.Get("/instructions/:id/details", instrHandler.GetInstructionDetails)
 	app.Get("/instructions/:id/details/:fileId", instrHandler.GetInstructionFileBytes)
 
+	app.Get("/files", instrHandler.ListUncleanedFiles)
+
 	app.Get("/products", productHandler.ListProducts)
 
 	log.Fatal(app.Listen(cfg.Port))

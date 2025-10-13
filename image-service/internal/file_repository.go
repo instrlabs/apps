@@ -16,6 +16,27 @@ type FileRepository struct {
 	collection *mongo.Collection
 }
 
+func (r *FileRepository) ListUncleaned() []File {
+	ctx := context.Background()
+	cur, err := r.collection.Find(ctx, bson.M{"is_cleaned": false})
+	if err != nil {
+		log.Infof("file_repository.ListUncleaned: Find failed: %v", err)
+		return []File{}
+	}
+	defer cur.Close(ctx)
+
+	var out []File
+	for cur.Next(ctx) {
+		var f File
+		if err := cur.Decode(&f); err != nil {
+			log.Infof("file_repository.ListUncleaned: cursor decode failed: %v", err)
+			continue
+		}
+		out = append(out, f)
+	}
+	return out
+}
+
 func (r *FileRepository) GetByID(id primitive.ObjectID) *File {
 	ctx := context.Background()
 	var f File
