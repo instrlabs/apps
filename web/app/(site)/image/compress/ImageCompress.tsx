@@ -141,7 +141,7 @@ export default function ImageCompress() {
   const showFinalActions = progress === 'UPLOADED' && ((!instruction && hasFailure) || (instruction && (anyFailed || allDone)));
 
   return (
-    <div className="flex h-full w-full flex-row gap-4 px-4 pb-4">
+    <div className="flex h-full w-full flex-row gap-4">
       <div className="flex h-full flex-1 flex-col gap-4">
         <div className="flex flex-col gap-2">
           <h4 className="text-sm">Image Compress</h4>

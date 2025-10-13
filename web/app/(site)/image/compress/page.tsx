@@ -1,22 +1,17 @@
 import type { Metadata } from "next";
 import ImageCompress from "@/app/(site)/image/compress/ImageCompress";
-import { getImageInstructions } from "@/services/images";
-import { redirect } from "next/navigation";
+import History from "@/app/(site)/image/compress/History";
 
 export const metadata: Metadata = {
   title: "Image Compress - Labs",
   description: "",
 };
 
-export default async function ImageCompressPage() {
-  const { success, data } = await getImageInstructions();
-
-  if (!success) redirect("/")
-
+export default function ImageCompressPage() {
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <p>{JSON.stringify(data!.instructions)}</p>
+    <div className="flex flex-row gap-4 p-4">
+      <History />
       <ImageCompress />
     </div>
-  )
+  );
 }
