@@ -10,7 +10,7 @@ export default function ListProduct() {
       <h4 className="mb-4">
         Image Tools
       </h4>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {productsByType['image']?.map((product) => (
           <Link
             key={product.key}
