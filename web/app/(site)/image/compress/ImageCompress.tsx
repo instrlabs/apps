@@ -4,10 +4,10 @@ import {useCallback, useEffect, useMemo, useState} from "react"
 import FileDropzone from "@/components/inputs/file-dropzone";
 import Button from "@/components/actions/button";
 import {
-  createInstruction,
+  createImageInstruction,
   Instruction,
   InstructionFile,
-  createInstructionDetails, getInstructionDetails
+  createImageInstructionDetails, getImageInstructionDetails
 } from "@/services/images";
 import useNotification from "@/hooks/useNotification";
 import ListFiles from "@/app/(site)/image/compress/ListFiles";
@@ -59,7 +59,7 @@ export default function ImageCompress() {
     if (eventName === "message") {
       const payload = data as { instruction_id: string; file_id: string; };
       const debouncedProcessFiles = debounce(async () => {
-        const result = await getInstructionDetails(payload.instruction_id);
+        const result = await getImageInstructionDetails(payload.instruction_id);
         if (result.success && result.data) {
           const inputs = result.data.files.filter(f => f.output_id);
           const outputs = result.data.files.filter(f => !f.output_id);
@@ -93,7 +93,7 @@ export default function ImageCompress() {
 
   const handleSubmit = async () => {
     setHasFailure(false);
-    const compressResult = await createInstruction("image-compress");
+    const compressResult = await createImageInstruction("image-compress");
     if (!compressResult.success || !compressResult.data) {
       setHasFailure(true);
       showNotification({ message: compressResult.message, type: "error", duration: 3000});
@@ -103,7 +103,7 @@ export default function ImageCompress() {
       setInstruction(instr);
 
       for (const file of files) {
-        const fileResult = await createInstructionDetails(instr.id, file);
+        const fileResult = await createImageInstructionDetails(instr.id, file);
         if (!fileResult.success || !fileResult.data) {
           setHasFailure(true);
           showNotification({ message: fileResult.message, type: "error", duration: 3000});

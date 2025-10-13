@@ -35,13 +35,13 @@ export async function getProducts() {
   return await fetchGET<{ products: Product[] }>(API_IMAGES + "/products");
 }
 
-export async function createInstruction(productKey: string) {
+export async function createImageInstruction(productKey: string) {
   return await fetchPOST<{ instruction: Instruction }>(`${API_IMAGES}/instructions`, {
     productKey
   });
 }
 
-export async function createInstructionDetails(instructionId: string, file: File) {
+export async function createImageInstructionDetails(instructionId: string, file: File) {
   const formData = new FormData();
   formData.append("file", file);
   return await fetchPOSTFormData<{ input: InstructionFile, output: InstructionFile }>(`${API_IMAGES}/instructions/${instructionId}/details`, formData);
@@ -51,15 +51,11 @@ export async function getImageInstructions() {
   return await fetchGET<{ instructions: Instruction[] }>(API_IMAGES + "/instructions");
 }
 
-export async function getImageInstruction(id: string) {
-  return await fetchGET<{ instruction: Instruction }>(`${API_IMAGES}/instructions/${id}`);
-}
-
-export async function getInstructionDetails(id: string) {
+export async function getImageInstructionDetails(id: string) {
   return await fetchGET<{ files: InstructionFile[] }>(`${API_IMAGES}/instructions/${id}/details`);
 }
 
-export async function getInstructionFileBytes(id: string, fileId: string) {
+export async function getImageFile(id: string, fileId: string) {
   return await fetchGETBytes(`${API_IMAGES}/instructions/${id}/details/${fileId}`);
 }
 

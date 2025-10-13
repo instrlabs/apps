@@ -4,7 +4,7 @@ import CloseIcon from "@/components/icons/CloseIcon";
 import Chip from "@/components/chip";
 import ButtonIcon from "@/components/actions/button-icon";
 import DownloadIcon from "@/components/icons/DownloadIcon";
-import { InstructionFile, getInstructionFileBytes } from "@/services/images";
+import { InstructionFile, getImageFile } from "@/services/images";
 import Button from "@/components/actions/button";
 
 export default function ListFiles(props: {
@@ -16,7 +16,7 @@ export default function ListFiles(props: {
   outputFiles?: InstructionFile[];
 }) {
   const handleDownload = async (output: InstructionFile) => {
-    const res = await getInstructionFileBytes(output.instruction_id, output.id);
+    const res = await getImageFile(output.instruction_id, output.id);
     if (!res?.success || !res.data) {
       console.error("Failed to download file:", res?.message);
       return;
