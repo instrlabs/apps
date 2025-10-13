@@ -92,7 +92,8 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 }
 
 func (h *InstructionHandler) ListInstructions(c *fiber.Ctx) error {
-	instructions, err := h.instrRepo.ListLatest(10)
+	userId, _ := c.Locals("userId").(string)
+	instructions, err := h.instrRepo.ListLatest(userId, 10)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "failed to list instructions",
