@@ -2,7 +2,6 @@ import ImagePreview from "@/components/ImagePreview";
 import { bytesToString } from "@/utils/bytesToString";
 import CloseIcon from "@/components/icons/CloseIcon";
 import Chip from "@/components/chip";
-import ButtonIcon from "@/components/actions/button-icon";
 import DownloadIcon from "@/components/icons/DownloadIcon";
 import { InstructionFile, getImageFile } from "@/services/images";
 import Button from "@/components/actions/button";
@@ -78,7 +77,7 @@ export default function ListFiles(props: {
             </div>
             {/* CLOSE ICON ONLY SHOW WHEN NOT SUBMITTED */}
             {!props.submitted && (
-              <Button onClick={() => props.removeFile(idx)} xVariant="transparent">
+              <Button onClick={() => props.removeFile(idx)} xColor="secondary">
                 <CloseIcon className="ml-auto size-4 shrink-0 cursor-pointer text-white/70" />
               </Button>
             )}
@@ -96,13 +95,16 @@ export default function ListFiles(props: {
             })()}
           {/*  ADD DOWNLOAD ICON*/}
             {props.submitted && isOutputDone && (
-              <ButtonIcon
-                xsize="sm"
-                xVariant="solid"
+              <Button
+                xSize="sm"
+                xColor="primary"
+                className="!p-1.5 h-8 w-8 inline-flex items-center justify-center"
                 onClick={() => handleDownload(output)}
+                aria-label="Download"
+                title="Download"
               >
-                <DownloadIcon className="size-6" />
-              </ButtonIcon>
+                <DownloadIcon className="size-5" />
+              </Button>
             )}
           </div>
         );

@@ -55,19 +55,19 @@ export default function AuthAction() {
     <>
       <p className="text-sm truncate">Profile: {profile?.email}</p>
       <div className="flex flex-col gap-4">
-        <Button onClick={handleSendPin} xVariant="solid" xSize="sm">
+        <Button onClick={handleSendPin} xColor="primary" xSize="sm">
           Send Pin
         </Button>
-        <Button onClick={handleLogin} xVariant="solid" xSize="sm">
+        <Button onClick={handleLogin} xColor="primary" xSize="sm">
           Login
         </Button>
-        <Button onClick={handleLogout} xVariant="solid" xSize="sm">
+        <Button onClick={handleLogout} xColor="primary" xSize="sm">
           Logout
         </Button>
-        <Button onClick={handleRefreshToken} xVariant="solid" xSize="sm">
+        <Button onClick={handleRefreshToken} xColor="primary" xSize="sm">
           Refresh Token - Client
         </Button>
-        <Button onClick={handleUpdateProfile} xVariant="solid" xSize="sm">
+        <Button onClick={handleUpdateProfile} xColor="primary" xSize="sm">
           Update Profile - Client
         </Button>
       </div>

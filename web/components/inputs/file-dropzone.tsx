@@ -89,7 +89,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
       `}>
         <CloudUploadIcon className="size-5 text-white/50 group-hover:text-white transition-colors" />
         <span className="text-sm font-light text-white/50 group-hover:text-white transition-colors">Import</span>
-      </div>
+      </div  >
       <span className="max-w-xs text-center text-xs font-light text-white/50 group-hover:text-white transition-colors">
         The maximum file size allowed is {bytesToString(maxSize)}, and the supported formats are {acceptsToExtensions(accepts).join(", ")}.
       </span>

@@ -4,45 +4,39 @@ import React from "react";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   xSize?: "sm" | "md" | "lg";
-  xVariant?: "solid" | "outline" | "transparent";
+  xColor?: "primary" | "secondary";
 };
 
 export default function Button({
   xSize = "md",
-  xVariant = "outline",
+  xColor = "primary",
   className,
   children,
   ...rest
 }: ButtonProps) {
-  // Container Classes
-  const outlineClasses = [
-    "bg-primary-black",
-    "shadow-primary",
-    "hover:bg-white/8"
-  ].join(" ");
-
-  const solidClasses = [
+  const primaryClasses = [
     "bg-white",
     "text-black",
     "hover:bg-white/85",
-    "disabled:bg-white/85",
+    "disabled:bg-white/85"
   ].join(" ");
 
-  const transparentClasses = [
-    "bg-transparent",
-    "shadow-none",
+  const secondaryClasses = [
+    "bg-white/8",
+    "text-white/90",
+    "border",
+    "border-white/10",
+    "hover:bg-white/10",
+    "disabled:opacity-60"
   ].join(" ");
 
-  const variantClasses =
-    xVariant === "solid" ? solidClasses :
-      xVariant === "outline" ? outlineClasses :
-        xVariant === "transparent" ? transparentClasses :
-          "";
+  const colorClasses = xColor === "primary"
+    ? primaryClasses
+    : secondaryClasses;
 
-  // Size Classes
-  const smClasses = "py-2 px-3 text-sm";
-  const mdClasses = "py-3 px-4";
-  const lgClasses = "py-4 px-6 text-base min-w-32";
+  const smClasses = "py-1.5 px-4 text-sm";
+  const mdClasses = "py-2 px-4";
+  const lgClasses = "py-3 px-6 text-base min-w-32";
 
   const sizeClasses =
     xSize === "sm" ? smClasses :
@@ -50,14 +44,14 @@ export default function Button({
         xSize === "lg" ? lgClasses :
           "";
 
-  const baseClasses = "cursor-pointer font-medium rounded-lg transition-colors disabled:cursor-not-allowed";
+  const baseClasses = "cursor-pointer font-medium rounded transition-colors disabled:cursor-not-allowed";
 
   return (
     <button
       className={[
         baseClasses,
         sizeClasses,
-        variantClasses,
+        colorClasses,
         className,
       ].join(" ")}
       {...rest}

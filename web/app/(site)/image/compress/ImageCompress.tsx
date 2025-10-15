@@ -189,20 +189,20 @@ export default function ImageCompress() {
               <div className="flex flex-row gap-2">
                 {showInitialActions && (
                   <>
-                    <Button xVariant="solid" xSize="sm" onClick={handleSubmit}>
+                    <Button xColor="primary" xSize="sm" onClick={handleSubmit}>
                       Continue
                     </Button>
-                    <Button xVariant="outline" xSize="sm" onClick={handleReset}>
+                    <Button xColor="secondary" xSize="sm" onClick={handleReset}>
                       Reset
                     </Button>
                   </>
                 )}
                 {showFinalActions && (
                   <>
-                    <Button xVariant="solid" xSize="sm" onClick={goHome}>
+                    <Button xColor="primary" xSize="sm" onClick={goHome}>
                       Back to Homepage
                     </Button>
-                    <Button xVariant="outline" xSize="sm" onClick={handleReset}>
+                    <Button xColor="secondary" xSize="sm" onClick={handleReset}>
                       Reset
                     </Button>
                   </>

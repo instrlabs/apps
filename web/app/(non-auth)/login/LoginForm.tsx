@@ -6,9 +6,12 @@ import { useForm } from "react-hook-form";
 import Button from "@/components/actions/button";
 import TextField from "@/components/inputs/text-field";
 import InputPin from "@/components/inputs/input-pin";
+import GoogleSignInButton from "@/components/actions/google-signin";
+import LogoIcon from "@/components/icons/logo-icon";
 import { login, sendPin } from "@/services/auth";
 import useNotification from "@/hooks/useNotification";
 import InlineSpinner from "@/components/feedback/InlineSpinner";
+import Text from "@/components/text";
 import { redirect, RedirectType } from "next/navigation";
 
 type FormEmailValues = {
@@ -65,12 +68,14 @@ function FormEmail({ setEmail, next }: {
   };
 
   return (
-    <>
-      <h3 className="text-center text-3xl font-semibold">Log in to Labs</h3>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+    <div className="mx-auto w-full max-w-[400px] flex flex-col gap-7 px-6 md:px-0">
+      <LogoIcon size={160} className="drop-shadow mx-auto" />
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7">
         <TextField
           type="email"
-          placeholder="Email Address"
+          placeholder="Email address"
+          autoComplete="email"
+          inputMode="email"
           {...register("email", {
             required: "Email is required",
             pattern: {
@@ -81,15 +86,17 @@ function FormEmail({ setEmail, next }: {
         />
         <Button
           type="submit"
-          xVariant="solid"
+          xColor="primary"
           disabled={loading}
         >
           <div className="flex items-center justify-center gap-2">
             {loading && <InlineSpinner />} <span>Continue with Email</span>
           </div>
         </Button>
+        <div className="h-px w-full bg-white/40" />
+        <GoogleSignInButton />
       </form>
-    </>
+    </div>
   );
 }
 
@@ -122,25 +129,46 @@ function FormPin({ email, next }: {
   };
 
   return (
-    <>
-      <h3 className="text-center text-3xl font-semibold">Verification</h3>
-      <p className="text-center text-white/70">
+    <div className="mx-auto w-full max-w-[400px] flex flex-col gap-7 px-6 md:px-0">
+      <Text as="h3" className="text-center" isBold xSize="xl">
+        Verification
+      </Text>
+      <Text as="p" className="text-center" xColor="secondary">
         If you have an account, we have sent a code to <b>{email}</b>. Enter it below.
-      </p>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      </Text>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-7">
         <div className="mx-auto">
           <InputPin values={values} onChange={setValues} />
         </div>
         <Button
           type="submit"
-          xVariant="solid"
+          xColor="primary"
           disabled={loading}
         >
           <div className="flex items-center justify-center gap-2">
             {loading && <InlineSpinner />} <span>Continue</span>
           </div>
         </Button>
+        <Button
+          type="button"
+          xColor="secondary"
+          onClick={async () => {
+            setLoading(true);
+            try {
+              const { success, message } = await sendPin({ email });
+              if (success) {
+                showNotification({ type: "info", message: "Code resent to your email" });
+              } else {
+                showNotification({ type: "error", message });
+              }
+            } finally {
+              setLoading(false);
+            }
+          }}
+        >
+          Resend code
+        </Button>
       </form>
-    </>
+    </div>
   );
 }
