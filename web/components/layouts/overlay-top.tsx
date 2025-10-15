@@ -48,7 +48,7 @@ export default function OverlayTop() {
           <NotificationIcon />
         </IconButton>
         <Avatar
-          xsize="sm"
+          xSize="sm"
           name={profile?.username || "Guest"}
           onClick={handleToggleProfile}
         />

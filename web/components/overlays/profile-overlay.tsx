@@ -19,7 +19,7 @@ export default function ProfileOverlay() {
   return (
     <div className="w-[400px] h-full ml-4 bg-white/10 rounded p-4 flex flex-col gap-4">
       <div className="flex justify-center">
-        <Avatar xsize="lg" name={username} />
+        <Avatar xSize="lg" name={username} />
       </div>
       <div className="flex flex-col gap">
         <h3 className="text-base font-semibold text-white text-center">{username}</h3>

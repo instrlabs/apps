@@ -3,7 +3,7 @@
 import { useOverlay } from "@/hooks/useOverlay";
 
 export default function OverlayRight() {
-  const { rightNode, rightKey, rightWidth } = useOverlay();
+  const { rightNode } = useOverlay();
 
   return (
     <div className="flex flex-col">

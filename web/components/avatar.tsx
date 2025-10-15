@@ -7,7 +7,7 @@ export type AvatarSize = "sm" | "md" | "lg";
 export type AvatarProps = {
   name?: string;
   src?: string;
-  xsize: AvatarSize;
+  xSize: AvatarSize;
   className?: string;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
 };
@@ -42,7 +42,7 @@ function getInitial(name: string | undefined) {
 
 export default function Avatar({
   name = "",
-  xsize = "md",
+  xSize = "md",
   onClick,
 }: AvatarProps) {
   const bucket = getBucket(name);
@@ -75,17 +75,16 @@ export default function Avatar({
   // Size Classes
   const smClasses = "size-8 text-sm";
   const mdClasses = "size-10";
-  const lgClasses = "size-12";
+  const lgClasses = "size-20 text-3xl font-semibold";
 
   const sizeClass =
-    xsize === "sm" ? smClasses :
-      xsize === "md" ? mdClasses :
-        xsize === "lg" ? lgClasses :
+    xSize === "sm" ? smClasses :
+      xSize === "md" ? mdClasses :
+        xSize === "lg" ? lgClasses :
           "";
 
   const baseClasses = `
-    flex items-center justify-center rounded-full
-    cursor-pointer select-none
+    flex items-center justify-center rounded-full select-none
   `;
 
   return (
