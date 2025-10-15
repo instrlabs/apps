@@ -137,9 +137,7 @@ function FormPin({ email, next }: {
         If you have an account, we have sent a code to <b>{email}</b>. Enter it below.
       </Text>
       <form onSubmit={handleSubmit} className="flex flex-col gap-7">
-        <div className="mx-auto">
-          <InputPin values={values} onChange={setValues} />
-        </div>
+        <InputPin values={values} onChange={setValues} />
         <Button
           type="submit"
           xColor="primary"

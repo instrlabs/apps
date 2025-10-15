@@ -68,10 +68,10 @@ export default function InputPin({
   };
 
   const baseInputClass =
-    "w-10 h-12 sm:w-12 sm:h-14 text-center text-lg rounded-lg bg-primary-black shadow-primary focus:outline-none focus:ring-2 focus:ring-white";
+    "w-12 h-12 text-center text-base rounded bg-white/10 border border-white/30 text-white placeholder:text-white/40 focus:outline-none focus:border-white focus:bg-white/15 transition-colors";
 
   return (
-    <div className={"flex gap-2 sm:gap-3"}>
+    <div className={"flex justify-between"}>
       {Array.from({ length }).map((_, i) => (
         <input
           key={i}
