@@ -42,9 +42,13 @@ export default async function SiteLayout({ children }: Readonly<{
     <ModalProvider>
     <OverlayProvider>
       <Suspense>
-        <OverlayBody>{children}</OverlayBody>
         <OverlayTop />
-        <OverlayRight />
+        <div className="h-full grid grid-cols-[auto_1fr_auto] p-2">
+          <div />
+          <OverlayBody>{children}</OverlayBody>
+          <div />
+        </div>
+        {/*<OverlayRight />*/}
         <NotificationWidget />
       </Suspense>
     </OverlayProvider>

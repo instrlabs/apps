@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import LoginForm from "./LoginForm";
 
 export const metadata: Metadata = {
-  title: "Login - Labs",
+  title: "Login - Instruction Labs",
   description: "",
 };
 

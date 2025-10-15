@@ -8,7 +8,7 @@ export type LogoIconProps = React.SVGAttributes<SVGSVGElement> & {
 export default function LogoIcon({
   size = 200,
   className,
-  title = "InstrLabsLogo",
+  title = "Instruction Labs",
   ...rest
 }: LogoIconProps) {
   const dimension = typeof size === "number" ? `${size}` : size;

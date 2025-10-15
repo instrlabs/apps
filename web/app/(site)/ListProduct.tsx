@@ -1,28 +1,84 @@
 "use client"
 
-import {useProduct} from "@/hooks/useProduct";
-import Link from "next/link";
+import { useMemo, useState } from "react";
+import { useProduct } from "@/hooks/useProduct";
+import TextField from "@/components/inputs/text-field";
+import Text from "@/components/text";
+import AppsCard from "@/components/cards/apps-card";
 
 export default function ListProduct() {
   const { productsByType } = useProduct();
+  const [query, setQuery] = useState("");
+  console.log(productsByType)
+
+  const images = productsByType["image"] ?? [];
+  const imagesFiltered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return images;
+    return images.filter(p =>
+      [p.title, p.description, p.key]
+        .filter(Boolean)
+        .some((v: string) => v.toLowerCase().includes(q))
+    );
+  }, [images, query]);
+
+  const pdfs = productsByType["pdf"] ?? [];
+  const pdfsFiltered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return pdfs;
+    return pdfs.filter(p =>
+      [p.title, p.description, p.key]
+        .filter(Boolean)
+        .some((v: string) => v.toLowerCase().includes(q))
+    );
+  }, [pdfs, query]);
+
+
   return (
-    <div className="p-4">
-      <h4 className="mb-4">
-        Image Tools
-      </h4>
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {productsByType['image']?.map((product) => (
-          <Link
+    <div className="flex flex-col gap-4">
+      <div className="flex w-full justify-center">
+        <TextField
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search"
+          aria-label="Search image tools"
+          className="max-w-[500px]"
+        />
+      </div>
+
+      {imagesFiltered.length > 0 && (
+        <Text as="h4" xSize="sm" className="font-semibold">
+          Images
+        </Text>
+      )}
+
+      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+        {imagesFiltered.map((product: any) => (
+          <AppsCard
             key={product.key}
-            href={`/${product.key.split('-').join('/')}`}
-          >
-            <div className="p-4 rounded-lg shadow-primary bg-primary-black flex flex-col gap-1">
-              <h3 className="text-sm">{product.title}</h3>
-              <p className="text-white/50 font-light text-sm">{product.description}</p>
-            </div>
-          </Link>
+            href={`/${product.key.split("-").join("/")}`}
+            title={product.title}
+            description={product.description}
+          />
+        ))}
+      </div>
+
+      {pdfsFiltered.length > 0 && (
+        <Text as="h4" xSize="sm" className="font-semibold">
+          PDFs
+        </Text>
+      )}
+
+      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+        {pdfsFiltered.map((product: any) => (
+          <AppsCard
+            key={product.key}
+            href={`/${product.key.split("-").join("/")}`}
+            title={product.title}
+            description={product.description}
+          />
         ))}
       </div>
     </div>
-  )
+  );
 }

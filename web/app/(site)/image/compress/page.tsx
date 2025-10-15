@@ -3,7 +3,7 @@ import ImageCompress from "@/app/(site)/image/compress/ImageCompress";
 import History from "@/app/(site)/image/compress/History";
 
 export const metadata: Metadata = {
-  title: "Image Compress - Labs",
+  title: "Image Compress - Instruction Labs",
   description: "",
 };
 

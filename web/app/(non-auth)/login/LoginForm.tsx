@@ -72,6 +72,7 @@ function FormEmail({ setEmail, next }: {
       <LogoIcon size={160} className="drop-shadow mx-auto" />
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7">
         <TextField
+          xSize="lg"
           type="email"
           placeholder="Email address"
           autoComplete="email"
@@ -87,6 +88,7 @@ function FormEmail({ setEmail, next }: {
         <Button
           type="submit"
           xColor="primary"
+          xSize="lg"
           disabled={loading}
         >
           <div className="flex items-center justify-center gap-2">
@@ -141,6 +143,7 @@ function FormPin({ email, next }: {
         <Button
           type="submit"
           xColor="primary"
+          xSize="lg"
           disabled={loading}
         >
           <div className="flex items-center justify-center gap-2">
@@ -150,6 +153,7 @@ function FormPin({ email, next }: {
         <Button
           type="button"
           xColor="secondary"
+          xSize="lg"
           onClick={async () => {
             setLoading(true);
             try {

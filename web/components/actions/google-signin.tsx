@@ -3,7 +3,7 @@ import { loginByGoogle } from "@/services/auth";
 
 function GoogleSignInButton() {
   return (
-      <Button onClick={loginByGoogle} xColor="secondary">
+      <Button onClick={loginByGoogle} xColor="secondary" xSize="lg">
         <div className="flex items-center justify-center gap-2">
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path

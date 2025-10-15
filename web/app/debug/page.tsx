@@ -1,10 +1,3 @@
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Debug - Labs",
-  description: "",
-};
-
 export default function DebugPage() {
   return(
     <div className="container mx-auto p-10">
