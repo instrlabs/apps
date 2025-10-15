@@ -2,31 +2,19 @@
 
 :root {
   --text-primary: var(--color-white);
-  --card-primary: var(--color-gray-900);
 }
-
 
 /*[data-theme="dark"] {}*/
 
-@theme {
-  --color-primary-black: hsla(0, 0%, 4%, 1);
-
-  --shadow-primary: 0 0 0 1px rgba(255, 255, 255, 0.1);
-  --shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 3px 1px rgba(255, 255, 255, 0.1);
-  --shadow-focus: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 5px 3px rgba(255, 255, 255, 0.1);
-}
+@theme {}
 
 body {
   width: 100vw;
   height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--color-black);
   color: var(--text-primary);
-  overflow: hidden;
-}
-
-hr {
-  border-color: var(--color-white);
-  opacity: 0.1;
 }
 
 @keyframes notificationIn {
@@ -65,7 +53,6 @@ hr {
   animation: modalOut 200ms ease-out both;
 }
 
-/* Blink2-style subtle color pulsing for loading states */
 @keyframes blink2 {
   0%, 100% {
     filter: brightness(100%);

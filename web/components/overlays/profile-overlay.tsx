@@ -1,32 +1,37 @@
 "use client";
 
 import React from "react";
-import { redirect, RedirectType } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { useProfile } from "@/hooks/useProfile";
 import MenuButton from "@/components/actions/menu-button";
 import { logout } from "@/services/auth";
+import Avatar from "@/components/avatar";
+import Button from "@/components/actions/button";
 
 export default function ProfileOverlay() {
   const { profile } = useProfile();
+  const router = useRouter();
+
+  const username = profile?.username || "Guest";
+  const email = profile?.email || "";
 
   return (
-    <div className="h-full w-[300px] p-4 pl-0 pt-0">
-      <div className="bg-primary-black shadow-primary h-full w-full rounded-lg">
-        <div className="flex flex-col p-4">
-          <h3 className="text-sm font-light text-white">{profile?.username}</h3>
-          <p className="text-sm font-light text-white/60">{profile?.email}</p>
-        </div>
-        <div className="flex flex-col">
-          <MenuButton xSize="sm" onClick={() => redirect("/", RedirectType.push)}>
-            Dashboard
-          </MenuButton>
-          <hr className="my-2" />
-          <MenuButton xSize="sm" onClick={logout}>
-            Logout
-          </MenuButton>
-          <hr className="my-2" />
-        </div>
+    <div className="w-[400px] h-full ml-4 bg-white/10 rounded p-4 flex flex-col gap-4">
+      <div className="flex justify-center">
+        <Avatar xsize="lg" name={username} />
+      </div>
+      <div className="flex flex-col gap">
+        <h3 className="text-base font-semibold text-white text-center">{username}</h3>
+        <p className="text-sm font-light text-white/60 text-center">{email}</p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Button onClick={() => router.push("/")}>
+          Dashboard
+        </Button>
+        <Button xColor="secondary" onClick={logout}>
+          Logout
+        </Button>
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ export default function OverlayBody({ children }: {
     //   )}
     //   // style={{ left: `${leftPx}px`, right: `${rightPx}px` }}
     // >
-      <div className="flex flex-col">
+      <div className="flex flex-col transition-width duration-300 ease-in-out">
         {children}
       </div>
     // </div>

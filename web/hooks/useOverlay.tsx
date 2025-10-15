@@ -62,7 +62,7 @@ function registerOverlays() {
   // Right profile
   registerOverlay("right:profile", {
     side: "right",
-    width: 300,
+    width: 400,
     render: () => <ProfileOverlay />,
   });
 

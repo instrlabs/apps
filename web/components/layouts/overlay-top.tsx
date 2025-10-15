@@ -11,7 +11,23 @@ import NotificationIcon from "@/components/icons/notification-icon";
 
 export default function OverlayTop() {
   const { profile } = useProfile();
-  const { openRight } = useOverlay();
+  const { rightKey, openRight, closeRight } = useOverlay();
+
+  function handleToggleNotifications() {
+    if (rightKey === "right:notifications") {
+      closeRight();
+    } else {
+      openRight("notifications");
+    }
+  }
+
+  function handleToggleProfile() {
+    if (rightKey === "right:profile") {
+      closeRight();
+    } else {
+      openRight("profile");
+    }
+  }
 
   return (
     <div className="relative w-full flex flex-row justify-between items-center bg-background/80">
@@ -27,14 +43,14 @@ export default function OverlayTop() {
         <IconButton
           aria-label="Notifications"
           xColor="secondary"
-          onClick={() => openRight("notifications")}
+          onClick={handleToggleNotifications}
         >
           <NotificationIcon />
         </IconButton>
         <Avatar
           xsize="sm"
           name={profile?.username || "Guest"}
-          onClick={() => openRight("profile")}
+          onClick={handleToggleProfile}
         />
       </div>
     </div>

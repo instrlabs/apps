@@ -9,7 +9,6 @@ import AppsCard from "@/components/cards/apps-card";
 export default function ListProduct() {
   const { productsByType } = useProduct();
   const [query, setQuery] = useState("");
-  console.log(productsByType)
 
   const images = productsByType["image"] ?? [];
   const imagesFiltered = useMemo(() => {
@@ -21,17 +20,6 @@ export default function ListProduct() {
         .some((v: string) => v.toLowerCase().includes(q))
     );
   }, [images, query]);
-
-  const pdfs = productsByType["pdf"] ?? [];
-  const pdfsFiltered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return pdfs;
-    return pdfs.filter(p =>
-      [p.title, p.description, p.key]
-        .filter(Boolean)
-        .some((v: string) => v.toLowerCase().includes(q))
-    );
-  }, [pdfs, query]);
 
 
   return (
@@ -52,32 +40,17 @@ export default function ListProduct() {
         </Text>
       )}
 
-      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-3 xl:grid-cols-4">
-        {imagesFiltered.map((product: any) => (
-          <AppsCard
-            key={product.key}
-            href={`/${product.key.split("-").join("/")}`}
-            title={product.title}
-            description={product.description}
-          />
-        ))}
-      </div>
-
-      {pdfsFiltered.length > 0 && (
-        <Text as="h4" xSize="sm" className="font-semibold">
-          PDFs
-        </Text>
-      )}
-
-      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-3 xl:grid-cols-4">
-        {pdfsFiltered.map((product: any) => (
-          <AppsCard
-            key={product.key}
-            href={`/${product.key.split("-").join("/")}`}
-            title={product.title}
-            description={product.description}
-          />
-        ))}
+      <div className="@container">
+        <div className="grid w-full grid-cols-1 gap-2 @3xs:grid-cols-2 @2xl:grid-cols-3 @5xl:grid-cols-4">
+          {imagesFiltered.map((product: any) => (
+            <AppsCard
+              key={product.key}
+              href={`/${product.key.split("-").join("/")}`}
+              title={product.title}
+              description={product.description}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
