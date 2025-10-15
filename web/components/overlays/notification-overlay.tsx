@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import BellIcon from "@/components/icons/bell";
+import NotificationIcon from "@/components/icons/notification-icon";
 
 export type NotificationStatus = "On Queue" | "On Processing" | "Finished" | "Failed";
 
@@ -65,35 +65,35 @@ export default function NotificationOverlay({
         title: "New project assigned: Phoenix",
         createdAt: new Date(now - 5 * 60 * 1000), // 5m ago
         status: "On Queue",
-        icon: <BellIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
+        icon: <NotificationIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
       },
       {
         id: "2",
         title: "Build succeeded on main",
         createdAt: new Date(now - 2 * 60 * 60 * 1000), // 2h ago
         status: "Finished",
-        icon: <BellIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
+        icon: <NotificationIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
       },
       {
         id: "3",
         title: "You have 3 unread messages",
         createdAt: new Date(now - 26 * 60 * 60 * 1000), // 26h ago
         status: "On Processing",
-        icon: <BellIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
+        icon: <NotificationIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
       },
       {
         id: "4",
         title: "Deployment failed: api-service",
         createdAt: new Date(now - 3 * 24 * 60 * 60 * 1000), // 3d ago
         status: "Failed",
-        icon: <BellIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
+        icon: <NotificationIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
       },
       {
         id: "5",
         title: "Weekly summary is ready",
         createdAt: new Date(now - 10 * 24 * 60 * 60 * 1000), // 10d ago
         status: "Finished",
-        icon: <BellIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
+        icon: <NotificationIcon className="w-6 h-6 text-primary" aria-hidden="true" />,
       },
     ];
   }, []);
@@ -113,7 +113,7 @@ export default function NotificationOverlay({
             {data.map((n) => (
               <div key={n.id} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-foreground/10 transition">
                 <div className="shrink-0 w-10 h-10 rounded-full bg-border flex items-center justify-center">
-                  {n.icon ?? <BellIcon className="w-6 h-6 text-foreground" aria-hidden="true"/>}
+                  {n.icon ?? <NotificationIcon className="w-6 h-6 text-foreground" aria-hidden="true"/>}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-col">
