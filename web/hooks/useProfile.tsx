@@ -6,6 +6,7 @@ import { User, logout } from "@/services/auth";
 
 
 type ProfileContextType = {
+  isLoggedIn: boolean;
   profile: User | null;
   setProfile: (p: User) => void;
 };
@@ -18,18 +19,14 @@ export function ProfileProvider({ children, data }: {
 }) {
   const [profileData, setProfileData] = useState<User | null>(data);
 
-  useEffect(() => {
-    if (!data) logout().then()
-  }, [data])
-
   const value = useMemo(
-    () => ({ profile: profileData, setProfile: setProfileData }),
+    () => ({
+      isLoggedIn: !!profileData,
+      profile: profileData,
+      setProfile: setProfileData
+    }),
     [profileData]
   );
-
-  if (!profileData) {
-    return <div>Loading...</div>
-  }
 
   return <Profile.Provider value={value}>{children}</Profile.Provider>;
 }

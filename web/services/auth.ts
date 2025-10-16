@@ -4,6 +4,7 @@ import {cookies} from "next/headers";
 import { API_AUTH } from "@/constants/api";
 import { ApiResponse, EmptyBody, fetchGET, fetchPOST } from "@/utils/fetch";
 import {redirect} from "next/navigation";
+import { RedirectType } from "next/dist/client/components/redirect-error";
 
 export interface User {
   username: string
@@ -35,7 +36,6 @@ export async function logout() {
   const storeCookie = await cookies();
   storeCookie.delete("access_token");
   storeCookie.delete("refresh_token");
-  redirect("/login")
 }
 
 export async function sendPin({ email }: {

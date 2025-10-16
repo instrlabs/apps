@@ -84,7 +84,7 @@ export default function Avatar({
           "";
 
   const baseClasses = `
-    flex items-center justify-center rounded-full select-none
+    flex items-center justify-center rounded-full select-none cursor-pointer
   `;
 
   return (

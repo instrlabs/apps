@@ -4,20 +4,19 @@ import React from "react";
 import { useRouter } from "next/navigation";
 
 import { useProfile } from "@/hooks/useProfile";
-import MenuButton from "@/components/actions/menu-button";
 import { logout } from "@/services/auth";
 import Avatar from "@/components/avatar";
 import Button from "@/components/actions/button";
 
 export default function ProfileOverlay() {
-  const { profile } = useProfile();
   const router = useRouter();
+  const { profile } = useProfile();
 
   const username = profile?.username || "Guest";
   const email = profile?.email || "";
 
   return (
-    <div className="w-[400px] h-full ml-4 bg-white/10 rounded p-4 flex flex-col gap-4">
+    <div className="w-[400px] h-full ml-4 bg-white/10 rounded-lg p-4 flex flex-col gap-4">
       <div className="flex justify-center">
         <Avatar xSize="lg" name={username} />
       </div>
@@ -29,7 +28,10 @@ export default function ProfileOverlay() {
         <Button onClick={() => router.push("/")}>
           Dashboard
         </Button>
-        <Button xColor="secondary" onClick={logout}>
+        <Button xColor="secondary" onClick={async () => {
+          await logout();
+          document.location.href = "/";
+        }}>
           Logout
         </Button>
       </div>

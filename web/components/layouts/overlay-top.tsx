@@ -8,9 +8,11 @@ import { useOverlay } from "@/hooks/useOverlay";
 import Avatar from "@/components/avatar";
 import { useProfile } from "@/hooks/useProfile";
 import NotificationIcon from "@/components/icons/notification-icon";
+import Button from "@/components/actions/button";
+import { redirect } from "next/navigation";
 
 export default function OverlayTop() {
-  const { profile } = useProfile();
+  const { isLoggedIn, profile } = useProfile();
   const { rightKey, openRight, closeRight } = useOverlay();
 
   function handleToggleNotifications() {
@@ -40,18 +42,26 @@ export default function OverlayTop() {
       </div>
 
       <div className="flex items-center gap-2 p-2">
-        <IconButton
-          aria-label="Notifications"
-          xColor="secondary"
-          onClick={handleToggleNotifications}
-        >
-          <NotificationIcon />
-        </IconButton>
-        <Avatar
-          xSize="sm"
-          name={profile?.username || "Guest"}
-          onClick={handleToggleProfile}
-        />
+        {isLoggedIn ? (
+          <>
+            <IconButton
+              aria-label="Notifications"
+              xColor="secondary"
+              onClick={handleToggleNotifications}
+            >
+              <NotificationIcon className="size-6"/>
+            </IconButton>
+            <Avatar
+              xSize="sm"
+              name={profile?.username || "Guest"}
+              onClick={handleToggleProfile}
+            />
+          </>
+        ) : (
+          <Button onClick={() => redirect("/login")}>
+            Login
+          </Button>
+        )}
       </div>
     </div>
   );
