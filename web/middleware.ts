@@ -39,7 +39,6 @@ export async function middleware(req: NextRequest) {
         storeCookie.set(newRefreshToken);
         accessToken = newAccessToken;
         refreshToken = newRefreshToken;
-        return next;
       } else {
         info("failed to refresh token", req);
         return NextResponse.redirect(new URL("/login", req.url));

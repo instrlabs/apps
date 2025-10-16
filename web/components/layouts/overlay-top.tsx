@@ -33,14 +33,17 @@ export default function OverlayTop() {
 
   return (
     <>
+      {/* ACTIVE - MOBILE SECTION */}
       <div className="flex flex-col items-center md:hidden p-2">
         <Breadcrumbs />
       </div>
+
       <div className="relative w-full flex flex-row justify-between items-center bg-background/80 gap-2 p-2">
         <div className="flex items-center gap-2">
           <BrandLink />
         </div>
 
+        {/* ACTIVE - WEB SECTION */}
         <div className="hidden pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 md:flex md:justify-center">
           <Breadcrumbs />
         </div>

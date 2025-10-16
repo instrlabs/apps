@@ -11,11 +11,8 @@ import { OverlayProvider } from "@/hooks/useOverlay";
 import { NotificationProvider, NotificationWidget } from "@/hooks/useNotification";
 import { ModalProvider } from "@/hooks/useModal";
 import { SSEProvider } from "@/hooks/useSSE";
-import OverlayBody from "@/components/layouts/overlay-body";
 import OverlayTop from "@/components/layouts/overlay-top";
-import OverlayRight from "@/components/layouts/overlay-right";
 import OverlayContent from "@/components/layouts/overlay-content";
-import OverlayLeft from "@/components/layouts/overlay-left";
 
 export default async function SiteLayout({ children }: Readonly<{
   children: React.ReactNode;
@@ -33,9 +30,7 @@ export default async function SiteLayout({ children }: Readonly<{
       <Suspense>
         <OverlayTop />
         <OverlayContent>
-          <OverlayLeft />
-          <OverlayBody>{children}</OverlayBody>
-          <OverlayRight />
+          {children}
         </OverlayContent>
         <NotificationWidget />
       </Suspense>

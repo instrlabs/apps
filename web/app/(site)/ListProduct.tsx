@@ -41,7 +41,7 @@ export default function ListProduct() {
       )}
 
       <div className="@container">
-        <div className="grid w-full grid-cols-1 gap-2 @3xs:grid-cols-2 @2xl:grid-cols-3 @5xl:grid-cols-4">
+        <div className="grid w-full grid-cols-1 gap-2 @2xl:grid-cols-3 @5xl:grid-cols-4">
           {imagesFiltered.map((product: any) => (
             <AppsCard
               key={product.key}
