@@ -3,9 +3,9 @@
 import { useOverlay } from "@/hooks/useOverlay";
 
 export default function OverlayRight() {
-  const { rightNode } = useOverlay();
+  const { isRightOpen, rightNode } = useOverlay();
 
-  return (
+  return isRightOpen && (
     <div className="flex flex-col">
       {rightNode}
     </div>

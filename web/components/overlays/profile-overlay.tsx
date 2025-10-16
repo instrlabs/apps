@@ -16,7 +16,7 @@ export default function ProfileOverlay() {
   const email = profile?.email || "";
 
   return (
-    <div className="w-[400px] h-full ml-4 bg-white/10 rounded-lg p-4 flex flex-col gap-4">
+    <div className="w-[400px] h-full bg-white/10 rounded-lg p-4 flex flex-col gap-4">
       <div className="flex justify-center">
         <Avatar xSize="lg" name={username} />
       </div>

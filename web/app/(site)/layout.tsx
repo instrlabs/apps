@@ -14,6 +14,8 @@ import { SSEProvider } from "@/hooks/useSSE";
 import OverlayBody from "@/components/layouts/overlay-body";
 import OverlayTop from "@/components/layouts/overlay-top";
 import OverlayRight from "@/components/layouts/overlay-right";
+import OverlayContent from "@/components/layouts/overlay-content";
+import OverlayLeft from "@/components/layouts/overlay-left";
 
 export default async function SiteLayout({ children }: Readonly<{
   children: React.ReactNode;
@@ -30,11 +32,11 @@ export default async function SiteLayout({ children }: Readonly<{
     <OverlayProvider>
       <Suspense>
         <OverlayTop />
-        <div className="flex-1 grid grid-cols-[auto_1fr_auto] p-2">
-          <div />
+        <OverlayContent>
+          <OverlayLeft />
           <OverlayBody>{children}</OverlayBody>
           <OverlayRight />
-        </div>
+        </OverlayContent>
         <NotificationWidget />
       </Suspense>
     </OverlayProvider>
