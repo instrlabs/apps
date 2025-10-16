@@ -32,7 +32,6 @@ async function getHeaders(): Promise<Headers> {
   return customHeaders;
 }
 
-
 export async function fetchGET<T>(
   path: string,
   queries: Record<string, string> = {}

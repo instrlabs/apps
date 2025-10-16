@@ -4,7 +4,7 @@ import { format } from "date-fns";
 
 export default async function History() {
   const { success, data } = await getImageInstructions();
-  if (!success) redirect("/");
+  // if (!success) redirect("/");
 
   return (
     <div className="flex w-[300px] flex-col gap-4">
