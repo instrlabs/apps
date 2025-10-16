@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2/log"
@@ -55,6 +56,22 @@ func (h *UserHandler) generateRefreshToken() (string, error) {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func (h *UserHandler) getCookieDomain(c *fiber.Ctx) string {
+	if h.cfg.Environment == "production" {
+		return ".arthadede.com"
+	}
+
+	userOrigin := c.Get("x-user-origin")
+	if userOrigin != "" {
+		if !strings.HasPrefix(userOrigin, "http://localhost") {
+			domain := strings.Split(userOrigin, "//")[1]
+			return "." + strings.Join(strings.Split(domain, ".")[1:], ".")
+		}
+	}
+
+	return ".localhost"
 }
 
 func (h *UserHandler) Login(c *fiber.Ctx) error {
@@ -143,12 +160,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	now := time.Now().UTC()
-	var domain string
-	if h.cfg.Environment == "production" {
-		domain = ".arthadede.com"
-	} else {
-		domain = ".localhost"
-	}
+	domain := h.getCookieDomain(c)
 
 	log.Info("Login: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
@@ -224,12 +236,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	}
 
 	now := time.Now().UTC()
-	var domain string
-	if h.cfg.Environment == "production" {
-		domain = ".arthadede.com"
-	} else {
-		domain = ".localhost"
-	}
+	domain := h.getCookieDomain(c)
 
 	log.Info("RefreshToken: Update access token cookie")
 	c.Cookie(&fiber.Cookie{
@@ -409,12 +416,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 	}
 
 	now := time.Now().UTC()
-	var domain string
-	if h.cfg.Environment == "production" {
-		domain = ".arthadede.com"
-	} else {
-		domain = ".localhost"
-	}
+	domain := h.getCookieDomain(c)
 
 	log.Info("GoogleCallback: Setting access token cookie")
 	c.Cookie(&fiber.Cookie{
@@ -480,12 +482,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 		})
 	}
 
-	var domain string
-	if h.cfg.Environment == "production" {
-		domain = ".arthadede.com"
-	} else {
-		domain = ".localhost"
-	}
+	domain := h.getCookieDomain(c)
 
 	c.Cookie(&fiber.Cookie{
 		Domain:   domain,
