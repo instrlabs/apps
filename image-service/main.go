@@ -36,7 +36,9 @@ func main() {
 	initx.SetupLogger(app)
 	initx.SetupServiceSwagger(app)
 	initx.SetupServiceHealth(app)
-	initx.SetupAuthenticated(app, []string{})
+	initx.SetupAuthenticated(app, []string{
+		"/products",
+	})
 
 	productRepo := internal.NewProductRepository(mongo)
 	instrRepo := internal.NewInstructionRepository(mongo)

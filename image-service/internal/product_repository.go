@@ -27,10 +27,7 @@ func (r *ProductRepository) List() ([]*Product, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	filter := bson.M{
-		"product_type": "image",
-		"is_active":    true,
-	}
+	filter := bson.M{"product_type": "image"}
 	cursor, err := r.collection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
