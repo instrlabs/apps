@@ -33,7 +33,7 @@ export default function OverlayTop() {
 
   return (
     <div className="relative w-full flex flex-row justify-between items-center bg-background/80 gap-2 p-2">
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
         <BrandLink />
       </div>
 
@@ -41,7 +41,7 @@ export default function OverlayTop() {
         <Breadcrumbs />
       </div>
 
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
         {isLoggedIn ? (
           <>
             <IconButton

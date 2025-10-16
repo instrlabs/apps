@@ -15,7 +15,7 @@ export default function OverlayContent({ children }: {
         : "1fr";
 
   return (
-    <div className="flex-1 grid p-2 gap-2" style={{ gridTemplateColumns: gridCols }}>
+    <div className="flex-1 grid p-2 gap-4" style={{ gridTemplateColumns: gridCols }}>
       {children}
     </div>
   );
