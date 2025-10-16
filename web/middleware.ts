@@ -39,13 +39,20 @@ export async function middleware(req: NextRequest) {
         storeCookie.set(newRefreshToken);
         accessToken = newAccessToken;
         refreshToken = newRefreshToken;
+        console.log("1");
       } else {
         info("failed to refresh token", req);
-        return NextResponse.redirect(new URL("/login", req.url));
+        const nextReset = NextResponse.redirect(new URL("/login", req.url));
+        nextReset.cookies.delete("access_token");
+        nextReset.cookies.delete("refresh_token");
+        return nextReset;
       }
     } catch (err) {
       error("failed to refresh token", req, err);
-      return NextResponse.redirect(new URL("/login", req.url));
+      const nextReset = NextResponse.redirect(new URL("/login", req.url));
+      nextReset.cookies.delete("access_token");
+      nextReset.cookies.delete("refresh_token");
+      return nextReset;
     }
   }
 
