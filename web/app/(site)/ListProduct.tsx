@@ -5,12 +5,13 @@ import { useProduct } from "@/hooks/useProduct";
 import TextField from "@/components/inputs/text-field";
 import Text from "@/components/text";
 import AppsCard from "@/components/cards/apps-card";
+import { Product } from "@/services/images";
 
 export default function ListProduct() {
   const { productsByType } = useProduct();
   const [query, setQuery] = useState("");
 
-  const images = productsByType["image"] ?? [];
+  const images = productsByType["image"];
   const imagesFiltered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return images;
@@ -42,7 +43,7 @@ export default function ListProduct() {
 
       <div className="@container">
         <div className="grid w-full grid-cols-1 gap-2 @2xl:grid-cols-3 @5xl:grid-cols-4">
-          {imagesFiltered.map((product: any) => (
+          {imagesFiltered.map((product: Product) => (
             <AppsCard
               key={product.key}
               href={`/${product.key.split("-").join("/")}`}
