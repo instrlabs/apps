@@ -13,7 +13,7 @@ export default function Breadcrumbs() {
   return (
     <nav
       aria-label="Breadcrumbs"
-      className="pointer-events-auto hidden items-center gap-2 px-2 py-1 md:flex"
+      className="pointer-events-auto flex items-center gap-2 px-2 py-1"
     >
       {isHome ? (
         <span className="text-muted text-sm font-normal">Instruction Labs</span>

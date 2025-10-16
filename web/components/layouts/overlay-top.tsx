@@ -32,37 +32,42 @@ export default function OverlayTop() {
   }
 
   return (
-    <div className="relative w-full flex flex-row justify-between items-center bg-background/80 gap-2 p-2">
-      <div className="flex items-center gap-2">
-        <BrandLink />
-      </div>
-
-      <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
+    <>
+      <div className="flex flex-col items-center md:hidden p-2">
         <Breadcrumbs />
       </div>
+      <div className="relative w-full flex flex-row justify-between items-center bg-background/80 gap-2 p-2">
+        <div className="flex items-center gap-2">
+          <BrandLink />
+        </div>
 
-      <div className="flex items-center gap-2">
-        {isLoggedIn ? (
-          <>
-            <IconButton
-              aria-label="Notifications"
-              xColor="secondary"
-              onClick={handleToggleNotifications}
-            >
-              <NotificationIcon className="size-6"/>
-            </IconButton>
-            <Avatar
-              xSize="sm"
-              name={profile?.username || "Guest"}
-              onClick={handleToggleProfile}
-            />
-          </>
-        ) : (
-          <Button onClick={() => redirect("/login")}>
-            Login
-          </Button>
-        )}
+        <div className="hidden pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 md:flex md:justify-center">
+          <Breadcrumbs />
+        </div>
+
+        <div className="flex items-center gap-2">
+          {isLoggedIn ? (
+            <>
+              <IconButton
+                aria-label="Notifications"
+                xColor="secondary"
+                onClick={handleToggleNotifications}
+              >
+                <NotificationIcon className="size-6"/>
+              </IconButton>
+              <Avatar
+                xSize="sm"
+                name={profile?.username || "Guest"}
+                onClick={handleToggleProfile}
+              />
+            </>
+          ) : (
+            <Button onClick={() => redirect("/login")}>
+              Login
+            </Button>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

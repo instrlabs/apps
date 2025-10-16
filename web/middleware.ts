@@ -16,8 +16,8 @@ export async function middleware(req: NextRequest) {
   headers.set("cookie", req.headers.get("cookie")!);
   const next = NextResponse.next({ headers });
 
-  const accessToken = req.cookies.get("access_token");
-  const refreshToken = req.cookies.get("refresh_token");
+  let accessToken = req.cookies.get("access_token");
+  let refreshToken = req.cookies.get("refresh_token");
 
   if (!accessToken && refreshToken) {
     info("trying to refresh token", req);
@@ -31,10 +31,15 @@ export async function middleware(req: NextRequest) {
 
       if (res.ok) {
         info("successfully refreshed token", req);
-        const reqSetCookie = new ResponseCookies(res.headers);
+        const resSetCookie = new ResponseCookies(res.headers);
         const storeCookie = next.cookies;
-        storeCookie.set(reqSetCookie.get("access_token") as ResponseCookie);
-        storeCookie.set(reqSetCookie.get("refresh_token") as ResponseCookie);
+        const newAccessToken = resSetCookie.get("access_token") as ResponseCookie;
+        const newRefreshToken = resSetCookie.get("refresh_token") as ResponseCookie;
+        storeCookie.set(newAccessToken);
+        storeCookie.set(newRefreshToken);
+        accessToken = newAccessToken;
+        refreshToken = newRefreshToken;
+        return next;
       } else {
         info("failed to refresh token", req);
         return NextResponse.redirect(new URL("/login", req.url));
@@ -45,11 +50,11 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  if (whitelistPaths.includes(req.nextUrl.pathname)) {
-    return next;
+  if (!whitelistPaths.includes(req.nextUrl.pathname) && !accessToken) {
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  return NextResponse.redirect(new URL("/login", req.url));
+  return next;
 }
 
 export const config = {
