@@ -38,13 +38,13 @@ export default function OverlayTop() {
         <Breadcrumbs />
       </div>
 
-      <div className="relative w-full flex flex-row justify-between items-center bg-background/80 gap-2 p-2">
+      <div className="relative w-full flex flex-row items-center justify-between gap-2 p-2 bg-background/80">
         <div className="flex items-center gap-2">
           <BrandLink />
         </div>
 
         {/* ACTIVE - WEB SECTION */}
-        <div className="hidden pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 md:flex md:justify-center">
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 hidden md:flex md:justify-center pointer-events-none">
           <Breadcrumbs />
         </div>
 

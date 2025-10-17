@@ -4,7 +4,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 
 import Button from "@/components/actions/button";
-import TextField from "@/components/inputs/text-field";
+import Input from "@/components/inputs/input";
 import InputPin from "@/components/inputs/input-pin";
 import GoogleSignInButton from "@/components/actions/google-signin";
 import LogoIcon from "@/components/icons/logo-icon";
@@ -69,9 +69,9 @@ function FormEmail({ setEmail, next }: {
 
   return (
     <div className="mx-auto w-full max-w-[400px] flex flex-col gap-7 px-6 md:px-0">
-      <LogoIcon size={160} className="drop-shadow mx-auto" />
+      <LogoIcon size={160} className="mx-auto drop-shadow" />
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7">
-        <TextField
+        <Input
           xSize="lg"
           type="email"
           placeholder="Email address"
@@ -95,7 +95,11 @@ function FormEmail({ setEmail, next }: {
             {loading && <InlineSpinner />} <span>Continue with Email</span>
           </div>
         </Button>
-        <div className="mx-auto h-px w-4 bg-white/40" />
+        <div className={`
+mx-auto
+bg-white/40
+h-px w-4
+        `} />
         <GoogleSignInButton />
       </form>
     </div>
@@ -131,14 +135,24 @@ function FormPin({ email, next }: {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[400px] flex flex-col gap-7 px-6 md:px-0">
-      <Text as="h3" className="text-center" isBold xSize="xl">
+    <div className={`
+mx-auto w-full max-w-[400px] flex flex-col
+gap-7 px-6 md:px-0
+   `}>
+      <Text as="h3" className={`
+text-center
+      `} isBold xSize="xl">
         Verification
       </Text>
-      <Text as="p" className="text-center" xColor="secondary">
+      <Text as="p" className={`
+text-center
+      `} xColor="secondary">
         If you have an account, we have sent a code to <b>{email}</b>. Enter it below.
       </Text>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-7">
+      <form onSubmit={handleSubmit} className={`
+flex flex-col
+gap-7
+      `}>
         <InputPin values={values} onChange={setValues} />
         <Button
           type="submit"
@@ -146,7 +160,21 @@ function FormPin({ email, next }: {
           xSize="lg"
           disabled={loading}
         >
-          <div className="flex items-center justify-center gap-2">
+          <div className={`
+            /* layout */
+            flex items-center justify-center
+            /* spacing */
+            gap-2
+            /* borders */
+
+            /* colors */
+
+            /* text */
+
+            /* effects */
+
+            /* states */
+         `}>
             {loading && <InlineSpinner />} <span>Continue</span>
           </div>
         </Button>

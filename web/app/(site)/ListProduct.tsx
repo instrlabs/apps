@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useProduct } from "@/hooks/useProduct";
-import TextField from "@/components/inputs/text-field";
+import Input from "@/components/inputs/input";
 import Text from "@/components/text";
 import AppsCard from "@/components/cards/apps-card";
 import { Product } from "@/services/images";
@@ -26,7 +26,7 @@ export default function ListProduct() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex w-full justify-center">
-        <TextField
+        <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search"

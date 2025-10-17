@@ -52,18 +52,15 @@ export default function IconButton({
     xSize === "lg" ? lgClasses :
     "";
 
-  const baseClasses = [
-    "inline-flex",
-    "items-center",
-    "justify-center",
-    "rounded-md",
-    "cursor-pointer",
-    "hover:opacity-90",
-    "transition-opacity",
-    "transition-colors",
-    "focus:outline-none",
-    "disabled:cursor-not-allowed",
-  ].join(" ");
+  const baseClasses = `
+inline-flex items-center justify-center
+rounded-md
+cursor-pointer
+hover:opacity-90
+transition-opacity transition-colors
+focus:outline-none
+disabled:cursor-not-allowed
+  `;
   return (
     <button
       className={[
