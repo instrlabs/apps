@@ -4,7 +4,7 @@ import React from "react";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   xSize?: "sm" | "md" | "lg";
-  xColor?: "primary" | "secondary";
+  xColor?: "primary" | "secondary" | "transparent";
 };
 
 export default function Button({
@@ -30,9 +30,17 @@ export default function Button({
     "disabled:opacity-60"
   ].join(" ");
 
-  const colorClasses = xColor === "primary"
-    ? primaryClasses
-    : secondaryClasses;
+  const transparentClasses = [
+    "bg-transparent",
+    "text-primary",
+    "hover:opacity-90",
+    "disabled:opacity-60"
+  ].join(" ");
+
+  const colorClasses =
+    xColor === "primary" ? primaryClasses :
+    xColor === "secondary" ? secondaryClasses :
+    transparentClasses;
 
   const smClasses = "py-1.5 px-4 text-sm";
   const mdClasses = "py-2 px-4";
@@ -40,11 +48,22 @@ export default function Button({
 
   const sizeClasses =
     xSize === "sm" ? smClasses :
-      xSize === "md" ? mdClasses :
-        xSize === "lg" ? lgClasses :
-          "";
+    xSize === "md" ? mdClasses :
+    xSize === "lg" ? lgClasses :
+    "";
 
-  const baseClasses = "cursor-pointer font-medium rounded transition-colors disabled:cursor-not-allowed";
+  const baseClasses = [
+    "inline-flex",
+    "items-center",
+    "justify-center",
+    "rounded-md",
+    "cursor-pointer",
+    "hover:opacity-90",
+    "transition-opacity",
+    "transition-colors",
+    "focus:outline-none",
+    "disabled:cursor-not-allowed",
+  ].join(" ");
 
   return (
     <button

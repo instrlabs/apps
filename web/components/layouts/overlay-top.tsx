@@ -53,7 +53,7 @@ export default function OverlayTop() {
             <>
               <IconButton
                 aria-label="Notifications"
-                xColor="secondary"
+                xColor="transparent"
                 onClick={handleToggleNotifications}
               >
                 <NotificationIcon className="size-6"/>

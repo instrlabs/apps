@@ -1,5 +1,4 @@
 import React from "react";
-import clsx from "clsx";
 
 export type LogoIconProps = React.SVGAttributes<SVGSVGElement> & {
   size?: number | string;
@@ -21,7 +20,7 @@ export default function LogoIcon({
       viewBox="0 0 200 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={clsx("inline-block", className)}
+      className={["inline-block", className].filter(Boolean).join(" ") }
       {...rest}
     >
       <title>{title}</title>

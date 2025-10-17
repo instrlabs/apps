@@ -1,5 +1,4 @@
 import React from "react";
-import clsx from "clsx";
 
 export type ChipSize = "sm" | "md" | "lg";
 export type ChipVariant = "filled" | "outline" | "outlined"; // 'outlined' kept for backward-compat
@@ -74,13 +73,13 @@ const Chip = React.forwardRef<HTMLDivElement, ChipProps>(
       return outlineDefault; // default
     })();
 
-    const containerClasses = clsx(
+    const containerClasses = [
       "inline-flex items-center justify-center rounded-md select-none",
       sizeClasses,
       variantClasses,
       loading && "animate-blink2 pointer-events-none",
-      className
-    );
+      className,
+    ].filter(Boolean).join(" ");
 
     return (
       <div

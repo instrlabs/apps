@@ -1,5 +1,4 @@
 import React from "react";
-import clsx from "clsx";
 
 export type MenuIconProps = React.SVGAttributes<SVGSVGElement> & {
   title?: string;
@@ -15,7 +14,7 @@ export default function MenuIcon({ className, title = "Menu", ...rest }: MenuIco
       viewBox="0 0 28 28"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={clsx("inline-block", className)}
+      className={["inline-block", className].filter(Boolean).join(" ") }
       {...rest}
     >
       <title>{title}</title>

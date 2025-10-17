@@ -1,5 +1,4 @@
 import React from "react";
-import clsx from "clsx";
 
 export type TextVariant =
   | "default"
@@ -56,12 +55,12 @@ export default function Text<T extends React.ElementType = "span">(
 
   return (
     <Component
-      className={clsx(
+      className={[
         sizeClasses[xSize],
         isBold ? "font-semibold" : "font-normal",
         variantClasses[xColor],
         className,
-      )}
+      ].filter(Boolean).join(" ") }
       {...rest}
     >
       {children}

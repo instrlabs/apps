@@ -1,5 +1,4 @@
 import React, { forwardRef } from "react";
-import clsx from "clsx";
 
 interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   xSize?: "sm" | "md" | "lg";
@@ -22,7 +21,7 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
 
     return (
       <input
-        className={clsx(baseClasses, sizeClasses, className)}
+        className={[baseClasses, sizeClasses, className].filter(Boolean).join(" ")}
         ref={ref}
         {...rest}
       />

@@ -1,4 +1,3 @@
-import clsx from "clsx";
 import React from "react";
 import Image from "next/image";
 
@@ -91,12 +90,12 @@ export default function Avatar({
     <button
       type="button"
       onClick={onClick}
-      className={clsx(
+      className={[
         baseClasses,
         sizeClass,
         bgClass,
         fgClass,
-      )}
+      ].filter(Boolean).join(" ")}
     >
       {initials}
     </button>

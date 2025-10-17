@@ -13,7 +13,6 @@ type NavItem = {
 import AppsIcon from "@/components/icons/apps";
 import HistoryIcon from "@/components/icons/history";
 import StorageIcon from "@/components/icons/storage";
-import clsx from "clsx";
 
 export default function NavigationOverlay({
   items = [
@@ -43,28 +42,28 @@ export default function NavigationOverlay({
             <div key={item.key}>
               <Link
                 href={target}
-                className={clsx(
+                className={[
                   "relative group cursor-pointer",
                   "flex items-center rounded-full",
                   "hover:bg-foreground/5 focus:outline-none",
                   isActive ? "bg-black" : "bg-white",
-                )}
+                ].filter(Boolean).join(" ")}
               >
-                <span className={clsx(
+                <span className={[
                   "inline-flex items-center justify-center w-10 h-10",
                   isActive ? "text-white" : "text-gray-600",
-                )}>
+                ].filter(Boolean).join(" ")}>
                   {item.icon}
                 </span>
                 {item.title && (
                   <span
-                    className={clsx(
+                    className={[
                       "pointer-events-none",
                       "absolute left-full top-1/2 -translate-y-1/2",
                       "ml-2 px-2 py-1 rounded-md",
                       "bg-white text-primary text-xs font-semibold opacity-0",
-                      "group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg z-10"
-                    )}
+                      "group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg z-10",
+                    ].filter(Boolean).join(" ")}
                   >
                     {item.title}
                   </span>
