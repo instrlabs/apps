@@ -5,10 +5,10 @@ import React from "react";
 export type InputPinProps = {
   values: string[];
   onChange: (values: string[]) => void;
+  length: number;
 };
 
-export default function InputPin({ values, onChange }: InputPinProps) {
-  const length = 6;
+const InputPin: React.FC<InputPinProps> = ({ values, onChange, length = 6 }) => {
   const inputsRef = React.useRef<Array<HTMLInputElement | null>>([]);
 
   React.useEffect(() => {
@@ -55,7 +55,14 @@ export default function InputPin({ values, onChange }: InputPinProps) {
     inputsRef.current[nextIdx]?.focus();
   };
 
-  const baseInputClass = "w-12 h-12 text-base text-center border border-primary rounded bg-secondary text-white placeholder:text-muted focus:outline-none focus:border-white focus:bg-white/15 transition-colors";
+  const baseInputClass = [
+    "w-12 h-12",
+    "border border-primary rounded",
+    "bg-secondary text-white placeholder:text-muted",
+    "text-base text-center",
+    "transition-colors",
+    "focus:outline-none focus:border-white focus:bg-white/15",
+  ].join(" ");
 
   return (
     <div className="flex justify-between">
@@ -75,4 +82,7 @@ export default function InputPin({ values, onChange }: InputPinProps) {
       ))}
     </div>
   );
-}
+};
+
+InputPin.displayName = "InputPin";
+export default InputPin;

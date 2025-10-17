@@ -6,6 +6,8 @@ import Input from "@/components/inputs/input";
 import Text from "@/components/text";
 import AppsCard from "@/components/cards/apps-card";
 import { Product } from "@/services/images";
+import InputWithIcon from "@/components/inputs/input-with-icon";
+import SearchIcon from "@/components/icons/search";
 
 export default function ListProduct() {
   const { productsByType } = useProduct();
@@ -26,12 +28,13 @@ export default function ListProduct() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex w-full justify-center">
-        <Input
+        <InputWithIcon
+          icon={<SearchIcon className="size-6" />}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search"
           aria-label="Search image tools"
-          className="max-w-[500px]"
+          className="min-w-[500px]"
         />
       </div>
 
