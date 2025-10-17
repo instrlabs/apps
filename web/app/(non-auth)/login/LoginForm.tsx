@@ -95,7 +95,7 @@ function FormEmail({ setEmail, next }: {
             {loading && <InlineSpinner />} <span>Continue with Email</span>
           </div>
         </Button>
-        <div className="h-px w-full bg-white/40" />
+        <div className="mx-auto h-px w-4 bg-white/40" />
         <GoogleSignInButton />
       </form>
     </div>

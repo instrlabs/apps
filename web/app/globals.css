@@ -65,3 +65,18 @@ body {
 .animate-blink2 {
   animation: blink2 1.2s ease-in-out infinite;
 }
+
+:root {
+  --app-bg: #000000;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.8);
+  --bg-primary: #ffffff;
+  --bg-secondary: rgba(255, 255, 255, 0.08);
+  --border-primary: rgba(255, 255, 255, 0.1);
+}
+
+@utility text-primary { color: var(--text-primary); }
+@utility text-secondary { color: var(--text-secondary); }
+@utility bg-primary { background-color: var(--bg-primary); }
+@utility bg-secondary { background-color: var(--bg-secondary); }
+@utility border-primary { border-color: var(--border-primary); }

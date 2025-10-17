@@ -15,18 +15,18 @@ export default function Button({
   ...rest
 }: ButtonProps) {
   const primaryClasses = [
-    "bg-white",
+    "bg-primary",
     "text-black",
-    "hover:bg-white/85",
-    "disabled:bg-white/85"
+    "hover:opacity-90",
+    "disabled:opacity-60"
   ].join(" ");
 
   const secondaryClasses = [
-    "bg-white/8",
-    "text-white/90",
+    "bg-secondary",
+    "text-secondary",
     "border",
-    "border-white/10",
-    "hover:bg-white/10",
+    "border-primary",
+    "hover:opacity-90",
     "disabled:opacity-60"
   ].join(" ");
 

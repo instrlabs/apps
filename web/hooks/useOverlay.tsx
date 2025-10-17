@@ -5,7 +5,6 @@ import React, {createContext, useCallback, useContext, useMemo, useState} from "
 import NavigationOverlay from "@/components/overlays/navigation-overlay";
 import NotificationOverlay from "@/components/overlays/notification-overlay";
 import ProfileOverlay from "@/components/overlays/profile-overlay";
-import SearchOverlay from "@/components/overlays/search-overlay";
 
 export type OverlayActions = {
   // left overlay state
@@ -57,12 +56,6 @@ function registerOverlays() {
   registerOverlay("right:profile", {
     side: "right",
     render: () => <ProfileOverlay />,
-  });
-
-  // Right search
-  registerOverlay("right:search", {
-    side: "right",
-    render: () => <SearchOverlay />,
   });
 }
 
