@@ -2,7 +2,7 @@
 
 import {useCallback, useEffect, useMemo, useState} from "react"
 import FileDropzone from "@/components/inputs/file-dropzone";
-import Button from "@/components/actions/button";
+import Text from "@/components/text";
 import {
   createImageInstruction,
   Instruction,
@@ -141,77 +141,81 @@ export default function ImageCompress() {
   const showFinalActions = progress === 'UPLOADED' && ((!instruction && hasFailure) || (instruction && (anyFailed || allDone)));
 
   return (
-    <div className="flex h-full w-full flex-row gap-4">
-      <div className="flex h-full flex-1 flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <h4 className="text-sm">Image Compress</h4>
-        </div>
+    <div className="p-4 flex flex-col gap-4">
+      <Text as="h3" xSize="sm" isBold>Image Compress</Text>
 
-        <div className="flex h-full w-full flex-col gap-4">
-          {progress === "LOADING" && (
-            <div className="bg-primary-black shadow-primary flex min-h-[300px] w-full flex-col items-center justify-center rounded-lg">
-              <Loading />
-            </div>
-          )}
+        {progress === "LOADING" && <Loading />}
 
-          {progress === "UPLOAD" && (
-            <div className="bg-primary-black shadow-primary flex min-h-[300px] w-full flex-col rounded-lg">
-              <FileDropzone
-                multiple
-                accepts={["image/png", "image/jpeg", "image/webp", "image/gif"]}
-                maxSize={FILE_SIZE_5MB}
-                onFilesAdded={handleUpload}
-                className="min-h-[300px]"
-              />
-            </div>
-          )}
+        {progress === "UPLOAD" && (
+          <FileDropzone
+            multiple
+            accepts={["image/png", "image/jpeg", "image/webp", "image/gif"]}
+            maxSize={FILE_SIZE_5MB}
+            onFilesAdded={handleUpload}
+          />
+        )}
 
-          {progress === "UPLOADED" && (
-            <>
-              <div className="bg-primary-black shadow-primary flex min-h-[300px] w-full flex-col rounded-lg">
-                <div className="flex flex-row items-center justify-between p-4">
-                  <span className="text-sm font-light text-white/50">
-                    Total files: {files.length}
-                  </span>
-                  <span className="text-sm font-light text-white/50">
-                    Total sizes: {bytesToString(files.reduce((acc, file) => acc + file.size, 0))}
-                  </span>
-                </div>
-                <ListFiles
-                  files={files}
-                  imagesUrls={urls}
-                  removeFile={removeFile}
-                  submitted={!!instruction}
-                  inputFiles={inputFiles}
-                  outputFiles={outputFiles}
-                />
-              </div>
-              <div className="flex flex-row gap-2">
-                {showInitialActions && (
-                  <>
-                    <Button xColor="primary" xSize="sm" onClick={handleSubmit}>
-                      Continue
-                    </Button>
-                    <Button xColor="secondary" xSize="sm" onClick={handleReset}>
-                      Reset
-                    </Button>
-                  </>
-                )}
-                {showFinalActions && (
-                  <>
-                    <Button xColor="primary" xSize="sm" onClick={goHome}>
-                      Back to Homepage
-                    </Button>
-                    <Button xColor="secondary" xSize="sm" onClick={handleReset}>
-                      Reset
-                    </Button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+        {/*  {progress === "UPLOADED" && (*/}
+        {/*    <>*/}
+        {/*      <div className={`*/}
+        {/*                      flex min-h-[300px] w-full*/}
+        {/*                      flex-col*/}
+        {/*                      rounded-lg*/}
+        {/*                      border border-white/10*/}
+        {/*                      bg-primary-black*/}
+        {/*                      shadow-primary*/}
+        {/*                    `}>*/}
+        {/*        <div className={`*/}
+        {/*                          flex flex-row items-center justify-between*/}
+        {/*                          p-4*/}
+        {/*                        `}>*/}
+        {/*          <span className={`*/}
+        {/*            text-sm font-light*/}
+        {/*            text-white/50*/}
+        {/*          `}>*/}
+        {/*            Total files: {files.length}*/}
+        {/*          </span>*/}
+        {/*          <span className={`*/}
+        {/*            text-sm font-light*/}
+        {/*            text-white/50*/}
+        {/*          `}>*/}
+        {/*            Total sizes: {bytesToString(files.reduce((acc, file) => acc + file.size, 0))}*/}
+        {/*          </span>*/}
+        {/*        </div>*/}
+        {/*        <ListFiles*/}
+        {/*          files={files}*/}
+        {/*          imagesUrls={urls}*/}
+        {/*          removeFile={removeFile}*/}
+        {/*          submitted={!!instruction}*/}
+        {/*          inputFiles={inputFiles}*/}
+        {/*          outputFiles={outputFiles}*/}
+        {/*        />*/}
+        {/*      </div>*/}
+        {/*      <div className={`*/}
+        {/*                      flex flex-row*/}
+        {/*                      gap-2*/}
+        {/*                    `}>*/}
+        {/*        {showInitialActions && (*/}
+        {/*          <>*/}
+        {/*            <Button xColor="primary" xSize="sm" onClick={handleSubmit}>*/}
+        {/*              Continue*/}
+        {/*            </Button>*/}
+        {/*            <Button xColor="secondary" xSize="sm" onClick={handleReset}>*/}
+        {/*              Reset*/}
+        {/*            </Button>*/}
+        {/*          </>*/}
+        {/*        )}*/}
+        {/*        {showFinalActions && (*/}
+        {/*          <>*/}
+        {/*            <Button xColor="primary" xSize="sm" onClick={goHome}>*/}
+        {/*              Back to Homepage*/}
+        {/*            </Button>*/}
+        {/*            <Button xColor="secondary" xSize="sm" onClick={handleReset}>*/}
+        {/*              Reset*/}
+        {/*            </Button>*/}
+        {/*          </>*/}
+        {/*        )}*/}
+        {/*      </div>*/}
     </div>
   );
 }

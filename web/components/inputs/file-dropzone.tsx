@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState, useId } from "react";
 import { bytesToString } from "@/utils/bytesToString";
 import { acceptsToExtensions } from "@/utils/acceptsToExtensions";
 import useNotification from "@/hooks/useNotification";
 import CloudUploadIcon from "@/components/icons/CloudUploadIcon";
+import Text from "@/components/text";
 
 export type FileDropzoneProps = {
   accepts: string[];
@@ -23,6 +24,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
   const { showNotification } = useNotification();
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const helperId = useId();
 
   const openFileDialog = useCallback(() => {
     inputRef.current?.click();
@@ -63,18 +65,31 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
   }, [multiple, accepts, maxSize, onFilesAdded, showNotification]);
 
   const baseClass = useMemo(() => (
-    [
-      "group cursor-pointer bg-primary-black",
-      "h-auto w-full flex flex-col items-center justify-center gap-4",
-      "transition-colors",
-      isDragging ? "bg-white/8" : "hover:bg-white/8",
-      className,
-    ].join(" ")
+    `
+    group cursor-pointer outline-none
+    flex w-full flex-col items-center justify-center
+    gap-2 p-6
+    rounded-lg border border-dashed border-white/10
+    bg-transparent
+
+    transition-colors focus-visible:ring-2 focus-visible:ring-white/20
+    ${isDragging ? "bg-white/8" : "hover:bg-white/5"}
+    ${className || ""}
+    `
   ), [isDragging, className]);
 
   return (
     <div
       role="button"
+      tabIndex={0}
+      aria-label={`Upload files. Allowed: ${acceptsToExtensions(accepts).join(", ")}. Max size: ${bytesToString(maxSize)}.`}
+      aria-describedby={helperId}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openFileDialog();
+        }
+      }}
       onClick={openFileDialog}
       onDragOver={handleDragOver}
       onDragEnter={handleDragOver}
@@ -83,16 +98,22 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
       className={baseClass}
     >
       <div className={`
-        flex flex-row items-center justify-center gap-2
-        py-2 px-4 rounded-lg shadow-primary bg-transparent
-        group-hover:bg-white/1
-      `}>
-        <CloudUploadIcon className="size-5 text-white/50 group-hover:text-white transition-colors" />
-        <span className="text-sm font-light text-white/50 group-hover:text-white transition-colors">Import</span>
-      </div  >
-      <span className="max-w-xs text-center text-xs font-light text-white/50 group-hover:text-white transition-colors">
-        The maximum file size allowed is {bytesToString(maxSize)}, and the supported formats are {acceptsToExtensions(accepts).join(", ")}.
-      </span>
+          flex flex-col items-center justify-center gap-2
+          rounded-lg
+          group-hover:bg-white/1
+        `}>
+        <CloudUploadIcon className="size-10" />
+        <Text as="span" xSize="sm" className="font-light text-white/50 group-hover:text-white transition-colors">Upload Files</Text>
+      </div>
+      <Text
+        as="span"
+        id={helperId}
+        xSize="xs"
+        xColor="secondary"
+        className="max-w-xs text-center"
+      >
+        Total file size allowed is {bytesToString(maxSize)}, and the supported formats are {acceptsToExtensions(accepts).join(", ")}.
+      </Text>
       <input
         ref={inputRef}
         className="hidden"

@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export default function ImageCompressPage() {
   return (
-    <div className="flex flex-row gap-4 p-4">
-      <History />
+    <div className="h-full rounded-lg bg-secondary border border-primary">
+      {/*<History />*/}
       <ImageCompress />
     </div>
   );

@@ -7,23 +7,55 @@ export default async function History() {
   if (!success) redirect("/");
 
   return (
-    <div className="flex w-[300px] flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <h4 className="text-sm">Histories</h4>
+    <div className={`
+      flex w-[300px]
+      flex-col
+      gap-4
+    `}>
+      <div className={`
+        flex flex-col
+        gap-2
+      `}>
+        <h4 className={`
+          text-sm
+        `}>Histories</h4>
       </div>
-      <div className="bg-primary-black shadow-primary rounded-lg">
-        <div className="flex flex-col gap-2 p-4">
+      <div className={`
+        rounded-lg
+        border border-white/10
+        bg-primary-black
+        shadow-primary
+      `}>
+        <div className={`
+          flex flex-col
+          gap-2
+          p-4
+        `}>
           {data!.instructions.map((instruction) => (
             <div
               key={instruction.id}
-              className="group flex items-center justify-between rounded-lg cursor-pointer"
+              className={`
+                group
+                flex items-center justify-between
+                rounded-md
+                px-2 py-1.5
+                hover:bg-white/5
+                cursor-pointer
+              `}
             >
-              <span className="text-sm text-white/70 group-hover:text-white/40">
+              <span className={`
+                text-sm
+                text-white/70 group-hover:text-white/60
+             `}>
                 {format(new Date(instruction.created_at), "HH:mm dd/MM")}
               </span>
               <button
-                className="text-sm text-gray-400 group-hover:text-white/40"
+                className={`
+                  text-sm
+                  text-gray-400 group-hover:text-white/60
+                `}
                 aria-label="Delete"
+                type="button"
               >
                 ✕
               </button>
