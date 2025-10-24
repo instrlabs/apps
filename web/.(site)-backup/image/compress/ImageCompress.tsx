@@ -10,7 +10,7 @@ import {
   createImageInstructionDetails, getImageInstructionDetails
 } from "@/services/images";
 import useNotification from "@/hooks/useNotification";
-import ListFiles from "@/app/(site)/image/compress/ListFiles";
+import ListFiles from "@/.(site)-backup/image/compress/ListFiles";
 import Loading from "@/components/feedback/Loading";
 import useSSE from "@/hooks/useSSE";
 import debounce from "lodash.debounce";

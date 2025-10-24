@@ -10,29 +10,16 @@ import CircleSuccessSvg from "./svgs/circle-success";
 import CircleErrorSvg from "./svgs/circle-error";
 import WarningSvg from "./svgs/warning";
 import CircleInfoSvg from "./svgs/circle-info";
-
-type IconName =
-  | "circle"
-  | "rectangle"
-  | "google"
-  | "search"
-  | "visible"
-  | "circle-success"
-  | "circle-error"
-  | "warning"
-  | "circle-info";
+import LogoSvg from "./svgs/logo";
 
 type IconProps = {
-  name: IconName;
+  name: string;
   size?: number;
   className?: string;
   title?: string;
 };
 
-const iconMap: Record<
-  IconName,
-  React.ComponentType<React.SVGProps<SVGSVGElement>>
-> = {
+const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   circle: CircleSvg,
   rectangle: RectangleSvg,
   google: GoogleSvg,
@@ -42,6 +29,7 @@ const iconMap: Record<
   "circle-error": CircleErrorSvg,
   warning: WarningSvg,
   "circle-info": CircleInfoSvg,
+  logo: LogoSvg,
 };
 
 export default function Icon({

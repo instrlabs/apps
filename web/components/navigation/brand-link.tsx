@@ -1,5 +1,5 @@
 import Link from "next/link";
-import LogoIcon from "@/components/icons/logo-icon";
+import Icon from "@/components/icon";
 
 export default function BrandLink() {
   return (
@@ -8,7 +8,7 @@ export default function BrandLink() {
       aria-label="Go to home"
       className="inline-flex items-center gap-2 hover:opacity-90 transition-opacity"
     >
-      <LogoIcon size={40} />
+      <Icon name="logo" size={40} />
     </Link>
   );
 }

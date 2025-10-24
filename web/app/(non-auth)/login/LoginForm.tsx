@@ -7,7 +7,7 @@ import Button from "@/components/button";
 import Input from "@/components/inputs/input";
 import InputPin from "@/components/inputs/input-pin";
 import GoogleSignInButton from "@/components/google-signin";
-import LogoIcon from "@/components/icons/logo-icon";
+import Icon from "@/components/icon";
 import { login, sendPin } from "@/services/auth";
 import useNotification from "@/hooks/useNotification";
 import InlineSpinner from "@/components/feedback/InlineSpinner";
@@ -69,7 +69,7 @@ function FormEmail({ setEmail, next }: {
 
   return (
     <div className="mx-auto w-full max-w-[400px] flex flex-col gap-7 px-6 md:px-0">
-      <LogoIcon size={160} className="mx-auto drop-shadow" />
+      <Icon name="logo" size={160} className="mx-auto drop-shadow" />
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7">
         <Input
           xSize="lg"
@@ -160,21 +160,7 @@ gap-7
           size="lg"
           disabled={loading}
         >
-          <div className={`
-            /* layout */
-            flex items-center justify-center
-            /* spacing */
-            gap-2
-            /* borders */
-
-            /* colors */
-
-            /* text */
-
-            /* effects */
-
-            /* states */
-         `}>
+          <div className="flex items-center justify-center gap-2">
             {loading && <InlineSpinner />} <span>Continue</span>
           </div>
         </Button>

@@ -1,12 +1,12 @@
 import Button from "@/components/button";
 import { loginByGoogle } from "@/services/auth";
-import GoogleIcon from "@/components/icons/google-icon";
+import Icon from "@/components/icon";
 
 function GoogleSignInButton() {
   return (
       <Button onClick={loginByGoogle} color="secondary" size="lg">
         <div className="flex items-center justify-center gap-2">
-          <GoogleIcon className="size-5" />
+          <Icon name="google" size={20} />
           Continue with Google
         </div>
       </Button>

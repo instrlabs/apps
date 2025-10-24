@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ListProduct from "@/app/(site)/ListProduct";
+import ListProduct from "@/.(site)-backup/ListProduct";
 
 export const metadata: Metadata = {
   title: "Home - Instruction Labs",
