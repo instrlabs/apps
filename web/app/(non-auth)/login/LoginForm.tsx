@@ -3,10 +3,10 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 
-import Button from "@/components/actions/button";
+import Button from "@/components/button";
 import Input from "@/components/inputs/input";
 import InputPin from "@/components/inputs/input-pin";
-import GoogleSignInButton from "@/components/actions/google-signin";
+import GoogleSignInButton from "@/components/google-signin";
 import LogoIcon from "@/components/icons/logo-icon";
 import { login, sendPin } from "@/services/auth";
 import useNotification from "@/hooks/useNotification";
@@ -87,8 +87,8 @@ function FormEmail({ setEmail, next }: {
         />
         <Button
           type="submit"
-          xColor="primary"
-          xSize="lg"
+          color="primary"
+          size="lg"
           disabled={loading}
         >
           <div className="flex items-center justify-center gap-2">
@@ -156,8 +156,8 @@ gap-7
         <InputPin values={values} onChange={setValues} />
         <Button
           type="submit"
-          xColor="primary"
-          xSize="lg"
+          color="primary"
+          size="lg"
           disabled={loading}
         >
           <div className={`
@@ -180,8 +180,8 @@ gap-7
         </Button>
         <Button
           type="button"
-          xColor="secondary"
-          xSize="lg"
+          color="secondary"
+          size="lg"
           onClick={async () => {
             setLoading(true);
             try {

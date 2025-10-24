@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useProfile } from "@/hooks/useProfile";
 import { logout } from "@/services/auth";
 import Avatar from "@/components/avatar";
-import Button from "@/components/actions/button";
+import Button from "@/components/button";
 
 export default function ProfileOverlay() {
   const router = useRouter();
@@ -28,7 +28,7 @@ export default function ProfileOverlay() {
         <Button onClick={() => router.push("/")}>
           Dashboard
         </Button>
-        <Button xColor="secondary" onClick={async () => {
+        <Button color="secondary" onClick={async () => {
           await logout();
           document.location.href = "/";
         }}>

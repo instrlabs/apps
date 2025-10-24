@@ -2,13 +2,13 @@
 
 import BrandLink from "@/components/navigation/brand-link";
 import Breadcrumbs from "@/components/navigation/breadcrumbs";
-import IconButton from "@/components/actions/icon-button";
+import IconButton from "@/components/icon-button";
 
 import { useOverlay } from "@/hooks/useOverlay";
 import Avatar from "@/components/avatar";
 import { useProfile } from "@/hooks/useProfile";
 import NotificationIcon from "@/components/icons/notification-icon";
-import Button from "@/components/actions/button";
+import Button from "@/components/button";
 import { redirect } from "next/navigation";
 
 export default function OverlayTop() {

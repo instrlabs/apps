@@ -1,6 +1,6 @@
 'use client'
 
-import Button from "@/components/actions/button";
+import Button from "@/components/button";
 import { getProfile, login, logout, refresh, sendPin } from "@/services/auth";
 import useNotification from "@/hooks/useNotification";
 import { useProfile } from "@/hooks/useProfile";
@@ -55,19 +55,19 @@ export default function AuthAction() {
     <>
       <p className="text-sm truncate">Profile: {profile?.email}</p>
       <div className="flex flex-col gap-4">
-        <Button onClick={handleSendPin} xColor="primary" xSize="sm">
+        <Button onClick={handleSendPin} color="primary" size="sm">
           Send Pin
         </Button>
-        <Button onClick={handleLogin} xColor="primary" xSize="sm">
+        <Button onClick={handleLogin} color="primary" size="sm">
           Login
         </Button>
-        <Button onClick={handleLogout} xColor="primary" xSize="sm">
+        <Button onClick={handleLogout} color="primary" size="sm">
           Logout
         </Button>
-        <Button onClick={handleRefreshToken} xColor="primary" xSize="sm">
+        <Button onClick={handleRefreshToken} color="primary" size="sm">
           Refresh Token - Client
         </Button>
-        <Button onClick={handleUpdateProfile} xColor="primary" xSize="sm">
+        <Button onClick={handleUpdateProfile} color="primary" size="sm">
           Update Profile - Client
         </Button>
       </div>

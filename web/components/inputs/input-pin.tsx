@@ -5,7 +5,7 @@ import React from "react";
 export type InputPinProps = {
   values: string[];
   onChange: (values: string[]) => void;
-  length: number;
+  length?: number;
 };
 
 const InputPin: React.FC<InputPinProps> = ({ values, onChange, length = 6 }) => {
