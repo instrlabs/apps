@@ -10,7 +10,8 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   hasLeftIcon?: boolean;
   hasRightIcon?: boolean;
   size?: "sm" | "base" | "lg";
-  color?: "primary" | "secondary" | "transparent";
+  color?: "primary" | "secondary";
+  state?: "Default" | "Hover" | "Disabled";
 };
 
 export default function Button({
@@ -21,83 +22,99 @@ export default function Button({
   hasRightIcon = false,
   size = "base",
   color = "primary",
+  state = "Default",
   className = "",
   children,
   disabled = false,
+  onMouseEnter,
+  onMouseLeave,
   ...rest
 }: ButtonProps) {
-  const baseClasses = [
-    "box-border",
-    "inline-flex",
-    "items-center",
-    "justify-center",
-    "rounded-border",
-    "cursor-pointer",
-    "transition-opacity",
-    "focus:outline-none",
-    "disabled:cursor-not-allowed",
-  ].join(" ");
+  const [isHovered, setIsHovered] = React.useState(false);
 
-  // Spacing and typography per size (matching Figma design)
   const sizeConfig = {
     sm: {
-      spacing: "gap-spacing-2 p-spacing-2",
-      font: "text-sm leading-5",
+      spacing: "gap-2 p-2",
+      font: "text-sm",
+      lineHeight: "leading-5",
       weight: "font-medium",
-      iconSize: 20
+      iconWidth: 20,
+      iconHeight: 17.889,
     },
     base: {
-      spacing: "gap-spacing-2 p-spacing-2",
-      font: "text-base leading-6",
+      spacing: "gap-2 p-2",
+      font: "text-base",
+      lineHeight: "leading-6",
       weight: "font-medium",
-      iconSize: 24
+      iconWidth: 24,
+      iconHeight: 21.909,
     },
     lg: {
-      spacing: "gap-spacing-3 p-spacing-3",
-      font: "text-base leading-6",
+      spacing: "gap-3 p-3",
+      font: "text-base",
+      lineHeight: "leading-6",
       weight: "font-semibold",
-      iconSize: 24
-    }
+      iconWidth: 24,
+      iconHeight: 24,
+    },
   };
 
-  // Color variants (matching Figma design system)
   const colorConfig = {
-    primary: [
-      "btn-primary",
-      "hover:btn-primary-hover",
-      "disabled:btn-primary-disabled"
-    ].join(" "),
-    secondary: [
-      "btn-secondary",
-      "border",
-      "opacity-90",
-      "hover:opacity-100",
-      "hover:btn-secondary-hover",
-      "disabled:btn-secondary-disabled"
-    ].join(" "),
-    transparent: [
-      "bg-transparent",
-      "text-primary",
-      "hover:opacity-90",
-      "disabled:opacity-60"
-    ].join(" ")
+    primary: {
+      default: "btn-primary",
+      hover: "btn-primary-hover",
+      disabled: "btn-primary-disabled",
+    },
+    secondary: {
+      default: "btn-secondary border",
+      hover: "btn-secondary-hover border",
+      disabled: "btn-secondary-disabled border",
+    },
   };
 
   const currentSize = sizeConfig[size] || sizeConfig.base;
   const currentColor = colorConfig[color] || colorConfig.primary;
 
+  // Determine current state
+  const currentState = disabled ? "Disabled" : isHovered ? "Hover" : "Default";
+  const stateStyle = disabled ? currentColor.disabled : isHovered ? currentColor.hover : currentColor.default;
+
+  const baseClasses = [
+    "box-border",
+    "inline-flex",
+    "items-center",
+    "justify-center",
+    "rounded",
+    "cursor-pointer",
+    "transition-colors",
+    "focus:outline-none",
+    "disabled:cursor-not-allowed",
+  ].join(" ");
+
   const renderIcon = (icon: React.ReactNode | string | null) => {
     if (!icon) return null;
 
-    const iconOpacity = disabled ? "opacity-60" : "opacity-[0.99]";
+    const iconOpacity = disabled ? "opacity-60" : currentState === "Hover" ? "" : "opacity-[0.99]";
 
     if (typeof icon === "string") {
       return (
-        <span className={["relative", "shrink-0", iconOpacity].join(" ")}>
-          <Icon name={icon} size={currentSize.iconSize} />
+        <span className={["relative", "shrink-0", iconOpacity].filter(Boolean).join(" ")}>
+          <Icon name={icon} size={currentSize.iconWidth} />
         </span>
       );
     }
+
+    return icon;
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setIsHovered(true);
+    onMouseEnter?.(e);
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setIsHovered(false);
+    onMouseLeave?.(e);
   };
 
   return (
@@ -106,11 +123,14 @@ export default function Button({
         baseClasses,
         currentSize.spacing,
         currentSize.font,
+        currentSize.lineHeight,
         currentSize.weight,
-        currentColor,
-        className
+        stateStyle,
+        className,
       ].filter(Boolean).join(" ")}
       disabled={disabled}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       {...rest}
     >
       {hasLeftIcon && renderIcon(leftIconName)}

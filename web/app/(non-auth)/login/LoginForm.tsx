@@ -4,7 +4,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 
 import Button from "@/components/button";
-import Input from "@/components/inputs/input";
+import Input from "@/components/input";
 import InputPin from "@/components/inputs/input-pin";
 import GoogleSignInButton from "@/components/google-signin";
 import Icon from "@/components/icon";
@@ -72,7 +72,8 @@ function FormEmail({ setEmail, next }: {
       <Icon name="logo" size={160} className="mx-auto drop-shadow" />
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7">
         <Input
-          xSize="lg"
+          size="lg"
+          color="primary"
           type="email"
           placeholder="Email address"
           autoComplete="email"

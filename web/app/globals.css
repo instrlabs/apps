@@ -7,93 +7,87 @@
   --colors-text-primary: #ffffff;
   --colors-text-secondary: rgba(255, 255, 255, 0.8);
   --colors-text-muted: rgba(255, 255, 255, 0.3);
+  --colors-text-black: #000000;
+  --colors-text-black-muted: rgba(0, 0, 0, 0.6);
 
   /* Figma Color Variables - colors/background/* */
+  --colors-background-primary: #000000;
   --colors-background-secondary: rgba(255, 255, 255, 0.08);
 
-  /* Figma Color Variables - colors/border/* */
   --colors-border-primary: rgba(255, 255, 255, 0.1);
 
-  /* Figma Spacing Variables - spacing/* */
-  --spacing-2: 8px;
-  --spacing-3: 12px;
+  --colors-button-primary: rgba(255, 255, 255, 0.96);
+  --colors-button-primary-hover: #ffffff;
+  --colors-button-secondary: rgba(255, 255, 255, 0.04);
+  --colors-button-secondary-hover: rgba(255, 255, 255, 0.08);
 
-  /* Figma Border Variables - border/* */
-  --border-radius: 4px;
-
-  /* Figma Font Variables - font/* */
-  --font-family-default: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-size-sm: 14px;
-  --font-size-base: 16px;
-  --font-line-height-sm: 20px;
-  --font-line-height-base: 24px;
-
-  /* Button Colors - Primary */
-  --btn-primary: rgba(255, 255, 255, 0.99);
-  --btn-primary-hover: #ffffff;
-  --btn-primary-disabled: rgba(255, 255, 255, 0.6);
-  --btn-primary-text: #000000;
-  --btn-primary-disabled-text: rgba(0, 0, 0, 0.6);
-
-  /* Button Colors - Secondary */
-  --btn-secondary: var(--colors-background-secondary);
-  --btn-secondary-border: var(--colors-border-primary);
-  --btn-secondary-text: var(--colors-text-primary);
-  --btn-secondary-hover-border: #ffffff;
-  --btn-secondary-hover-text: #ffffff;
+  /* Figma Color Variables - colors/input/* */
+  --colors-input-primary: #ffffff;
+  --colors-input-secondary: rgba(255, 255, 255, 0.04);
 }
 
 /* Utility classes for Button component color variants */
 @utility btn-primary {
-  background-color: var(--btn-primary);
-  color: var(--btn-primary-text);
+  background-color: var(--colors-button-primary);
+  color: var(--colors-text-black);
 }
 
 @utility btn-primary-hover {
-  background-color: var(--btn-primary-hover);
-  color: var(--btn-primary-text);
+  background-color: var(--colors-button-primary-hover);
+  color: var(--colors-text-black);
 }
 
 @utility btn-primary-disabled {
-  background-color: var(--btn-primary-disabled);
-  color: var(--btn-primary-disabled-text);
+  background-color: var(--colors-button-primary);
+  color: var(--colors-text-black-muted);
+  opacity: 0.6;
 }
 
 @utility btn-secondary {
-  background-color: var(--btn-secondary);
-  border-color: var(--btn-secondary-border);
-  color: var(--btn-secondary-text);
+  background-color: var(--colors-button-secondary);
+  border-color: var(--colors-border-primary);
+  color: var(--colors-text-primary);
 }
 
 @utility btn-secondary-hover {
-  border-color: var(--btn-secondary-hover-border);
-  color: var(--btn-secondary-hover-text);
+  background-color: var(--colors-button-secondary-hover);
+  border-color: var(--colors-border-primary);
+  color: var(--colors-text-primary);
 }
 
 @utility btn-secondary-disabled {
-  opacity: 0.5;
+  background-color: var(--colors-button-secondary);
+  border-color: var(--colors-border-primary);
+  color: var(--colors-text-muted);
+  opacity: 0.6;
 }
 
-/* Utility classes for spacing */
-@utility gap-spacing-2 {
-  gap: var(--spacing-2);
+/* Utility classes for Input component color variants */
+@utility input-primary {
+  background-color: var(--colors-input-secondary);
+  border-color: var(--colors-border-primary);
+  color: var(--colors-text-muted);
+
+  &:focus-within {
+    color: var(--colors-text-primary);
+  }
+
+  &:has(input:disabled) {
+    opacity: 0.5;
+  }
 }
 
-@utility gap-spacing-3 {
-  gap: var(--spacing-3);
-}
+@utility input-secondary {
+  background-color: var(--colors-input-primary);
+  color: var(--colors-text-black-muted);
 
-@utility p-spacing-2 {
-  padding: var(--spacing-2);
-}
+  &:focus-within {
+    color: var(--colors-text-black);
+  }
 
-@utility p-spacing-3 {
-  padding: var(--spacing-3);
-}
-
-/* Utility classes for border radius */
-@utility rounded-border {
-  border-radius: var(--border-radius);
+  &:has(input:disabled) {
+    opacity: 0.5;
+  }
 }
 
 body {
