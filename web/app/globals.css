@@ -16,7 +16,7 @@
 
   --colors-border-primary: rgba(255, 255, 255, 0.1);
 
-  --colors-button-primary: rgba(255, 255, 255, 0.96);
+  --colors-button-primary: rgba(255, 255, 255, 0.90);
   --colors-button-primary-hover: #ffffff;
   --colors-button-secondary: rgba(255, 255, 255, 0.04);
   --colors-button-secondary-hover: rgba(255, 255, 255, 0.08);
@@ -82,7 +82,7 @@
   color: var(--colors-text-black-muted);
 
   &:focus-within {
-    color: var(--colors-text-black);
+    color: var(--colors-text-primary);
   }
 
   &:has(input:disabled) {

@@ -1,13 +1,12 @@
 "use client";
 
-import BrandLink from "@/components/navigation/brand-link";
-import Breadcrumbs from "@/components/navigation/breadcrumbs";
+import Breadcrumbs from "@/components/breadcrumbs";
 import IconButton from "@/components/icon-button";
 
 import { useOverlay } from "@/hooks/useOverlay";
 import Avatar from "@/components/avatar";
 import { useProfile } from "@/hooks/useProfile";
-import NotificationIcon from "@/components/icons/notification-icon";
+import Icon from "@/components/icon";
 import Button from "@/components/button";
 import { redirect } from "next/navigation";
 
@@ -40,7 +39,7 @@ export default function OverlayTop() {
 
       <div className="relative w-full flex flex-row items-center justify-between gap-2 p-2 bg-background/80">
         <div className="flex items-center gap-2">
-          <BrandLink />
+          <Icon name="logo" className="size-6" />
         </div>
 
         {/* ACTIVE - WEB SECTION */}
@@ -56,7 +55,7 @@ export default function OverlayTop() {
                 xColor="transparent"
                 onClick={handleToggleNotifications}
               >
-                <NotificationIcon className="size-6"/>
+                <Icon name="rectangle" className="size-6"/>
               </IconButton>
               <Avatar
                 xSize="sm"

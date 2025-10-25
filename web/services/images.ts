@@ -1,6 +1,6 @@
 "use server"
 
-import { API_IMAGES } from "@/constants/api";
+import { IMAGES } from "@/constants/APIs";
 import { fetchGET, fetchGETBytes, fetchPOST, fetchPOSTFormData } from "@/utils/fetch";
 
 export type Product = {
@@ -32,11 +32,11 @@ export type InstructionFile = {
 };
 
 export async function getProducts() {
-  return await fetchGET<{ products: Product[] }>(API_IMAGES + "/products");
+  return await fetchGET<{ products: Product[] }>(IMAGES + "/products");
 }
 
 export async function createImageInstruction(productKey: string) {
-  return await fetchPOST<{ instruction: Instruction }>(`${API_IMAGES}/instructions`, {
+  return await fetchPOST<{ instruction: Instruction }>(`${IMAGES}/instructions`, {
     productKey
   });
 }
@@ -44,19 +44,19 @@ export async function createImageInstruction(productKey: string) {
 export async function createImageInstructionDetails(instructionId: string, file: File) {
   const formData = new FormData();
   formData.append("file", file);
-  return await fetchPOSTFormData<{ input: InstructionFile, output: InstructionFile }>(`${API_IMAGES}/instructions/${instructionId}/details`, formData);
+  return await fetchPOSTFormData<{ input: InstructionFile, output: InstructionFile }>(`${IMAGES}/instructions/${instructionId}/details`, formData);
 }
 
 export async function getImageInstructions() {
-  return await fetchGET<{ instructions: Instruction[] }>(API_IMAGES + "/instructions");
+  return await fetchGET<{ instructions: Instruction[] }>(IMAGES + "/instructions");
 }
 
 export async function getImageInstructionDetails(id: string) {
-  return await fetchGET<{ files: InstructionFile[] }>(`${API_IMAGES}/instructions/${id}/details`);
+  return await fetchGET<{ files: InstructionFile[] }>(`${IMAGES}/instructions/${id}/details`);
 }
 
 export async function getImageFile(id: string, fileId: string) {
-  return await fetchGETBytes(`${API_IMAGES}/instructions/${id}/details/${fileId}`);
+  return await fetchGETBytes(`${IMAGES}/instructions/${id}/details/${fileId}`);
 }
 
 

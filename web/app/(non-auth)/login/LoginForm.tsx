@@ -5,8 +5,8 @@ import { useForm } from "react-hook-form";
 
 import Button from "@/components/button";
 import Input from "@/components/input";
-import InputPin from "@/components/inputs/input-pin";
-import GoogleSignInButton from "@/components/google-signin";
+import InputPin from "@/components/input-pin";
+import GoogleSignIn from "@/app/(non-auth)/login/GoogleSignIn";
 import Icon from "@/components/icon";
 import { login, sendPin } from "@/services/auth";
 import useNotification from "@/hooks/useNotification";
@@ -101,7 +101,7 @@ mx-auto
 bg-white/40
 h-px w-4
         `} />
-        <GoogleSignInButton />
+        <GoogleSignIn />
       </form>
     </div>
   );

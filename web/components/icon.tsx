@@ -14,41 +14,30 @@ import LogoSvg from "./svgs/logo";
 
 type IconProps = {
   name: string;
-  size?: number;
   className?: string;
-  title?: string;
 };
 
 const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
-  circle: CircleSvg,
-  rectangle: RectangleSvg,
-  google: GoogleSvg,
-  search: SearchSvg,
-  visible: VisibleSvg,
+  "logo": LogoSvg,
+  "circle": CircleSvg,
+  "rectangle": RectangleSvg,
+  "google": GoogleSvg,
+  "search": SearchSvg,
+  "visible": VisibleSvg,
   "circle-success": CircleSuccessSvg,
   "circle-error": CircleErrorSvg,
-  warning: WarningSvg,
+  "warning": WarningSvg,
   "circle-info": CircleInfoSvg,
-  logo: LogoSvg,
 };
 
 export default function Icon({
   name,
-  size = 24,
   className = "",
-  title,
 }: IconProps) {
   const IconComponent = iconMap[name];
 
   return (
-    <IconComponent
-      width={size}
-      height={size}
-      className={className}
-      aria-hidden={title ? undefined : true}
-      role={title ? "img" : "presentation"}
-    >
-      {title ? <title>{title}</title> : null}
+    <IconComponent className={className}>
     </IconComponent>
   );
 }

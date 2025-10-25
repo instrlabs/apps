@@ -4,8 +4,7 @@ import React, { useCallback, useMemo, useRef, useState, useId } from "react";
 import { bytesToString } from "@/utils/bytesToString";
 import { acceptsToExtensions } from "@/utils/acceptsToExtensions";
 import useNotification from "@/hooks/useNotification";
-import CloudUploadIcon from "@/components/icons/CloudUploadIcon";
-import Text from "@/components/text";
+import Icon from "@/components/icon";
 
 export type FileDropzoneProps = {
   accepts: string[];
@@ -102,18 +101,15 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
           rounded-lg
           group-hover:bg-white/1
         `}>
-        <CloudUploadIcon className="size-10" />
-        <Text as="span" xSize="sm" className="font-light text-white/50 group-hover:text-white transition-colors">Upload Files</Text>
+        <Icon name="rectangle" size={40} className="size-10" />
+        <span className="text-sm font-light text-white/50 group-hover:text-white transition-colors">Upload Files</span>
       </div>
-      <Text
-        as="span"
+      <span
         id={helperId}
-        xSize="xs"
-        xColor="secondary"
-        className="max-w-xs text-center"
+        className="text-xs text-white/50 max-w-xs text-center"
       >
         Total file size allowed is {bytesToString(maxSize)}, and the supported formats are {acceptsToExtensions(accepts).join(", ")}.
-      </Text>
+      </span>
       <input
         ref={inputRef}
         className="hidden"

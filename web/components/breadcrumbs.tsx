@@ -20,7 +20,7 @@ export default function Breadcrumbs() {
       ) : (
         <div className="flex items-center gap-2">
           <Link
-            href="/"
+            href="/public"
             className="text-muted hover:text-foreground text-sm font-normal transition-colors"
           >
             Home

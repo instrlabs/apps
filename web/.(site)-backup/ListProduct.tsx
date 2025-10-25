@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useProduct } from "@/hooks/useProduct";
 import Input from "@/components/inputs/input";
 import Text from "@/components/text";
-import AppsCard from "@/components/cards/apps-card";
+import AppsCard from "@/.(site)-backup/apps-card";
 import { Product } from "@/services/images";
 import InputWithIcon from "@/components/inputs/input-with-icon";
 import SearchIcon from "@/components/icons/search";

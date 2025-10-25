@@ -1,7 +1,7 @@
 "use client"
 
 import {useCallback, useEffect, useMemo, useState} from "react"
-import FileDropzone from "@/components/inputs/file-dropzone";
+import FileDropzone from "@/components/file-dropzone";
 import Text from "@/components/text";
 import {
   createImageInstruction,

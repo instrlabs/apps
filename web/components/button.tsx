@@ -5,32 +5,27 @@ import Icon from "./icon";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   label?: React.ReactNode;
-  leftIconName?: string | null;
-  rightIconName?: string | null;
+  leftIconName?: string;
+  rightIconName?: string;
   hasLeftIcon?: boolean;
   hasRightIcon?: boolean;
   size?: "sm" | "base" | "lg";
   color?: "primary" | "secondary";
-  state?: "Default" | "Hover" | "Disabled";
 };
 
 export default function Button({
   label,
-  leftIconName = null,
-  rightIconName = null,
+  leftIconName,
+  rightIconName,
   hasLeftIcon = false,
   hasRightIcon = false,
   size = "base",
   color = "primary",
-  state = "Default",
   className = "",
   children,
-  disabled = false,
-  onMouseEnter,
-  onMouseLeave,
+  disabled,
   ...rest
 }: ButtonProps) {
-  const [isHovered, setIsHovered] = React.useState(false);
 
   const sizeConfig = {
     sm: {
@@ -75,9 +70,8 @@ export default function Button({
   const currentSize = sizeConfig[size] || sizeConfig.base;
   const currentColor = colorConfig[color] || colorConfig.primary;
 
-  // Determine current state
-  const currentState = disabled ? "Disabled" : isHovered ? "Hover" : "Default";
-  const stateStyle = disabled ? currentColor.disabled : isHovered ? currentColor.hover : currentColor.default;
+  // Use default color - CSS pseudo-classes (:hover, :disabled) handle state styling
+  const stateStyle = currentColor.default;
 
   const baseClasses = [
     "box-border",
@@ -91,31 +85,18 @@ export default function Button({
     "disabled:cursor-not-allowed",
   ].join(" ");
 
-  const renderIcon = (icon: React.ReactNode | string | null) => {
+  const renderIcon = (icon: string) => {
     if (!icon) return null;
 
-    const iconOpacity = disabled ? "opacity-60" : currentState === "Hover" ? "" : "opacity-[0.99]";
+    const iconOpacity = disabled ? "opacity-60" : "opacity-[0.99]";
 
-    if (typeof icon === "string") {
-      return (
-        <span className={["relative", "shrink-0", iconOpacity].filter(Boolean).join(" ")}>
-          <Icon name={icon} size={currentSize.iconWidth} />
-        </span>
-      );
-    }
-
-    return icon;
+    return (
+      <span className={["relative", "shrink-0", iconOpacity].filter(Boolean).join(" ")}>
+        <Icon name={icon} size={currentSize.iconWidth} />
+      </span>
+    );
   };
 
-  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-    setIsHovered(true);
-    onMouseEnter?.(e);
-  };
-
-  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-    setIsHovered(false);
-    onMouseLeave?.(e);
-  };
 
   return (
     <button
@@ -129,15 +110,13 @@ export default function Button({
         className,
       ].filter(Boolean).join(" ")}
       disabled={disabled}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       {...rest}
     >
-      {hasLeftIcon && renderIcon(leftIconName)}
+      {hasLeftIcon && leftIconName && renderIcon(leftIconName)}
       <span className="relative shrink-0">
         {children ?? label ?? "Button Text"}
       </span>
-      {hasRightIcon && renderIcon(rightIconName)}
+      {hasRightIcon && rightIconName && renderIcon(rightIconName)}
     </button>
   );
 }

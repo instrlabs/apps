@@ -3,9 +3,9 @@
 import React from "react";
 import Icon from "./icon";
 
-type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
-  leftIconName?: string | null;
-  rightIconName?: string | null;
+type InputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> & {
+  leftIconName?: string;
+  rightIconName?: string;
   hasLeftIcon?: boolean;
   hasRightIcon?: boolean;
   size?: "sm" | "base" | "lg";
@@ -13,8 +13,8 @@ type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
 };
 
 export default function Input({
-  leftIconName = null,
-  rightIconName = null,
+  leftIconName,
+  rightIconName,
   hasLeftIcon = false,
   hasRightIcon = false,
   size = "base",
@@ -23,16 +23,7 @@ export default function Input({
   disabled,
   ...rest
 }: InputProps) {
-  const sizeConfig: Record<
-    "sm" | "base" | "lg",
-    {
-      spacing: string;
-      font: string;
-      lineHeight: string;
-      height: string;
-      iconSize: number;
-    }
-  > = {
+  const sizeConfig = {
     sm: {
       spacing: "gap-2 p-2",
       font: "text-sm",
@@ -77,7 +68,6 @@ export default function Input({
   const inputClasses = [
     "flex-1",
     "min-w-0",
-    "bg-transparent",
     "border-none",
     "outline-none",
     currentSize.font,
@@ -107,13 +97,13 @@ export default function Input({
         .filter(Boolean)
         .join(" ")}
     >
-      {hasLeftIcon && renderIcon(leftIconName)}
+      {hasLeftIcon && leftIconName && renderIcon(leftIconName)}
       <input
         className={inputClasses}
         disabled={disabled}
         {...rest}
       />
-      {hasRightIcon && renderIcon(rightIconName)}
+      {hasRightIcon && rightIconName && renderIcon(rightIconName)}
     </div>
   );
 }

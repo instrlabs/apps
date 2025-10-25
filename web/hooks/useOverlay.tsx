@@ -2,9 +2,9 @@
 
 import React, {createContext, useCallback, useContext, useMemo, useState} from "react";
 
-import NavigationOverlay from "@/components/overlays/navigation-overlay";
-import NotificationOverlay from "@/components/overlays/notification-overlay";
-import ProfileOverlay from "@/components/overlays/profile-overlay";
+import NavigationOverlay from "@/components/widgets/navigation-overlay";
+import NotificationOverlay from "@/components/widgets/notification-overlay";
+import ProfileOverlay from "@/components/widgets/profile-overlay";
 
 export type OverlayActions = {
   // left overlay state

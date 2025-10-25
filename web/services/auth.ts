@@ -1,7 +1,7 @@
 "use server"
 
 import {cookies} from "next/headers";
-import { API_AUTH } from "@/constants/api";
+import { AUTH } from "@/constants/APIs";
 import { ApiResponse, EmptyBody, fetchGET, fetchPOST } from "@/utils/fetch";
 import {redirect} from "next/navigation";
 import { RedirectType } from "next/dist/client/components/redirect-error";
@@ -20,7 +20,7 @@ export async function login({ email, pin }: {
     throw new Error("Function: login() must be call on client component");
   }
 
-  return await fetchPOST(`${API_AUTH}/login`, { email, pin });
+  return await fetchPOST(`${AUTH}/login`, { email, pin });
 }
 
 export async function refresh() {
@@ -28,11 +28,11 @@ export async function refresh() {
     throw new Error("Function: refresh() must be call on client component");
   }
 
-  return await fetchPOST(`${API_AUTH}/refresh`);
+  return await fetchPOST(`${AUTH}/refresh`);
 }
 
 export async function logout() {
-  await fetchPOST<EmptyBody>(`${API_AUTH}/logout`, {});
+  await fetchPOST<EmptyBody>(`${AUTH}/logout`, {});
   const storeCookie = await cookies();
   storeCookie.delete("access_token");
   storeCookie.delete("refresh_token");
@@ -41,14 +41,14 @@ export async function logout() {
 export async function sendPin({ email }: {
   email: string,
 }): Promise<ApiResponse<EmptyBody>> {
-  return await fetchPOST(`${API_AUTH}/send-pin`, { email });
+  return await fetchPOST(`${AUTH}/send-pin`, { email });
 }
 
 export async function getProfile() {
-  return await fetchGET<{ user: User }>(`${API_AUTH}/profile`);
+  return await fetchGET<{ user: User }>(`${AUTH}/profile`);
 }
 
 export async function loginByGoogle(): Promise<ApiResponse<User>> {
-  return redirect(`${process.env.GATEWAY_URL}${API_AUTH}/google`);
+  return redirect(`${process.env.GATEWAY_URL}${AUTH}/google`);
 }
 
