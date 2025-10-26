@@ -14,6 +14,7 @@ import LogoSvg from "./svgs/logo";
 
 type IconProps = {
   name: string;
+  size?: number;
   className?: string;
 };
 
@@ -32,12 +33,13 @@ const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>
 
 export default function Icon({
   name,
+  size = 24,
   className = "",
 }: IconProps) {
   const IconComponent = iconMap[name];
 
   return (
-    <IconComponent className={className}>
+    <IconComponent width={size} height={size} className={className}>
     </IconComponent>
   );
 }

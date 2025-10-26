@@ -2,7 +2,6 @@
 
 import {useCallback, useEffect, useMemo, useState} from "react"
 import FileDropzone from "@/components/file-dropzone";
-import Text from "@/components/text";
 import {
   createImageInstruction,
   Instruction,
@@ -11,7 +10,7 @@ import {
 } from "@/services/images";
 import useNotification from "@/hooks/useNotification";
 import ListFiles from "@/.(site)-backup/image/compress/ListFiles";
-import Loading from "@/components/feedback/Loading";
+import Icon from "@/components/icon";
 import useSSE from "@/hooks/useSSE";
 import debounce from "lodash.debounce";
 import { bytesToString } from "@/utils/bytesToString";
@@ -142,9 +141,13 @@ export default function ImageCompress() {
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      <Text as="h3" xSize="sm" isBold>Image Compress</Text>
+      <h3 className="text-sm font-bold">Image Compress</h3>
 
-        {progress === "LOADING" && <Loading />}
+        {progress === "LOADING" && (
+          <div className="flex items-center justify-center p-8">
+            <Icon name="rectangle" size={32} className="animate-spin" />
+          </div>
+        )}
 
         {progress === "UPLOAD" && (
           <FileDropzone
@@ -197,20 +200,20 @@ export default function ImageCompress() {
         {/*                    `}>*/}
         {/*        {showInitialActions && (*/}
         {/*          <>*/}
-        {/*            <Button xColor="primary" xSize="sm" onClick={handleSubmit}>*/}
+        {/*            <Button variant="primary" size="sm" onClick={handleSubmit}>*/}
         {/*              Continue*/}
         {/*            </Button>*/}
-        {/*            <Button xColor="secondary" xSize="sm" onClick={handleReset}>*/}
+        {/*            <Button variant="secondary" size="sm" onClick={handleReset}>*/}
         {/*              Reset*/}
         {/*            </Button>*/}
         {/*          </>*/}
         {/*        )}*/}
         {/*        {showFinalActions && (*/}
         {/*          <>*/}
-        {/*            <Button xColor="primary" xSize="sm" onClick={goHome}>*/}
+        {/*            <Button variant="primary" size="sm" onClick={goHome}>*/}
         {/*              Back to Homepage*/}
         {/*            </Button>*/}
-        {/*            <Button xColor="secondary" xSize="sm" onClick={handleReset}>*/}
+        {/*            <Button variant="secondary" size="sm" onClick={handleReset}>*/}
         {/*              Reset*/}
         {/*            </Button>*/}
         {/*          </>*/}

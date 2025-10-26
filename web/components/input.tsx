@@ -9,7 +9,7 @@ type InputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> & {
   hasLeftIcon?: boolean;
   hasRightIcon?: boolean;
   size?: "sm" | "base" | "lg";
-  color?: "primary" | "secondary";
+  variant?: "primary" | "secondary";
 };
 
 export default function Input({
@@ -18,61 +18,57 @@ export default function Input({
   hasLeftIcon = false,
   hasRightIcon = false,
   size = "base",
-  color = "primary",
+  variant = "primary",
   className = "",
   disabled,
   ...rest
 }: InputProps) {
-  const sizeConfig = {
+  // Base classes - structure and layout
+  const baseClasses = "flex items-center rounded min-w-[200px] transition-colors focus-within:outline-none";
+
+  // Size configuration - spacing, typography, and icon size
+  const sizeConfig: Record<"sm" | "base" | "lg", { container: string; input: string; iconSize: number }> = {
     sm: {
-      spacing: "gap-2 p-2",
-      font: "text-sm",
-      lineHeight: "leading-5",
-      height: "",
+      container: "gap-2 p-2",
+      input: "text-sm leading-5",
       iconSize: 20,
     },
     base: {
-      spacing: "gap-2 p-2",
-      font: "text-base",
-      lineHeight: "leading-6",
-      height: "h-10",
+      container: "gap-2 p-2 h-10",
+      input: "text-base leading-6",
       iconSize: 24,
     },
     lg: {
-      spacing: "gap-3 p-3",
-      font: "text-base",
-      lineHeight: "leading-6",
-      height: "h-12",
+      container: "gap-3 p-3 h-12",
+      input: "text-base leading-6",
       iconSize: 24,
     },
   };
 
-  const colorConfig: Record<"primary" | "secondary", string> = {
-    primary: "input-primary border",
-    secondary: "input-secondary",
+  // Variant configuration - colors and states
+  const variantConfig: Record<"primary" | "secondary", { container: string; input: string }> = {
+    primary: {
+      container: "bg-white/4 border border-white/10",
+      input: "text-white placeholder:text-white/30",
+    },
+    secondary: {
+      container: "bg-white",
+      input: "text-black placeholder:text-black/60",
+    },
   };
 
   const currentSize = sizeConfig[size];
-  const colorStyle = colorConfig[color];
-
-  const baseClasses = [
-    "box-border",
-    "flex",
-    "items-center",
-    "rounded",
-    "min-w-[200px]",
-    "transition-colors",
-    "focus-within:outline-none",
-  ].join(" ");
+  const currentVariant = variantConfig[variant];
 
   const inputClasses = [
     "flex-1",
     "min-w-0",
+    "bg-transparent",
     "border-none",
     "outline-none",
-    currentSize.font,
-    currentSize.lineHeight,
+    currentSize.input,
     "font-normal",
+    currentVariant.input,
   ].join(" ");
 
   const renderIcon = (iconName: string | null) => {
@@ -89,9 +85,9 @@ export default function Input({
     <div
       className={[
         baseClasses,
-        currentSize.spacing,
-        currentSize.height,
-        colorStyle,
+        currentSize.container,
+        currentVariant.container,
+        disabled && "opacity-50",
         className,
       ]
         .filter(Boolean)
@@ -101,6 +97,7 @@ export default function Input({
       <input
         className={inputClasses}
         disabled={disabled}
+        data-variant={variant}
         {...rest}
       />
       {hasRightIcon && rightIconName && renderIcon(rightIconName)}

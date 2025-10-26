@@ -5,7 +5,7 @@ import { loginByGoogle } from "@/services/auth";
 
 function GoogleSignIn() {
   return (
-      <Button onClick={loginByGoogle} color="secondary" size="lg">
+      <Button onClick={loginByGoogle} variant="secondary" size="lg">
         <div className="flex items-center justify-center gap-2">
           <Icon name="google" size={20} />
           Continue with Google

@@ -3,14 +3,14 @@
 import React from "react";
 import Icon from "./icon";
 
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+type ButtonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'size'> & {
   label?: React.ReactNode;
   leftIconName?: string;
   rightIconName?: string;
   hasLeftIcon?: boolean;
   hasRightIcon?: boolean;
   size?: "sm" | "base" | "lg";
-  color?: "primary" | "secondary";
+  variant?: "primary" | "secondary";
 };
 
 export default function Button({
@@ -20,95 +20,64 @@ export default function Button({
   hasLeftIcon = false,
   hasRightIcon = false,
   size = "base",
-  color = "primary",
+  variant = "primary",
   className = "",
   children,
   disabled,
   ...rest
 }: ButtonProps) {
+  // Base classes - structure and layout
+  const baseClasses = "inline-flex items-center justify-center rounded transition-colors focus:outline-none disabled:cursor-not-allowed";
 
-  const sizeConfig = {
+  // Size configuration - spacing, typography, and icon size
+  const sizeConfig: Record<"sm" | "base" | "lg", { container: string; text: string; iconSize: number }> = {
     sm: {
-      spacing: "gap-2 p-2",
-      font: "text-sm",
-      lineHeight: "leading-5",
-      weight: "font-medium",
-      iconWidth: 20,
-      iconHeight: 17.889,
+      container: "gap-2 p-2",
+      text: "text-sm leading-5 font-medium",
+      iconSize: 20,
     },
     base: {
-      spacing: "gap-2 p-2",
-      font: "text-base",
-      lineHeight: "leading-6",
-      weight: "font-medium",
-      iconWidth: 24,
-      iconHeight: 21.909,
+      container: "gap-2 p-2",
+      text: "text-base leading-6 font-medium",
+      iconSize: 24,
     },
     lg: {
-      spacing: "gap-3 p-3",
-      font: "text-base",
-      lineHeight: "leading-6",
-      weight: "font-semibold",
-      iconWidth: 24,
-      iconHeight: 24,
+      container: "gap-3 p-3",
+      text: "text-base leading-6 font-semibold",
+      iconSize: 24,
     },
   };
 
-  const colorConfig = {
-    primary: {
-      default: "btn-primary",
-      hover: "btn-primary-hover",
-      disabled: "btn-primary-disabled",
-    },
-    secondary: {
-      default: "btn-secondary border",
-      hover: "btn-secondary-hover border",
-      disabled: "btn-secondary-disabled border",
-    },
+  // Variant configuration - colors and states
+  const variantConfig: Record<"primary" | "secondary", string> = {
+    primary: "bg-white/96 text-black hover:bg-white disabled:text-black/60",
+    secondary: "bg-white/4 border border-white/10 text-white hover:bg-white/8 disabled:text-white/30",
   };
 
-  const currentSize = sizeConfig[size] || sizeConfig.base;
-  const currentColor = colorConfig[color] || colorConfig.primary;
+  const currentSize = sizeConfig[size];
+  const currentVariant = variantConfig[variant];
 
-  // Use default color - CSS pseudo-classes (:hover, :disabled) handle state styling
-  const stateStyle = currentColor.default;
-
-  const baseClasses = [
-    "box-border",
-    "inline-flex",
-    "items-center",
-    "justify-center",
-    "rounded",
-    "cursor-pointer",
-    "transition-colors",
-    "focus:outline-none",
-    "disabled:cursor-not-allowed",
-  ].join(" ");
-
-  const renderIcon = (icon: string) => {
-    if (!icon) return null;
-
-    const iconOpacity = disabled ? "opacity-60" : "opacity-[0.99]";
+  const renderIcon = (iconName: string) => {
+    if (!iconName) return null;
 
     return (
-      <span className={["relative", "shrink-0", iconOpacity].filter(Boolean).join(" ")}>
-        <Icon name={icon} size={currentSize.iconWidth} />
+      <span className={["relative shrink-0", disabled ? "opacity-60" : "opacity-[0.99]"].filter(Boolean).join(" ")}>
+        <Icon name={iconName} size={currentSize.iconSize} />
       </span>
     );
   };
-
 
   return (
     <button
       className={[
         baseClasses,
-        currentSize.spacing,
-        currentSize.font,
-        currentSize.lineHeight,
-        currentSize.weight,
-        stateStyle,
+        currentSize.container,
+        currentSize.text,
+        currentVariant,
         className,
-      ].filter(Boolean).join(" ")}
+      ]
+        .filter(Boolean)
+        .join(" ")}
       disabled={disabled}
       {...rest}
     >

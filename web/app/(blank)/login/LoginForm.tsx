@@ -6,12 +6,10 @@ import { useForm } from "react-hook-form";
 import Button from "@/components/button";
 import Input from "@/components/input";
 import InputPin from "@/components/input-pin";
-import GoogleSignIn from "@/app/(non-auth)/login/GoogleSignIn";
+import GoogleSignIn from "@/app/(blank)/login/GoogleSignIn";
 import Icon from "@/components/icon";
 import { login, sendPin } from "@/services/auth";
 import useNotification from "@/hooks/useNotification";
-import InlineSpinner from "@/components/feedback/InlineSpinner";
-import Text from "@/components/text";
 import { redirect, RedirectType } from "next/navigation";
 
 type FormEmailValues = {
@@ -73,7 +71,7 @@ function FormEmail({ setEmail, next }: {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-7">
         <Input
           size="lg"
-          color="primary"
+          variant="primary"
           type="email"
           placeholder="Email address"
           autoComplete="email"
@@ -88,12 +86,12 @@ function FormEmail({ setEmail, next }: {
         />
         <Button
           type="submit"
-          color="primary"
+          variant="primary"
           size="lg"
           disabled={loading}
         >
           <div className="flex items-center justify-center gap-2">
-            {loading && <InlineSpinner />} <span>Continue with Email</span>
+            {loading && <Icon name="rectangle" size={16} className="animate-spin" />} <span>Continue with Email</span>
           </div>
         </Button>
         <div className={`
@@ -140,16 +138,12 @@ function FormPin({ email, next }: {
 mx-auto w-full max-w-[400px] flex flex-col
 gap-7 px-6 md:px-0
    `}>
-      <Text as="h3" className={`
-text-center
-      `} isBold xSize="xl">
+      <h3 className="text-center text-xl font-bold">
         Verification
-      </Text>
-      <Text as="p" className={`
-text-center
-      `} xColor="secondary">
+      </h3>
+      <p className="text-center text-white/70">
         If you have an account, we have sent a code to <b>{email}</b>. Enter it below.
-      </Text>
+      </p>
       <form onSubmit={handleSubmit} className={`
 flex flex-col
 gap-7
@@ -157,17 +151,17 @@ gap-7
         <InputPin values={values} onChange={setValues} />
         <Button
           type="submit"
-          color="primary"
+          variant="primary"
           size="lg"
           disabled={loading}
         >
           <div className="flex items-center justify-center gap-2">
-            {loading && <InlineSpinner />} <span>Continue</span>
+            {loading && <Icon name="rectangle" size={16} className="animate-spin" />} <span>Continue</span>
           </div>
         </Button>
         <Button
           type="button"
-          color="secondary"
+          variant="secondary"
           size="lg"
           onClick={async () => {
             setLoading(true);

@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { useProduct } from "@/hooks/useProduct";
 import Input from "@/components/inputs/input";
-import Text from "@/components/text";
 import AppsCard from "@/.(site)-backup/apps-card";
 import { Product } from "@/services/images";
 import InputWithIcon from "@/components/inputs/input-with-icon";
@@ -39,9 +38,9 @@ export default function ListProduct() {
       </div>
 
       {imagesFiltered.length > 0 && (
-        <Text as="h4" xSize="sm" className="font-semibold">
+        <h4 className="text-sm font-semibold">
           Images
-        </Text>
+        </h4>
       )}
 
       <div className="@container">

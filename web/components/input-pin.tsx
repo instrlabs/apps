@@ -57,11 +57,12 @@ const InputPin: React.FC<InputPinProps> = ({ values, onChange, length = 6 }) => 
 
   const baseInputClass = [
     "w-12 h-12",
-    "border border-primary rounded",
-    "bg-secondary text-white placeholder:text-muted",
-    "text-base text-center",
+    "border border-white/10 rounded",
+    "bg-white/8",
+    "text-white text-center placeholder:text-white/30",
+    "text-base leading-6 font-medium",
     "transition-colors",
-    "focus:outline-none focus:border-white focus:bg-white/15",
+    "focus:outline-none focus:border-white",
   ].join(" ");
 
   return (

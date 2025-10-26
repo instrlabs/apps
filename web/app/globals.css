@@ -2,103 +2,35 @@
 
 @theme {}
 
-:root {
-  /* Figma Color Variables - colors/text/* */
-  --colors-text-primary: #ffffff;
-  --colors-text-secondary: rgba(255, 255, 255, 0.8);
-  --colors-text-muted: rgba(255, 255, 255, 0.3);
-  --colors-text-black: #000000;
-  --colors-text-black-muted: rgba(0, 0, 0, 0.6);
-
-  /* Figma Color Variables - colors/background/* */
-  --colors-background-primary: #000000;
-  --colors-background-secondary: rgba(255, 255, 255, 0.08);
-
-  --colors-border-primary: rgba(255, 255, 255, 0.1);
-
-  --colors-button-primary: rgba(255, 255, 255, 0.90);
-  --colors-button-primary-hover: #ffffff;
-  --colors-button-secondary: rgba(255, 255, 255, 0.04);
-  --colors-button-secondary-hover: rgba(255, 255, 255, 0.08);
-
-  /* Figma Color Variables - colors/input/* */
-  --colors-input-primary: #ffffff;
-  --colors-input-secondary: rgba(255, 255, 255, 0.04);
-}
-
-/* Utility classes for Button component color variants */
-@utility btn-primary {
-  background-color: var(--colors-button-primary);
-  color: var(--colors-text-black);
-}
-
-@utility btn-primary-hover {
-  background-color: var(--colors-button-primary-hover);
-  color: var(--colors-text-black);
-}
-
-@utility btn-primary-disabled {
-  background-color: var(--colors-button-primary);
-  color: var(--colors-text-black-muted);
-  opacity: 0.6;
-}
-
-@utility btn-secondary {
-  background-color: var(--colors-button-secondary);
-  border-color: var(--colors-border-primary);
-  color: var(--colors-text-primary);
-}
-
-@utility btn-secondary-hover {
-  background-color: var(--colors-button-secondary-hover);
-  border-color: var(--colors-border-primary);
-  color: var(--colors-text-primary);
-}
-
-@utility btn-secondary-disabled {
-  background-color: var(--colors-button-secondary);
-  border-color: var(--colors-border-primary);
-  color: var(--colors-text-muted);
-  opacity: 0.6;
-}
-
-/* Utility classes for Input component color variants */
-@utility input-primary {
-  background-color: var(--colors-input-secondary);
-  border-color: var(--colors-border-primary);
-  color: var(--colors-text-muted);
-
-  &:focus-within {
-    color: var(--colors-text-primary);
-  }
-
-  &:has(input:disabled) {
-    opacity: 0.5;
-  }
-}
-
-@utility input-secondary {
-  background-color: var(--colors-input-primary);
-  color: var(--colors-text-black-muted);
-
-  &:focus-within {
-    color: var(--colors-text-primary);
-  }
-
-  &:has(input:disabled) {
-    opacity: 0.5;
-  }
-}
-
 body {
   width: 100vw;
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--color-black);
-  color: var(--color-white);
+  background: #000000;
+  color: #ffffff;
 }
 
+/* Input Autofill Styles - Match default input behavior */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset;
+  box-shadow: 0 0 0 1000px transparent inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Secondary variant autofill */
+input[data-variant="secondary"]:-webkit-autofill,
+input[data-variant="secondary"]:-webkit-autofill:hover,
+input[data-variant="secondary"]:-webkit-autofill:focus {
+  -webkit-text-fill-color: #000000;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset;
+  box-shadow: 0 0 0 1000px transparent inset;
+}
+
+/* Notification Animations */
 @keyframes notificationIn {
   from { transform: translateY(100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -117,6 +49,7 @@ body {
   animation: notificationOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+/* Modal Animations */
 @keyframes modalIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -133,30 +66,4 @@ body {
 
 .animate-modal-out {
   animation: modalOut 200ms ease-out both;
-}
-
-@keyframes flash {
-  0%, 100% {
-    filter: brightness(100%);
-  }
-  50% {
-    filter: brightness(75%);
-  }
-}
-
-.animate-flash {
-  animation: flash 1.2s ease-in-out infinite;
-}
-
-/* Text Color Utilities from Figma colors/text/* */
-@utility text-primary {
-  color: var(--colors-text-primary);
-}
-
-@utility text-secondary {
-  color: var(--colors-text-secondary);
-}
-
-@utility text-muted {
-  color: var(--colors-text-muted);
 }

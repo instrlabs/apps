@@ -3,72 +3,43 @@
 import React from "react";
 
 export type IconButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  xSize?: "sm" | "md" | "lg";
-  xColor?: "primary" | "secondary" | "transparent";
+  size?: "sm" | "base" | "lg";
+  variant?: "primary" | "secondary";
 };
 
 export default function IconButton({
-  xSize = "md",
-  xColor = "primary",
-  className,
+  size = "base",
+  variant = "secondary",
+  className = "",
   children,
   ...rest
 }: IconButtonProps) {
-  const primaryClasses = [
-    "bg-primary",
-    "text-black",
-    "hover:opacity-90",
-    "disabled:opacity-60",
-  ].join(" ");
+  // Base classes - structure and layout
+  const baseClasses = "inline-flex items-center justify-center rounded transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-60";
 
-  const secondaryClasses = [
-    "bg-secondary",
-    "text-secondary",
-    "border",
-    "border-primary",
-    "hover:opacity-90",
-    "disabled:opacity-60",
-  ].join(" ");
+  // Size configuration - spacing and icon size
+  const sizeConfig: Record<"sm" | "base" | "lg", string> = {
+    sm: "gap-2 p-2",
+    base: "gap-2 p-2",
+    lg: "gap-3 p-3",
+  };
 
-  const transparentClasses = [
-    "bg-transparent",
-    "text-primary",
-    "hover:opacity-90",
-    "disabled:opacity-60",
-  ].join(" ");
+  // Variant configuration - colors and states
+  const variantConfig: Record<"primary" | "secondary", string> = {
+    primary: "bg-white text-black hover:bg-white/90",
+    secondary: "bg-white/8 border border-white/10 text-white hover:bg-white/12",
+  };
 
-  const colorClasses =
-    xColor === "primary" ? primaryClasses :
-    xColor === "secondary" ? secondaryClasses :
-    transparentClasses;
-
-  const smClasses = "w-8 h-8";
-  const mdClasses = "w-10 h-10";
-  const lgClasses = "w-12 h-12";
-
-  const sizeClasses =
-    xSize === "sm" ? smClasses :
-    xSize === "md" ? mdClasses :
-    xSize === "lg" ? lgClasses :
-    "";
-
-  const baseClasses = `
-inline-flex items-center justify-center
-rounded-md
-cursor-pointer
-hover:opacity-90
-transition-opacity transition-colors
-focus:outline-none
-disabled:cursor-not-allowed
-  `;
   return (
     <button
       className={[
         baseClasses,
-        sizeClasses,
-        colorClasses,
-        className
-      ].join(" ")}
+        sizeConfig[size],
+        variantConfig[variant],
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       {...rest}
     >
       {children}

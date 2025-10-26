@@ -28,7 +28,7 @@ export default function ProfileOverlay() {
         <Button onClick={() => router.push("/")}>
           Dashboard
         </Button>
-        <Button color="secondary" onClick={async () => {
+        <Button variant="secondary" onClick={async () => {
           await logout();
           document.location.href = "/";
         }}>
