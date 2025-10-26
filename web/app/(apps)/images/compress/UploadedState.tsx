@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Icon from "@/components/icon";
 import Chip from "@/components/chip";
 import Button from "@/components/button";
+import ImagePreview from "@/components/image-preview";
 import { FileMetadata } from "./types";
 
 interface UploadedStateProps {
@@ -23,6 +24,28 @@ export default function UploadedState({
   onDownload,
   formatFileMetadata,
 }: UploadedStateProps) {
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+
+  // Generate image previews from File objects
+  useEffect(() => {
+    const generatePreviews = async () => {
+      const newPreviews: Record<string, string> = {};
+
+      for (const item of fileMetadata) {
+        if (item.file.type.startsWith("image/") && !previews[item.id]) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            newPreviews[item.id] = e.target?.result as string;
+            setPreviews((prev) => ({ ...prev, [item.id]: e.target?.result as string }));
+          };
+          reader.readAsDataURL(item.file);
+        }
+      }
+    };
+
+    generatePreviews().then();
+  }, [fileMetadata, previews]);
+
   return (
     <div className="flex h-full flex-col gap-4">
       {/* File List */}
@@ -33,7 +56,13 @@ export default function UploadedState({
         >
           {/* Left Side - File Info */}
           <div className="flex flex-1 items-center gap-4">
-            <Icon name="rectangle" size={40} className="text-white/80" />
+            {/* Image Preview or Icon */}
+            {previews[item.id] ? (
+              <ImagePreview src={previews[item.id]} alt={item.file.name} size={40} />
+            ) : (
+              <Icon name="rectangle" size={40} className="text-white/80" />
+            )}
+
             <div className="flex flex-col">
               {/* Filename and Status Chip */}
               <div className="flex items-center gap-2">
