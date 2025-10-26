@@ -1,7 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import { SSEProvider } from "@/hooks/useSSE";
-import { NotificationProvider, NotificationWidget } from "@/hooks/useNotification";
+import { NotificationProvider, NotificationWidget } from "@/hooks/useSnackbar";
 import { ProfileProvider } from "@/hooks/useProfile";
 import { getProfile } from "@/services/auth";
 

@@ -9,7 +9,7 @@ import InputPin from "@/components/input-pin";
 import GoogleSignIn from "@/app/(blank)/login/GoogleSignIn";
 import Icon from "@/components/icon";
 import { login, sendPin } from "@/services/auth";
-import useNotification from "@/hooks/useNotification";
+import useSnackbar from "@/hooks/useSnackbar";
 import { redirect, RedirectType } from "next/navigation";
 
 type FormEmailValues = {
@@ -36,7 +36,7 @@ function FormEmail({ setEmail, next }: {
   next: () => void,
 }) {
   const [loading, setLoading] = React.useState(false);
-  const { showNotification } = useNotification();
+  const { showSnackbar } = useSnackbar();
   const {
     register,
     handleSubmit,
@@ -55,7 +55,7 @@ function FormEmail({ setEmail, next }: {
         setEmail(values.email)
         next()
       } else {
-        showNotification({
+        showSnackbar({
           type: "error",
           message: message,
         })
@@ -112,7 +112,7 @@ function FormPin({ email, next }: {
 }) {
   const [loading, setLoading] = React.useState(false);
   const [values, setValues] = React.useState<string[]>(Array(6).fill(""));
-  const { showNotification } = useNotification();
+  const { showSnackbar } = useSnackbar();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,7 +123,7 @@ function FormPin({ email, next }: {
       if (success) {
         next()
       } else {
-        showNotification({
+        showSnackbar({
           type: "error",
           message: message,
         })
@@ -168,9 +168,9 @@ gap-7
             try {
               const { success, message } = await sendPin({ email });
               if (success) {
-                showNotification({ type: "info", message: "Code resent to your email" });
+                showSnackbar({ type: "info", message: "Code resent to your email" });
               } else {
-                showNotification({ type: "error", message });
+                showSnackbar({ type: "error", message });
               }
             } finally {
               setLoading(false);

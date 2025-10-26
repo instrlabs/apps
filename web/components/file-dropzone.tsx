@@ -3,7 +3,7 @@
 import React, { useCallback, useMemo, useRef, useState, useId } from "react";
 import { bytesToString } from "@/utils/bytesToString";
 import { acceptsToExtensions } from "@/utils/acceptsToExtensions";
-import useNotification from "@/hooks/useNotification";
+import useSnackbar from "@/hooks/useSnackbar";
 import Icon from "@/components/icon";
 
 export type FileDropzoneProps = {
@@ -28,7 +28,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
   title = "Upload Files",
   className,
 }) => {
-  const { showNotification } = useNotification();
+  const { showSnackbar } = useSnackbar();
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const helperId = useId();
@@ -61,12 +61,12 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
         const files = Array.from(e.dataTransfer.files);
 
         if (!multiple && files.length > 1) {
-          showNotification({ message: "Only one file can be dropped at a time.", type: "error" });
+          showSnackbar({ message: "Only one file can be dropped at a time.", type: "error" });
           return;
         }
 
         if (!validateFiles(files, accepts, maxSize)) {
-          showNotification({ message: "Invalid file type or file size.", type: "error" });
+          showSnackbar({ message: "Invalid file type or file size.", type: "error" });
           return;
         }
 
@@ -74,7 +74,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
         e.dataTransfer.clearData();
       }
     },
-    [multiple, accepts, maxSize, onFilesAdded, showNotification],
+    [multiple, accepts, maxSize, onFilesAdded, showSnackbar],
   );
 
   const descriptionText = `Total file size allowed is ${bytesToString(maxSize)}, and the supported formats are ${acceptsToExtensions(accepts).join(", ")}.`;
@@ -131,12 +131,12 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
             const files = Array.from(e.target.files);
 
             if (!multiple && files.length > 1) {
-              showNotification({
+              showSnackbar({
                 type: "error",
                 message: "Only one file can be dropped at a time.",
               });
             } else if (!validateFiles(files, accepts, maxSize)) {
-              showNotification({
+              showSnackbar({
                 type: "error",
                 message: "Invalid file type or file size.",
               });

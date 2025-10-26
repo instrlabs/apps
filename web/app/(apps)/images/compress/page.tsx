@@ -1,19 +1,10 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import FileDropzone from "@/components/file-dropzone";
-import useNotification from "@/hooks/useNotification";
-import Button from "@/components/button";
-import Icon from "@/components/icon";
-
-type CompressState = "default" | "uploaded" | "success";
-
-interface FileMetadata {
-  file: File;
-  id: string;
-  typeLabel: string;
-  dimensions?: { width: number; height: number };
-}
+import React, { useCallback, useState } from "react";
+import useSnackbar from "@/hooks/useSnackbar";
+import DefaultState from "./DefaultState";
+import UploadedState from "./UploadedState";
+import { CompressState, FileStatus, FileMetadata } from "./types";
 
 // Helper to get file type label from MIME type
 const getFileTypeLabel = (mimeType: string): string => {
@@ -55,8 +46,9 @@ const formatFileMetadata = (
   return `${sizeInKB}KB · ${typeLabel} · ${dimensionsStr}`;
 };
 
+
 export default function ImageCompress() {
-  const { showNotification } = useNotification();
+  const { showSnackbar } = useSnackbar();
   const [state, setState] = useState<CompressState>("default");
   const [fileMetadata, setFileMetadata] = useState<FileMetadata[]>([]);
 
@@ -71,18 +63,19 @@ export default function ImageCompress() {
             id: `${file.name}-${Date.now()}-${Math.random()}`,
             typeLabel: getFileTypeLabel(file.type),
             dimensions: dimensions || undefined,
+            status: "waiting" as FileStatus,
           };
         })
       );
 
       setFileMetadata((prevMetadata) => [...prevMetadata, ...newMetadata]);
       setState("uploaded");
-      showNotification({
+      showSnackbar({
         type: "info",
         message: `${newFiles.length} file(s) added successfully!`,
       });
     },
-    [showNotification],
+    [showSnackbar],
   );
 
   const handleRemoveFile = useCallback((id: string) => {
@@ -91,33 +84,57 @@ export default function ImageCompress() {
 
   const handleSubmit = useCallback(async () => {
     if (fileMetadata.length === 0) {
-      showNotification({
+      showSnackbar({
         type: "error",
         message: "Please select files to compress",
       });
       return;
     }
 
-    // TODO: Implement actual compression logic
-    // For now, just transition to success state
-    setState("success");
-  }, [fileMetadata.length, showNotification]);
+    // Simulate compression for each file
+    for (let i = 0; i < fileMetadata.length; i++) {
+      // Set status to processing
+      setFileMetadata((prev) =>
+        prev.map((item, idx) =>
+          idx === i ? { ...item, status: "processing" as FileStatus } : item
+        )
+      );
+
+      // Simulate compression delay (1-3 seconds per file)
+      await new Promise((resolve) => setTimeout(resolve, Math.random() * 2000 + 1000));
+
+      // Set status to success with compression data
+      setFileMetadata((prev) =>
+        prev.map((item, idx) => {
+          if (idx !== i) return item;
+
+          // Simulate 40-60% size reduction
+          const compressionPercentage = Math.floor(Math.random() * 20 + 40);
+          const compressedSize = Math.floor(
+            item.file.size * ((100 - compressionPercentage) / 100)
+          );
+
+          return {
+            ...item,
+            status: "success" as FileStatus,
+            compressionPercentage,
+            compressedSize,
+            downloadUrl: `/api/download/${item.id}`,
+          };
+        })
+      );
+    }
+
+    showSnackbar({
+      type: "info",
+      message: "All files compressed successfully!",
+    });
+  }, [fileMetadata, showSnackbar]);
 
   const handleReset = useCallback(() => {
     setFileMetadata([]);
     setState("default");
   }, []);
-
-  // Auto-reset success state after 2 seconds
-  useEffect(() => {
-    if (state === "success") {
-      const timer = setTimeout(() => {
-        setFileMetadata([]);
-        setState("default");
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [state]);
 
   return (
     <div className="flex h-full w-full flex-col gap-2">
@@ -125,81 +142,24 @@ export default function ImageCompress() {
         {/* Title */}
         <h1 className="text-base leading-6 font-semibold text-white">Image Compress</h1>
 
-        {/* Default State - File Dropzone */}
-        {state === "default" && (
-          <FileDropzone
-            accepts={["image/jpeg", "image/png", "image/webp"]}
-            multiple
-            maxSize={5242880} // 5MB
-            title="Upload Files"
-            onFilesAdded={handleFilesAdded}
-            className="h-full"
-          />
-        )}
+        {/* Default State */}
+        {state === "default" && <DefaultState onFilesAdded={handleFilesAdded} />}
 
-        {/* Uploaded State - File List */}
+        {/* Uploaded State */}
         {state === "uploaded" && (
-          <div className="flex h-full flex-col gap-4">
-            {/* File List */}
-            {fileMetadata.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between rounded border border-white/10 bg-white/4 p-3"
-              >
-                <div className="flex items-center gap-4">
-                  <Icon name="rectangle" size={40} className="text-white/80" />
-                  <div className="flex flex-col gap-1">
-                    <p className="text-sm leading-5 font-normal text-white">{item.file.name}</p>
-                    <p className="text-xs leading-4 font-normal text-white/30">
-                      {formatFileMetadata(item.file, item.dimensions)}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleRemoveFile(item.id)}
-                  className="text-white/60 transition-colors hover:text-white"
-                  aria-label="Remove file"
-                >
-                  <Icon name="close" size={24} />
-                </button>
-              </div>
-            ))}
-
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Button
-                variant="primary"
-                size="base"
-                onClick={handleSubmit}
-                className="min-w-[150px]"
-              >
-                Submit
-              </Button>
-              <Button
-                variant="secondary"
-                size="base"
-                onClick={handleReset}
-                className="min-w-[150px]"
-              >
-                Reset
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Success State - Confirmation */}
-        {state === "success" && (
-          <div className="flex h-full flex-col items-center justify-center gap-4">
-            <Icon name="circle-success" size={80} className="text-green-400" />
-            <div className="flex flex-col items-center gap-2">
-              <h2 className="text-lg leading-7 font-semibold text-white">
-                Compression Complete
-              </h2>
-              <p className="text-sm leading-5 font-normal text-white/60">
-                {fileMetadata.length} file(s) compressed successfully
-              </p>
-            </div>
-          </div>
+          <UploadedState
+            fileMetadata={fileMetadata}
+            onRemoveFile={handleRemoveFile}
+            onSubmit={handleSubmit}
+            onReset={handleReset}
+            onDownload={(fileName) => {
+              showSnackbar({
+                type: "info",
+                message: `Download started for ${fileName}!`,
+              });
+            }}
+            formatFileMetadata={formatFileMetadata}
+          />
         )}
       </div>
     </div>

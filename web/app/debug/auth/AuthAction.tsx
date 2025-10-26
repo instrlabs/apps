@@ -2,22 +2,22 @@
 
 import Button from "@/components/button";
 import { getProfile, login, logout, refresh, sendPin } from "@/services/auth";
-import useNotification from "@/hooks/useNotification";
+import useSnackbar from "@/hooks/useSnackbar";
 import { useProfile } from "@/hooks/useProfile";
 
 export default function AuthAction() {
-  const { showNotification } = useNotification();
+  const { showSnackbar } = useSnackbar();
   const { profile } = useProfile();
 
   async function handleSendPin() {
     const res = await sendPin({ email: "arthadede@gmail.com" });
     if (res.success) {
-      showNotification({
+      showSnackbar({
         type: "info",
         message: "Pin sent to your email",
       })
     } else {
-      showNotification({
+      showSnackbar({
         type: "error",
         message: res.message,
       })
@@ -27,12 +27,12 @@ export default function AuthAction() {
   async function handleLogin() {
     const res = await login({ email: "arthadede@gmail.com", pin: "000000"});
     if (res.success) {
-      showNotification({
+      showSnackbar({
         type: "info",
         message: "Login success",
       })
     } else {
-      showNotification({
+      showSnackbar({
         type: "error",
         message: res.message,
       })
