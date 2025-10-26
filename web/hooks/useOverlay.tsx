@@ -1,8 +1,7 @@
 "use client";
 
-import React, {createContext, useCallback, useContext, useMemo, useState} from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 
-import NavigationOverlay from "@/components/widgets/navigation-overlay";
 import NotificationOverlay from "@/components/widgets/notification-overlay";
 import ProfileOverlay from "@/components/widgets/profile-overlay";
 
@@ -40,12 +39,6 @@ function registerOverlay(key: string, config: OverlayOpts): void {
 }
 
 function registerOverlays() {
-  // Left navigation rail
-  registerOverlay("left:navigation", {
-    side: "left",
-    render: () => <NavigationOverlay />,
-  });
-
   // Right notifications
   registerOverlay("right:notifications", {
     side: "right",
@@ -61,7 +54,11 @@ function registerOverlays() {
 
 const OverlayContext = createContext<OverlayActions | undefined>(undefined);
 
-export function OverlayProvider({ children, defaultLeft, defaultRight }: {
+export function OverlayProvider({
+  children,
+  defaultLeft,
+  defaultRight,
+}: {
   children: React.ReactNode;
   defaultLeft?: string;
   defaultRight?: string;
@@ -75,12 +72,16 @@ export function OverlayProvider({ children, defaultLeft, defaultRight }: {
 
   // left
   const [isLeftOpen, setIsLeftOpen] = useState<boolean>(!!defaultLeftOverlay);
-  const [leftNode, setLeftNodeState] = useState<React.ReactNode>(!!defaultLeftOverlay ? (defaultLeftOverlay as OverlayOpts).render() : <div />);
+  const [leftNode, setLeftNodeState] = useState<React.ReactNode>(
+    !!defaultLeftOverlay ? (defaultLeftOverlay as OverlayOpts).render() : <div />,
+  );
   const [leftKey, setLeftKey] = useState<string>(defaultLeft ?? "");
 
   // right
   const [isRightOpen, setIsRightOpen] = useState<boolean>(!!defaultRightOverlay);
-  const [rightNode, setRightNodeState] = useState<React.ReactNode>(!!defaultRightOverlay ? (defaultRightOverlay as OverlayOpts).render() : <div/>);
+  const [rightNode, setRightNodeState] = useState<React.ReactNode>(
+    !!defaultRightOverlay ? (defaultRightOverlay as OverlayOpts).render() : <div />,
+  );
   const [rightKey, setRightKey] = useState<string>(defaultRight ?? "");
 
   const openLeft = useCallback((currentKey: string) => {
@@ -92,7 +93,7 @@ export function OverlayProvider({ children, defaultLeft, defaultRight }: {
   }, []);
 
   const closeLeft = useCallback(() => {
-    setLeftNodeState(<div/>);
+    setLeftNodeState(<div />);
     setLeftKey("");
     setIsLeftOpen(false);
   }, []);
@@ -106,35 +107,45 @@ export function OverlayProvider({ children, defaultLeft, defaultRight }: {
   }, []);
 
   const closeRight = useCallback(() => {
-    setRightNodeState(<div/>);
+    setRightNodeState(<div />);
     setRightKey("");
     setIsRightOpen(false);
   }, []);
 
-  const value = useMemo<OverlayActions>(() => ({
-    // left
-    isLeftOpen,
-    leftKey,
-    leftNode,
-    openLeft,
-    closeLeft,
-    // right
-    isRightOpen,
-    rightKey,
-    rightNode,
-    openRight,
-    closeRight,
-  }), [isLeftOpen, leftKey, leftNode, closeLeft, openLeft, isRightOpen, rightKey, rightNode, openRight, closeRight]);
-
-  return (
-    <OverlayContext.Provider value={value}>
-      {children}
-    </OverlayContext.Provider>
+  const value = useMemo<OverlayActions>(
+    () => ({
+      // left
+      isLeftOpen,
+      leftKey,
+      leftNode,
+      openLeft,
+      closeLeft,
+      // right
+      isRightOpen,
+      rightKey,
+      rightNode,
+      openRight,
+      closeRight,
+    }),
+    [
+      isLeftOpen,
+      leftKey,
+      leftNode,
+      closeLeft,
+      openLeft,
+      isRightOpen,
+      rightKey,
+      rightNode,
+      openRight,
+      closeRight,
+    ],
   );
+
+  return <OverlayContext.Provider value={value}>{children}</OverlayContext.Provider>;
 }
 
 export function useOverlay(): OverlayActions {
   const ctx = useContext(OverlayContext);
-  if (!ctx) throw new Error('useOverlay must be used within an OverlayProvider');
+  if (!ctx) throw new Error("useOverlay must be used within an OverlayProvider");
   return ctx;
 }

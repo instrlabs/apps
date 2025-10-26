@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
 
 import { useProfile } from "@/hooks/useProfile";
 import { logout } from "@/services/auth";
@@ -9,32 +8,29 @@ import Avatar from "@/components/avatar";
 import Button from "@/components/button";
 
 export default function ProfileOverlay() {
-  const router = useRouter();
   const { profile } = useProfile();
 
   const username = profile?.username || "Guest";
   const email = profile?.email || "";
 
   return (
-    <div className="w-full md:w-[400px] h-full bg-white/10 border border-white/10 rounded-lg p-4 flex flex-col gap-4">
-      <div className="flex justify-center">
-        <Avatar xSize="lg" name={username} />
+    <div className="flex w-full flex-col items-center gap-3 rounded-lg border border-white/10 bg-white/8 p-4 md:w-[300px]">
+      <Avatar size="xl" name={username} />
+      <div className="flex w-full flex-col items-center gap-0">
+        <h3 className="text-xl font-semibold text-white">{username}</h3>
+        <p className="text-base font-normal text-white/60">{email}</p>
       </div>
-      <div className="flex flex-col gap">
-        <h3 className="text-base font-semibold text-white text-center">{username}</h3>
-        <p className="text-sm font-light text-white/60 text-center">{email}</p>
-      </div>
-      <div className="flex flex-col gap-2">
-        <Button onClick={() => router.push("/")}>
-          Dashboard
-        </Button>
-        <Button variant="secondary" onClick={async () => {
+      <Button
+        variant="secondary"
+        size="sm"
+        className="w-full"
+        onClick={async () => {
           await logout();
           document.location.href = "/";
-        }}>
-          Logout
-        </Button>
-      </div>
+        }}
+      >
+        Logout
+      </Button>
     </div>
   );
 }

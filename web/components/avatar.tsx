@@ -1,11 +1,11 @@
 import React from "react";
 
-export type AvatarSize = "sm" | "md" | "lg";
+export type AvatarSize = "sm" | "base" | "lg" | "xl";
 
 export type AvatarProps = {
   name?: string;
   src?: string;
-  xSize: AvatarSize;
+  size?: AvatarSize;
   className?: string;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
 };
@@ -40,8 +40,9 @@ function getInitial(name: string | undefined) {
 
 export default function Avatar({
   name = "",
-  xSize = "md",
+  size = "sm",
   onClick,
+  className = "",
 }: AvatarProps) {
   const bucket = getBucket(name);
   const initials = getInitial(name);
@@ -70,20 +71,15 @@ export default function Avatar({
   const bgClass = bgPaletteCls[bucket];
   const fgClass = textPaletteCls[bucket];
 
-  // Size Classes
-  const smClasses = "size-8 text-sm";
-  const mdClasses = "size-10";
-  const lgClasses = "size-20 text-3xl font-semibold";
+  // Size configuration
+  const sizeConfig: Record<AvatarSize, string> = {
+    sm: "size-9 text-base font-medium",
+    base: "h-10 w-10 text-base font-medium",
+    lg: "size-12 text-xl font-medium",
+    xl: "size-20 text-4xl font-medium",
+  };
 
-  const sizeClass =
-    xSize === "sm" ? smClasses :
-      xSize === "md" ? mdClasses :
-        xSize === "lg" ? lgClasses :
-          "";
-
-  const baseClasses = `
-    flex items-center justify-center rounded-full select-none cursor-pointer
-  `;
+  const baseClasses = "flex items-center justify-center rounded-full select-none cursor-pointer transition-colors";
 
   return (
     <button
@@ -91,10 +87,13 @@ export default function Avatar({
       onClick={onClick}
       className={[
         baseClasses,
-        sizeClass,
+        sizeConfig[size],
         bgClass,
         fgClass,
-      ].filter(Boolean).join(" ")}
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       {initials}
     </button>

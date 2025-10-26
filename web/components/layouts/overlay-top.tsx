@@ -1,8 +1,6 @@
 "use client";
 
 import Breadcrumbs from "@/components/breadcrumbs";
-import IconButton from "@/components/icon-button";
-
 import { useOverlay } from "@/hooks/useOverlay";
 import Avatar from "@/components/avatar";
 import { useProfile } from "@/hooks/useProfile";
@@ -14,14 +12,6 @@ export default function OverlayTop() {
   const { isLoggedIn, profile } = useProfile();
   const { rightKey, openRight, closeRight } = useOverlay();
 
-  function handleToggleNotifications() {
-    if (rightKey === "right:notifications") {
-      closeRight();
-    } else {
-      openRight("notifications");
-    }
-  }
-
   function handleToggleProfile() {
     if (rightKey === "right:profile") {
       closeRight();
@@ -32,41 +22,33 @@ export default function OverlayTop() {
 
   return (
     <>
-      {/* ACTIVE - MOBILE SECTION */}
-      <div className="flex flex-col items-center md:hidden p-2">
+      {/* MOBILE BREADCRUMBS */}
+      <div className="flex md:hidden flex-col items-center p-2">
         <Breadcrumbs />
       </div>
 
-      <div className="relative w-full flex flex-row items-center justify-between gap-2 p-2 bg-background/80">
-        <div className="flex items-center gap-2">
-          <Icon name="logo" className="size-6" />
+      {/* HEADER */}
+      <div className="flex w-full items-center justify-between gap-2 bg-black p-2">
+        {/* LEFT - LOGO */}
+        <div className="flex shrink-0 items-center gap-2">
+          <Icon name="logo" size={40} />
         </div>
 
-        {/* ACTIVE - WEB SECTION */}
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 hidden md:flex md:justify-center pointer-events-none">
+        {/* CENTER - BREADCRUMBS (WEB ONLY) */}
+        <div className="hidden flex-1 items-center justify-center md:flex">
           <Breadcrumbs />
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* RIGHT - AUTH SECTION */}
+        <div className="flex shrink-0 items-center gap-2">
           {isLoggedIn ? (
-            <>
-              <IconButton
-                aria-label="Notifications"
-                variant="secondary"
-                onClick={handleToggleNotifications}
-              >
-                <Icon name="rectangle" className="size-6"/>
-              </IconButton>
-              <Avatar
-                xSize="sm"
-                name={profile?.username || "Guest"}
-                onClick={handleToggleProfile}
-              />
-            </>
+            <Avatar
+              size="sm"
+              name={profile?.username || "Guest"}
+              onClick={handleToggleProfile}
+            />
           ) : (
-            <Button onClick={() => redirect("/login")}>
-              Login
-            </Button>
+            <Button onClick={() => redirect("/login")}>Login</Button>
           )}
         </div>
       </div>

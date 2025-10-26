@@ -3,6 +3,7 @@
 import React from "react";
 import CircleSvg from "./svgs/circle";
 import RectangleSvg from "./svgs/rectangle";
+import RectangleOutlineSvg from "./svgs/rectangle-outline";
 import GoogleSvg from "./svgs/google";
 import SearchSvg from "./svgs/search";
 import VisibleSvg from "./svgs/visible";
@@ -11,6 +12,9 @@ import CircleErrorSvg from "./svgs/circle-error";
 import WarningSvg from "./svgs/warning";
 import CircleInfoSvg from "./svgs/circle-info";
 import LogoSvg from "./svgs/logo";
+import CloseSvg from "./svgs/close";
+import NotificationSvg from "./svgs/notification";
+import ProgressSvg from "./svgs/progress";
 
 type IconProps = {
   name: string;
@@ -22,6 +26,7 @@ const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>
   "logo": LogoSvg,
   "circle": CircleSvg,
   "rectangle": RectangleSvg,
+  "rectangle-outline": RectangleOutlineSvg,
   "google": GoogleSvg,
   "search": SearchSvg,
   "visible": VisibleSvg,
@@ -29,6 +34,9 @@ const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>
   "circle-error": CircleErrorSvg,
   "warning": WarningSvg,
   "circle-info": CircleInfoSvg,
+  "close": CloseSvg,
+  "notification": NotificationSvg,
+  "progress": ProgressSvg,
 };
 
 export default function Icon({
