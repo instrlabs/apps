@@ -15,6 +15,7 @@ import LogoSvg from "./svgs/logo";
 import CloseSvg from "./svgs/close";
 import NotificationSvg from "./svgs/notification";
 import ProgressSvg from "./svgs/progress";
+import UploadSvg from "./svgs/upload";
 
 type IconProps = {
   name: string;
@@ -37,6 +38,7 @@ const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>
   "close": CloseSvg,
   "notification": NotificationSvg,
   "progress": ProgressSvg,
+  "upload": UploadSvg,
 };
 
 export default function Icon({

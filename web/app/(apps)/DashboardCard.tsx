@@ -15,22 +15,18 @@ export default function DashboardCard({
   title,
   description,
   href,
-  iconName = "circle",
+  iconName = "rectangle",
 }: DashboardCardProps) {
   return (
     <Link
       href={href}
-      className="flex flex-col gap-2 items-start p-4 bg-white/8 border border-white/10 rounded-lg transition-colors hover:bg-white/12"
+      className="flex flex-col items-start gap-2 rounded-lg border border-white/10 bg-white/8 p-4 transition-colors hover:bg-white/12"
     >
-      <div className="relative shrink-0 size-10">
+      <div className="relative size-10 shrink-0">
         <Icon name={iconName} size={40} />
       </div>
-      <h3 className="text-lg leading-7 font-semibold text-white">
-        {title}
-      </h3>
-      <p className="text-sm leading-5 font-normal text-white">
-        {description}
-      </p>
+      <h3 className="text-lg leading-7 font-semibold text-white">{title}</h3>
+      <p className="text-sm leading-5 font-normal text-white">{description}</p>
     </Link>
   );
 }
