@@ -11,6 +11,7 @@ export type FileDropzoneProps = {
   multiple: boolean;
   onFilesAdded: (files: File[]) => void;
   maxSize: number;
+  title?: string;
   className?: string;
 };
 
@@ -19,7 +20,14 @@ function validateFiles(files: File[], accepts: string[], maxFileSize: number): b
   return files.every((file) => acceptedTypes.includes(file.type) && file.size <= maxFileSize);
 }
 
-const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, multiple, maxSize, className }) => {
+const FileDropzone: React.FC<FileDropzoneProps> = ({
+  accepts,
+  onFilesAdded,
+  multiple,
+  maxSize,
+  title = "Upload Files",
+  className,
+}) => {
   const { showNotification } = useNotification();
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -29,11 +37,14 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
     inputRef.current?.click();
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isDragging) setIsDragging(true);
-  }, [isDragging]);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!isDragging) setIsDragging(true);
+    },
+    [isDragging],
+  );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -41,41 +52,49 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-      const files = Array.from(e.dataTransfer.files);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        const files = Array.from(e.dataTransfer.files);
 
-      if (!multiple && files.length > 1) {
-        showNotification({ message: "Only one file can be dropped at a time.", type: "error" });
-        return;
+        if (!multiple && files.length > 1) {
+          showNotification({ message: "Only one file can be dropped at a time.", type: "error" });
+          return;
+        }
+
+        if (!validateFiles(files, accepts, maxSize)) {
+          showNotification({ message: "Invalid file type or file size.", type: "error" });
+          return;
+        }
+
+        onFilesAdded(files);
+        e.dataTransfer.clearData();
       }
+    },
+    [multiple, accepts, maxSize, onFilesAdded, showNotification],
+  );
 
-      if (!validateFiles(files, accepts, maxSize)) {
-        showNotification({ message: "Invalid file type or file size.", type: "error" });
-        return;
-      }
+  const descriptionText = `Total file size allowed is ${bytesToString(maxSize)}, and the supported formats are ${acceptsToExtensions(accepts).join(", ")}.`;
 
-      onFilesAdded(files);
-      e.dataTransfer.clearData();
-    }
-  }, [multiple, accepts, maxSize, onFilesAdded, showNotification]);
-
-  const baseClass = useMemo(() => (
-    `
-    group cursor-pointer outline-none
-    flex w-full flex-col items-center justify-center
-    gap-2 p-6
-    rounded-lg border border-dashed border-white/10
-    bg-transparent
-
-    transition-colors focus-visible:ring-2 focus-visible:ring-white/20
-    ${isDragging ? "bg-white/8" : "hover:bg-white/5"}
-    ${className || ""}
-    `
-  ), [isDragging, className]);
+  const baseClass = useMemo(
+    () =>
+      [
+        "group cursor-pointer outline-none",
+        "flex w-full flex-col items-center justify-center",
+        "gap-2 p-6",
+        "rounded-lg border-2 border-dashed border-white/10",
+        "bg-transparent",
+        "transition-colors focus-visible:ring-2 focus-visible:ring-white/20",
+        isDragging ? "bg-white/8" : "hover:bg-white/5",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    [isDragging, className],
+  );
 
   return (
     <div
@@ -96,20 +115,11 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
       onDrop={handleDrop}
       className={baseClass}
     >
-      <div className={`
-          flex flex-col items-center justify-center gap-2
-          rounded-lg
-          group-hover:bg-white/1
-        `}>
-        <Icon name="rectangle" size={40} className="size-10" />
-        <span className="text-sm font-light text-white/50 group-hover:text-white transition-colors">Upload Files</span>
-      </div>
-      <span
-        id={helperId}
-        className="text-xs text-white/50 max-w-xs text-center"
-      >
-        Total file size allowed is {bytesToString(maxSize)}, and the supported formats are {acceptsToExtensions(accepts).join(", ")}.
-      </span>
+      <Icon name="upload" size={60} />
+      <p className="text-lg leading-7 font-semibold text-white">{title}</p>
+      <p id={helperId} className="text-center text-sm leading-5 font-normal text-white/80">
+        {descriptionText}
+      </p>
       <input
         ref={inputRef}
         className="hidden"
@@ -123,12 +133,12 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ accepts, onFilesAdded, mult
             if (!multiple && files.length > 1) {
               showNotification({
                 type: "error",
-                message: "Only one file can be dropped at a time."
+                message: "Only one file can be dropped at a time.",
               });
             } else if (!validateFiles(files, accepts, maxSize)) {
               showNotification({
                 type: "error",
-                message: "Invalid file type or file size."
+                message: "Invalid file type or file size.",
               });
             } else {
               onFilesAdded(files);
