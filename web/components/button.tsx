@@ -28,7 +28,7 @@ export default function Button({
 }: ButtonProps) {
   // Base classes - structure and layout
   const baseClasses =
-    "inline-flex items-center justify-center rounded transition-colors focus:outline-none disabled:cursor-not-allowed";
+    "inline-flex items-center justify-center rounded transition-colors focus:outline-none disabled:cursor-not-allowed min-w-[150px]";
 
   // Size configuration - spacing, typography, and icon size
   const sizeConfig: Record<
