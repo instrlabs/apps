@@ -1,4 +1,4 @@
-"use server"
+"use server";
 
 import { cookies, headers } from "next/headers";
 import { ResponseCookie, ResponseCookies } from "next/dist/compiled/@edge-runtime/cookies";
@@ -10,10 +10,12 @@ export type ApiResponse<TBody> = {
   errors: FormErrors | null;
 };
 
-export type FormErrors = {
-  errorMessage: string;
-  fieldName: string;
-}[] | null;
+export type FormErrors =
+  | {
+      errorMessage: string;
+      fieldName: string;
+    }[]
+  | null;
 
 export type EmptyBody = Record<string, unknown>;
 
@@ -34,7 +36,7 @@ async function getHeaders(): Promise<Headers> {
 
 export async function fetchGET<T>(
   path: string,
-  queries: Record<string, string> = {}
+  queries: Record<string, string> = {},
 ): Promise<ApiResponse<T>> {
   let url = process.env.GATEWAY_URL + path;
   const params = new URLSearchParams(queries);
@@ -58,10 +60,7 @@ export async function fetchGET<T>(
   };
 }
 
-export async function fetchPOST<T>(
-  path: string,
-  body?: unknown
-): Promise<ApiResponse<T>> {
+export async function fetchPOST<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
   const url = process.env.GATEWAY_URL + path;
 
   const headers = await getHeaders();
@@ -69,7 +68,7 @@ export async function fetchPOST<T>(
   const res = await fetch(url, {
     method: "POST",
     headers: headers,
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   });
 
   if (["/auth/login", "/auth/refresh"].includes(path) && res.ok) {
@@ -91,10 +90,7 @@ export async function fetchPOST<T>(
   };
 }
 
-export async function fetchPUT<T>(
-  path: string,
-  body: unknown
-): Promise<ApiResponse<T>> {
+export async function fetchPUT<T>(path: string, body: unknown): Promise<ApiResponse<T>> {
   const url = process.env.GATEWAY_URL + path;
 
   const headers = await getHeaders();
@@ -115,10 +111,7 @@ export async function fetchPUT<T>(
   };
 }
 
-export async function fetchPATCH<T>(
-  path: string,
-  body: unknown
-): Promise<ApiResponse<T>> {
+export async function fetchPATCH<T>(path: string, body: unknown): Promise<ApiResponse<T>> {
   const url = process.env.GATEWAY_URL + path;
 
   const headers = await getHeaders();
@@ -139,9 +132,7 @@ export async function fetchPATCH<T>(
   };
 }
 
-export async function fetchGETBytes(
-  path: string
-): Promise<ApiResponse<ArrayBuffer>> {
+export async function fetchGETBytes(path: string): Promise<ApiResponse<ArrayBuffer>> {
   const url = process.env.GATEWAY_URL + path;
 
   const res = await fetch(url, {
@@ -180,7 +171,7 @@ export async function fetchGETBytes(
 
 export async function fetchPOSTFormData<T>(
   path: string,
-  formData: FormData
+  formData: FormData,
 ): Promise<ApiResponse<T>> {
   const url = process.env.GATEWAY_URL + path;
 

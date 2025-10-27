@@ -7,10 +7,15 @@ import React, {
   ReactNode, useEffect,
 } from "react";
 
+type InstructionNotification = {
+  user_id: string;
+  instruction_id: string;
+  instruction_detail_id: string;
+};
 
 type SSEMessageEvent = {
   eventName: string;
-  data: object;
+  data: object | InstructionNotification;
 }
 
 interface SSEContextProps {
@@ -24,20 +29,23 @@ export const SSEProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     async function start() {
+      console.log("[useSSE] Starting SSE connection...");
       const url = "/api/sse";
       const res = await fetch(url, {
         cache: "no-store",
       });
 
       if (!res.ok) {
-        console.warn("SSE connection failed:", res.status, res.statusText);
+        console.warn("[useSSE] Connection failed:", res.status, res.statusText);
         return;
       }
 
       if (!res.body) {
-        console.warn("SSE response has no body");
+        console.warn("[useSSE] Response has no body");
         return;
       }
+
+      console.log("[useSSE] Connection established, reading stream...");
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder("utf-8");
@@ -57,8 +65,27 @@ export const SSEProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const dataText = dataLine ? dataLine.slice(5).trimStart() : "{}";
           try {
             const data = JSON.parse(dataText);
-            setMessage({ eventName, data });
-          } catch {
+            console.log("[useSSE] Received message:", { eventName, data });
+
+            // Type guard for instruction notifications
+            const isInstructionNotification = (
+              parsed: any
+            ): parsed is InstructionNotification => {
+            return (
+              parsed &&
+              typeof parsed.user_id === 'string' &&
+              typeof parsed.instruction_id === 'string' &&
+              typeof parsed.instruction_detail_id === 'string'
+            );
+          };
+
+          // Set message with proper typing
+          setMessage({
+            eventName,
+            data: isInstructionNotification(data) ? data : data
+          });
+          } catch (err) {
+            console.warn("[useSSE] Failed to parse data:", dataText, err);
             // ignore non-JSON data lines
           }
         }

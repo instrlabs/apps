@@ -10,6 +10,13 @@ services:
     command: [ "./app" ]
     ports:
       - "3000:3000"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./gateway-service
+          target: /app
+          ignore:
+            - .env.staging
 
   auth-service:
     build:
@@ -22,6 +29,13 @@ services:
     command: [ "./app" ]
     ports:
       - "3001:3000"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./auth-service
+          target: /app
+          ignore:
+            - .env.staging
 
   image-service:
     build:
@@ -34,6 +48,13 @@ services:
     command: [ "./app" ]
     ports:
       - "3002:3000"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./image-service
+          target: /app
+          ignore:
+            - .env.staging
 
   notification-service:
     build:
@@ -46,14 +67,30 @@ services:
     command: [ "./app" ]
     ports:
       - "3003:3000"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./notification-service
+          target: /app
+          ignore:
+            - .env.staging
 
-#  web:
-#    build:
-#      context: ./web
-#      dockerfile: Dockerfile
-#    container_name: instrlabs-web
-#    restart: unless-stopped
-#    env_file:
-#      - ./web/.env
-#    ports:
-#      - "8000:3000"
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: instrlabs-web
+    restart: unless-stopped
+    env_file:
+      - web/.env.staging
+    ports:
+      - "8000:3000"
+    develop:
+      watch:
+        - action: sync
+          path: ./web
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
+            - .env.staging

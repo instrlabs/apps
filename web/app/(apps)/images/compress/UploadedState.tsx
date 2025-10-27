@@ -5,38 +5,36 @@ import Icon from "@/components/icon";
 import Chip from "@/components/chip";
 import Button from "@/components/button";
 import ImagePreview from "@/components/image-preview";
-import { FileMetadata } from "./types";
+import { ExtendedInstructionFile } from "./types";
 
 interface UploadedStateProps {
-  fileMetadata: FileMetadata[];
-  onRemoveFile: (id: string) => void;
+  files: ExtendedInstructionFile[];
+  onRemoveFile: (fileIndex: number) => void;
   onSubmit: () => void;
   onReset: () => void;
   onDownload: (fileName: string) => void;
-  formatFileMetadata: (file: File, dimensions?: { width: number; height: number }) => string;
 }
 
 export default function UploadedState({
-  fileMetadata,
+  files,
   onRemoveFile,
   onSubmit,
   onReset,
   onDownload,
-  formatFileMetadata,
 }: UploadedStateProps) {
-  const [previews, setPreviews] = useState<Record<string, string>>({});
+  const [previews, setPreviews] = useState<Record<number, string>>({});
 
-  // Generate image previews from File objects
   useEffect(() => {
     const generatePreviews = async () => {
-      const newPreviews: Record<string, string> = {};
+      const newPreviews: Record<number, string> = {};
 
-      for (const item of fileMetadata) {
-        if (item.file.type.startsWith("image/") && !previews[item.id]) {
+      for (let index = 0; index < files.length; index++) {
+        const item = files[index];
+        if (item.file.type.startsWith("image/") && !previews[index]) {
           const reader = new FileReader();
           reader.onload = (e) => {
-            newPreviews[item.id] = e.target?.result as string;
-            setPreviews((prev) => ({ ...prev, [item.id]: e.target?.result as string }));
+            newPreviews[index] = e.target?.result as string;
+            setPreviews((prev) => ({ ...prev, [index]: e.target?.result as string }));
           };
           reader.readAsDataURL(item.file);
         }
@@ -44,49 +42,41 @@ export default function UploadedState({
     };
 
     generatePreviews().then();
-  }, [fileMetadata, previews]);
+  }, [files, previews]);
 
   return (
     <div className="flex h-full flex-col gap-4">
-      {/* File List */}
-      {fileMetadata.map((item) => (
+      {files.map((item, index) => (
         <div
-          key={item.id}
+          key={index}
           className="flex items-center justify-between rounded border border-white/10 bg-white/4 p-3"
         >
-          {/* Left Side - File Info */}
           <div className="flex flex-1 items-center gap-4">
-            {/* Image Preview or Icon */}
-            {previews[item.id] ? (
-              <ImagePreview src={previews[item.id]} alt={item.file.name} size={40} />
-            ) : (
-              <Icon name="rectangle" size={40} className="text-white/80" />
-            )}
+            {<ImagePreview src={previews[index]} alt={item.file.name} size={40} />}
 
             <div className="flex flex-col">
-              {/* Filename and Status Chip */}
               <div className="flex items-center gap-2">
                 <p className="text-sm leading-5 font-normal text-white">{item.file.name}</p>
-                <Chip
-                  label={item.status.toUpperCase()}
-                  state={
-                    item.status === "success"
-                      ? "success"
-                      : item.status === "processing"
-                        ? "processing"
-                        : "default"
-                  }
-                />
+                {item.status && (
+                  <Chip
+                    label={item.status}
+                    state={
+                      item.status === "DONE"
+                        ? "success"
+                        : item.status === "PROCESSING"
+                          ? "processing"
+                          : "error"
+                    }
+                  />
+                )}
               </div>
-              {/* Metadata */}
               <p className="text-xs leading-4 font-normal text-white/30">
-                {formatFileMetadata(item.file, item.dimensions)}
+                {(item.file_size / 1024).toFixed(0)}KB
               </p>
             </div>
           </div>
 
-          {/* Right Side - Status-specific Content */}
-          {item.status === "success" && (
+          {item.status === "DONE" && (
             <div className="flex flex-col items-end justify-center gap-2">
               <p className="text-xs leading-4 font-semibold text-green-500">
                 {(item.compressedSize || 0) / 1024 < 1
@@ -103,13 +93,13 @@ export default function UploadedState({
             </div>
           )}
 
-          {item.status === "processing" && (
+          {item.status === "PROCESSING" && (
             <Icon name="progress" size={24} className="text-white/60" />
           )}
 
-          {item.status === "waiting" && (
+          {!item.status && (
             <button
-              onClick={() => onRemoveFile(item.id)}
+              onClick={() => onRemoveFile(index)}
               className="text-white/60 transition-colors hover:text-white"
               aria-label="Remove file"
             >

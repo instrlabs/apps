@@ -1,13 +1,10 @@
-export type CompressState = "default" | "uploaded";
-export type FileStatus = "waiting" | "processing" | "success" | "error";
+import { InstructionFile } from "@/services/images";
 
-export interface FileMetadata {
+export type CompressState = "default" | "uploaded";
+
+export interface ExtendedInstructionFile extends InstructionFile {
   file: File;
-  id: string;
-  typeLabel: string;
-  dimensions?: { width: number; height: number };
-  status: FileStatus;
+  outputFile?: InstructionFile;
   compressedSize?: number;
   compressionPercentage?: number;
-  downloadUrl?: string;
 }

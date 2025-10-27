@@ -42,12 +42,12 @@ func main() {
 
 	productRepo := internal.NewProductRepository(mongo)
 	instrRepo := internal.NewInstructionRepository(mongo)
-	fileRepo := internal.NewFileRepository(mongo)
+	detailRepo := internal.NewInstructionDetailRepository(mongo)
 
 	imageSvc := internal.NewImageService()
 
 	productHandler := internal.NewProductHandler(productRepo)
-	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, fileRepo, productRepo, imageSvc)
+	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, detailRepo, productRepo, imageSvc)
 
 	_, _ = nats.Conn.Subscribe(cfg.NatsSubjectImageRequests, func(m *natsgo.Msg) {
 		instrHandler.RunInstructionMessage(m.Data)
@@ -67,10 +67,11 @@ func main() {
 	app.Post("/instructions", instrHandler.CreateInstruction)
 	app.Post("/instructions/:id/details", instrHandler.CreateInstructionDetails)
 
+	app.Get("/instructions/:id/details/:detailId", instrHandler.GetInstructionDetail)
+	app.Get("/instructions/:id/details/:detailId/file", instrHandler.GetInstructionDetilFile)
 	app.Get("/instructions", instrHandler.ListInstructions)
 	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
 	app.Get("/instructions/:id/details", instrHandler.GetInstructionDetails)
-	app.Get("/instructions/:id/details/:fileId", instrHandler.GetInstructionFileBytes)
 
 	app.Get("/files", instrHandler.ListUncleanedFiles)
 

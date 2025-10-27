@@ -18,7 +18,7 @@ type InstructionHandler struct {
 	s3          *initx.S3
 	nats        *initx.Nats
 	instrRepo   *InstructionRepository
-	fileRepo    *FileRepository
+	detailRepo  *InstructionDetailRepository
 	productRepo *ProductRepository
 	imageSvc    *ImageService
 }
@@ -28,15 +28,15 @@ func NewInstructionHandler(
 	s3 *initx.S3,
 	nats *initx.Nats,
 	instrRepo *InstructionRepository,
-	fileRepo *FileRepository,
+	detailRepo *InstructionDetailRepository,
 	productRepo *ProductRepository,
 	imageSvc *ImageService) *InstructionHandler {
-	return &InstructionHandler{cfg: cfg, s3: s3, nats: nats, instrRepo: instrRepo, fileRepo: fileRepo, productRepo: productRepo, imageSvc: imageSvc}
+	return &InstructionHandler{cfg: cfg, s3: s3, nats: nats, instrRepo: instrRepo, detailRepo: detailRepo, productRepo: productRepo, imageSvc: imageSvc}
 }
 
 func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 	type payload struct {
-		ProductKey string `json:"productKey"`
+		ProductID string `json:"product_id"`
 	}
 	var body payload
 	if err := c.BodyParser(&body); err != nil {
@@ -46,16 +46,17 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 			"data":    nil,
 		})
 	}
-	if body.ProductKey == "" {
+	if body.ProductID == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "productKey is required",
+			"message": "ProductID is required",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
 	userID, _ := c.Locals("userId").(string)
-	product, _ := h.productRepo.FindByKey(body.ProductKey)
+	productID, _ := primitive.ObjectIDFromHex(body.ProductID)
+	product, _ := h.productRepo.FindByID(productID)
 	if product == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "product not found",
@@ -146,7 +147,7 @@ func (h *InstructionHandler) GetInstructionDetails(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden", "errors": nil, "data": nil})
 	}
 
-	files := h.fileRepo.ListByInstruction(instr.ID)
+	files := h.detailRepo.ListByInstruction(instr.ID)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "ok",
 		"errors":  nil,
@@ -192,30 +193,30 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 	outName := "images/" + outputID.Hex() + ext
 
 	now := time.Now().UTC()
-	input := &File{
+	input := &InstructionDetail{
 		ID:            inputID,
 		InstructionID: instr.ID,
-		OriginalName:  fh.Filename,
 		FileName:      inName,
-		Size:          int64(len(b)),
+		FileSize:      int64(len(b)),
+		MimeType:      fh.Header.Get("Content-Type"),
 		Status:        FileStatusPending,
 		OutputID:      &outputID,
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}
 
-	output := &File{
+	output := &InstructionDetail{
 		ID:            outputID,
 		InstructionID: instr.ID,
-		OriginalName:  filepath.Base(outName),
 		FileName:      outName,
-		Size:          0,
+		FileSize:      0,
+		MimeType:      fh.Header.Get("Content-Type"),
 		Status:        FileStatusPending,
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}
 
-	if err := h.fileRepo.CreateMany([]*File{input, output}); err != nil {
+	if err := h.detailRepo.CreateMany([]*InstructionDetail{input, output}); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "failed to create file records",
 			"errors":  nil,
@@ -224,8 +225,8 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 	}
 
 	if err := h.s3.Put(input.FileName, b); err != nil {
-		_ = h.fileRepo.UpdateStatus(inputID, FileStatusFailed)
-		_ = h.fileRepo.UpdateStatus(outputID, FileStatusFailed)
+		_ = h.detailRepo.UpdateStatus(inputID, FileStatusFailed)
+		_ = h.detailRepo.UpdateStatus(outputID, FileStatusFailed)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "upload failed",
 			"errors":  nil,
@@ -234,8 +235,8 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 	}
 
 	if err := h.nats.Conn.Publish(h.cfg.NatsSubjectImageRequests, []byte(inputID.Hex())); err != nil {
-		_ = h.fileRepo.UpdateStatus(inputID, FileStatusFailed)
-		_ = h.fileRepo.UpdateStatus(outputID, FileStatusFailed)
+		_ = h.detailRepo.UpdateStatus(inputID, FileStatusFailed)
+		_ = h.detailRepo.UpdateStatus(outputID, FileStatusFailed)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to publish to nats", "errors": nil, "data": nil})
 	}
 
@@ -258,13 +259,13 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	}
 
 	// 1. Find file by ID
-	input := h.fileRepo.GetByID(fileID)
+	input := h.detailRepo.GetByID(fileID)
 	if input == nil || input.ID.IsZero() {
 		log.Infof("RunInstructionMessage: input file not found: %s", fileIDHex)
 		return
 	}
 
-	output := h.fileRepo.GetByID(*input.OutputID)
+	output := h.detailRepo.GetByID(*input.OutputID)
 	if output == nil || output.ID.IsZero() {
 		log.Infof("RunInstructionMessage: output file not found: %s", fileIDHex)
 		return
@@ -274,9 +275,9 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	instr := h.instrRepo.GetByID(input.InstructionID)
 	if instr == nil || instr.ID.IsZero() {
 		log.Infof("RunInstructionMessage: instruction not found: %s", fileIDHex)
-		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-		_ = h.fileRepo.UpdateStatus(output.ID, FileStatusFailed)
-		h.publishFileNotification(primitive.NilObjectID, input.InstructionID)
+		_ = h.detailRepo.UpdateStatus(input.ID, FileStatusFailed)
+		_ = h.detailRepo.UpdateStatus(output.ID, FileStatusFailed)
+		h.publishFileNotification(primitive.NilObjectID, input.InstructionID, input.ID)
 		return
 	}
 
@@ -284,62 +285,67 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	product, _ := h.productRepo.FindByID(instr.ProductID)
 	if product == nil {
 		log.Infof("RunInstructionMessage: product not found: %s", instr.ProductID.Hex())
-		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-		_ = h.fileRepo.UpdateStatus(output.ID, FileStatusFailed)
-		h.publishFileNotification(instr.UserID, instr.ID)
+		_ = h.detailRepo.UpdateStatus(input.ID, FileStatusFailed)
+		_ = h.detailRepo.UpdateStatus(output.ID, FileStatusFailed)
+		h.publishFileNotification(instr.UserID, instr.ID, input.ID)
 		return
 	}
 
 	// 4. Get binary from S3
-	_ = h.fileRepo.UpdateStatus(input.ID, FileStatusProcessing)
-	h.publishFileNotification(instr.UserID, instr.ID)
+	_ = h.detailRepo.UpdateStatus(input.ID, FileStatusProcessing)
+	h.publishFileNotification(instr.UserID, instr.ID, input.ID)
 	inputBytes := h.s3.Get(input.FileName)
 	if inputBytes == nil {
 		log.Infof("RunInstructionMessage: input file missing on S3: %s", input.FileName)
-		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-		_ = h.fileRepo.UpdateStatus(output.ID, FileStatusFailed)
-		h.publishFileNotification(instr.UserID, instr.ID)
+		_ = h.detailRepo.UpdateStatus(input.ID, FileStatusFailed)
+		_ = h.detailRepo.UpdateStatus(output.ID, FileStatusFailed)
+		h.publishFileNotification(instr.UserID, instr.ID, input.ID)
 		return
 	}
 
 	// 5. Process based on product key
 	var outputBytes []byte
 	switch product.Key {
-	case "image-compress":
+	case "images/compress":
 		outputBytes, err = h.imageSvc.Compress(inputBytes)
 		if err != nil {
 			log.Infof("RunInstructionMessage: image-compress failed: %v", err)
-			_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-			_ = h.fileRepo.UpdateStatus(output.ID, FileStatusFailed)
-			h.publishFileNotification(instr.UserID, instr.ID)
+			_ = h.detailRepo.UpdateStatus(input.ID, FileStatusFailed)
+			_ = h.detailRepo.UpdateStatus(output.ID, FileStatusFailed)
+			h.publishFileNotification(instr.UserID, instr.ID, input.ID)
 			return
 		}
 	default:
 		log.Infof("RunInstructionMessage: unsupported product key: %s", product.Key)
-		_ = h.fileRepo.UpdateStatus(input.ID, FileStatusFailed)
-		_ = h.fileRepo.UpdateStatus(output.ID, FileStatusFailed)
-		h.publishFileNotification(instr.UserID, instr.ID)
+		_ = h.detailRepo.UpdateStatus(input.ID, FileStatusFailed)
+		_ = h.detailRepo.UpdateStatus(output.ID, FileStatusFailed)
+		h.publishFileNotification(instr.UserID, instr.ID, input.ID)
 		return
 	}
 
-	_ = h.fileRepo.UpdateStatus(input.ID, FileStatusDone)
-	_ = h.fileRepo.UpdateStatus(output.ID, FileStatusProcessing)
-	h.publishFileNotification(instr.UserID, instr.ID)
+	// Input file is DONE - notify for input completion
+	_ = h.detailRepo.UpdateStatus(input.ID, FileStatusDone)
+	h.publishFileNotification(instr.UserID, instr.ID, input.ID)
+
+	// Output file is now PROCESSING - notify for output processing start
+	_ = h.detailRepo.UpdateStatus(output.ID, FileStatusProcessing)
+	h.publishFileNotification(instr.UserID, instr.ID, output.ID)
 
 	// 6. Upload output to S3
 	if err := h.s3.Put(output.FileName, outputBytes); err != nil {
 		log.Infof("RunInstructionMessage: failed to upload output to S3: %v", err)
-		_ = h.fileRepo.UpdateStatus(output.ID, FileStatusFailed)
-		h.publishFileNotification(instr.UserID, instr.ID)
+		_ = h.detailRepo.UpdateStatus(output.ID, FileStatusFailed)
+		h.publishFileNotification(instr.UserID, instr.ID, output.ID)
 		return
 	}
 
-	_ = h.fileRepo.UpdateStatusAndSize(output.ID, FileStatusDone, int64(len(outputBytes)))
-	h.publishFileNotification(instr.UserID, instr.ID)
+	// Output file is DONE - notify for output completion
+	_ = h.detailRepo.UpdateStatusAndSize(output.ID, FileStatusDone, int64(len(outputBytes)))
+	h.publishFileNotification(instr.UserID, instr.ID, output.ID)
 }
 
-func (h *InstructionHandler) publishFileNotification(userID, instrID primitive.ObjectID) {
-	n := InstructionNotification{UserID: userID.Hex(), InstructionID: instrID.Hex()}
+func (h *InstructionHandler) publishFileNotification(userID, instrID, fileID primitive.ObjectID) {
+	n := InstructionNotification{UserID: userID.Hex(), InstructionID: instrID.Hex(), InstructionDetailID: fileID.Hex()}
 	b, err := json.Marshal(n)
 	if err != nil {
 		log.Infof("publishFileNotification: marshal error: %v", err)
@@ -353,7 +359,7 @@ func (h *InstructionHandler) publishFileNotification(userID, instrID primitive.O
 func (h *InstructionHandler) CleanInstruction() error {
 	cutoff := time.Now().Add(-1 * time.Hour)
 
-	files := h.fileRepo.ListOlderThan(cutoff)
+	files := h.detailRepo.ListOlderThan(cutoff)
 	if len(files) > 0 {
 		for _, f := range files {
 			if f.FileName == "" {
@@ -370,7 +376,7 @@ func (h *InstructionHandler) CleanInstruction() error {
 				ids = append(ids, f.ID)
 			}
 		}
-		if err := h.fileRepo.MarkCleaned(ids); err != nil {
+		if err := h.detailRepo.MarkCleaned(ids); err != nil {
 			log.Infof("CleanInstruction: MarkCleaned failed for %d files: %v", len(ids), err)
 		}
 		log.Infof("CleanInstruction: marked cleaned %d files older than %s", len(ids), cutoff.UTC().Format(time.RFC3339))
@@ -378,7 +384,7 @@ func (h *InstructionHandler) CleanInstruction() error {
 		log.Infof("CleanInstruction: no files older than %s", cutoff.UTC().Format(time.RFC3339))
 	}
 
-	stale := h.fileRepo.ListPendingUpdatedBefore(cutoff)
+	stale := h.detailRepo.ListPendingUpdatedBefore(cutoff)
 	if len(stale) > 0 {
 		for _, f := range stale {
 			if f.FileName != "" {
@@ -386,7 +392,7 @@ func (h *InstructionHandler) CleanInstruction() error {
 					log.Infof("CleanInstruction: failed to delete stale PENDING S3 object %s: %v", f.FileName, err)
 				}
 			}
-			_ = h.fileRepo.UpdateStatus(f.ID, FileStatusFailed)
+			_ = h.detailRepo.UpdateStatus(f.ID, FileStatusFailed)
 		}
 		ids := make([]primitive.ObjectID, 0, len(stale))
 		for _, f := range stale {
@@ -394,7 +400,7 @@ func (h *InstructionHandler) CleanInstruction() error {
 				ids = append(ids, f.ID)
 			}
 		}
-		if err := h.fileRepo.MarkCleaned(ids); err != nil {
+		if err := h.detailRepo.MarkCleaned(ids); err != nil {
 			log.Infof("CleanInstruction: MarkCleaned failed for stale PENDING %d files: %v", len(ids), err)
 		}
 		log.Infof("CleanInstruction: marked FAILED and cleaned %d stale PENDING files (updated_at < %s)", len(ids), cutoff.UTC().Format(time.RFC3339))
@@ -403,20 +409,20 @@ func (h *InstructionHandler) CleanInstruction() error {
 	return nil
 }
 
-func (h *InstructionHandler) GetInstructionFileBytes(c *fiber.Ctx) error {
+func (h *InstructionHandler) GetInstructionDetilFile(c *fiber.Ctx) error {
 	instrIDHex := c.Params("id", "")
-	fileIDHex := c.Params("fileId", "")
-	if instrIDHex == "" || fileIDHex == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "instruction id and file id required", "errors": nil, "data": nil})
+	detailIDHex := c.Params("detailId", "")
+	if instrIDHex == "" || detailIDHex == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "instruction id and detail id required", "errors": nil, "data": nil})
 	}
 
 	instrID, err := primitive.ObjectIDFromHex(instrIDHex)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid instruction id", "errors": nil, "data": nil})
 	}
-	fileID, err := primitive.ObjectIDFromHex(fileIDHex)
+	fileID, err := primitive.ObjectIDFromHex(detailIDHex)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid file id", "errors": nil, "data": nil})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid detail id", "errors": nil, "data": nil})
 	}
 
 	instr := h.instrRepo.GetByID(instrID)
@@ -430,7 +436,7 @@ func (h *InstructionHandler) GetInstructionFileBytes(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden", "errors": nil, "data": nil})
 	}
 
-	f := h.fileRepo.GetByID(fileID)
+	f := h.detailRepo.GetByID(fileID)
 	if f == nil || f.ID.IsZero() || f.InstructionID != instr.ID {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "file not found", "errors": nil, "data": nil})
 	}
@@ -446,12 +452,54 @@ func (h *InstructionHandler) GetInstructionFileBytes(c *fiber.Ctx) error {
 }
 
 func (h *InstructionHandler) ListUncleanedFiles(c *fiber.Ctx) error {
-	files := h.fileRepo.ListUncleaned()
+	files := h.detailRepo.ListUncleaned()
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "ok",
 		"errors":  nil,
 		"data": fiber.Map{
 			"files": files,
 		},
+	})
+}
+
+func (h *InstructionHandler) GetInstructionDetail(c *fiber.Ctx) error {
+	instrIDHex := c.Params("id")
+	detailIDHex := c.Params("detailId")
+
+	if instrIDHex == "" || detailIDHex == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "instruction id and detail id required", "errors": nil, "data": nil})
+	}
+
+	instrID, err := primitive.ObjectIDFromHex(instrIDHex)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid instruction id", "errors": nil, "data": nil})
+	}
+
+	detailID, err := primitive.ObjectIDFromHex(detailIDHex)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid detail id", "errors": nil, "data": nil})
+	}
+
+	// Verify instruction exists and user has permission
+	instr := h.instrRepo.GetByID(instrID)
+	if instr == nil || instr.ID.IsZero() {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "instruction not found", "errors": nil, "data": nil})
+	}
+
+	localUserID, _ := c.Locals("userId").(string)
+	userID, _ := primitive.ObjectIDFromHex(localUserID)
+	if instr.UserID != userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden", "errors": nil, "data": nil})
+	}
+
+	detail := h.detailRepo.GetByID(detailID)
+	if detail == nil || detail.ID.IsZero() || detail.InstructionID != instr.ID {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "instruction detail not found", "errors": nil, "data": nil})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "ok",
+		"errors":  nil,
+		"data":    fiber.Map{"detail": detail},
 	})
 }
