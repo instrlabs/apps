@@ -1,0 +1,332 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Auth Service API",
+        "version": "1.0.0",
+        "description": "Authentication service API documentation"
+    },
+    "servers": [
+      { "url": "http://localhost:3000/auth", "description": "Local" },
+      { "url": "https://api-instrlabs.arthadede.com/auth", "description": "Staging" }
+    ],
+    "paths": {
+      "/health": {
+        "get": {
+          "summary": "Health check",
+          "responses": {
+            "200": {
+              "description": "Service is healthy",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "status": { "type": "string", "example": "ok" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+        "/google": {
+            "get": {
+                "description": "Redirect user to Google OAuth consent screen",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Initiate Google OAuth login",
+                "responses": {
+                    "302": {
+                        "description": "Redirect to Google OAuth consent screen",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/google/callback": {
+            "get": {
+                "description": "Process the OAuth code from Google, set HTTP-only cookies with tokens, and redirect to frontend",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Handle Google OAuth callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "OAuth authorization code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to frontend with tokens set as HTTP-only cookies",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or missing code parameter",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "description": "Authenticate a user with email and 6-digit PIN",
+                "tags": ["auth"],
+                "summary": "Login user",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["email", "pin"],
+                                "properties": {
+                                    "email": {"type": "string", "format": "email"},
+                                    "pin": {"type": "string", "minLength": 6, "maxLength": 6, "description": "6-digit code"}
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful. Tokens are set as HTTP-only cookies: AccessToken and RefreshToken.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": { "type": "string", "example": "Login successful" },
+                                        "errors": { "type": ["null", "array"], "items": { "type": "object" } },
+                                        "data": { "type": ["null", "object"], "nullable": true }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Set-Cookie": {
+                                "description": "HTTP-only cookies set by the server: AccessToken and RefreshToken.",
+                                "schema": { "type": "string" }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation error",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/logout": {
+            "post": {
+                "description": "Logout a user by clearing their refresh token and cookies",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Logout user",
+                "responses": {
+                    "200": {
+                        "description": "Logout successful",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid access token",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/refresh": {
+            "post": {
+                "description": "Get a new access token using a refresh token",
+                "tags": ["auth"],
+                "summary": "Refresh access token",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["refresh_token"],
+                                "properties": {"refresh_token": {"type": "string"}}
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Token refreshed successfully. New tokens are set as HTTP-only cookies: AccessToken and RefreshToken.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": { "type": "string", "example": "Token refreshed successfully" },
+                                        "errors": { "type": ["null", "array"], "items": { "type": "object" } },
+                                        "data": { "type": ["null", "object"], "nullable": true }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Set-Cookie": {
+                                "description": "HTTP-only cookies set by the server: AccessToken and RefreshToken.",
+                                "schema": { "type": "string" }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body, missing refresh_token, or validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": { "type": "string" },
+                                        "errors": { "type": ["null", "array"], "items": { "type": "object" } },
+                                        "data": { "type": ["null", "object"], "nullable": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/profile": {
+            "get": {
+                "description": "Get the authenticated user's profile",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get user profile",
+                "responses": {
+                    "200": {
+                        "description": "Profile fetched successfully",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": { "type": "object" },
+                                "message": { "type": "string" }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": { "type": "string" }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/send-pin": {
+            "post": {
+                "description": "Send a 6-digit PIN to the email. If the email is not found, a user account is created first, then the PIN is sent.",
+                "tags": ["auth"],
+                "summary": "Send one-time PIN (create if not exists)",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["email"],
+                                "properties": {
+                                    "email": {"type": "string", "format": "email"}
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "PIN sent",
+                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation error",
+                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,59 @@
+services:
+  gateway-service:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    container_name: instrlabs-gateway-service
+    restart: unless-stopped
+    env_file:
+      - ./gateway-service/.env.local
+    command: [ "./app" ]
+    ports:
+      - "3000:3000"
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: instrlabs-auth-service
+    restart: unless-stopped
+    env_file:
+      - ./auth-service/.env.local
+    command: [ "./app" ]
+    ports:
+      - "3001:3000"
+
+  image-service:
+    build:
+      context: ./image-service
+      dockerfile: Dockerfile
+    container_name: instrlabs-image-service
+    restart: unless-stopped
+    env_file:
+      - ./image-service/.env.local
+    command: [ "./app" ]
+    ports:
+      - "3002:3000"
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: instrlabs-notification-service
+    restart: unless-stopped
+    env_file:
+      - ./notification-service/.env.local
+    command: [ "./app" ]
+    ports:
+      - "3003:3000"
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: instrlabs-web
+    restart: unless-stopped
+    env_file:
+      - ./web/.env.local
+    ports:
+      - "8000:3000"

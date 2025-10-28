@@ -1,47 +1,101 @@
 import React from "react";
 
-interface AvatarProps {
-  character: string;
-  size?: "sm" | "md" | "lg";
-}
+export type AvatarSize = "sm" | "base" | "lg" | "xl";
 
-const Avatar: React.FC<AvatarProps> = ({ character, size = "md" }) => {
-  // Get the first character and convert to uppercase
-  const displayChar = character.charAt(0).toUpperCase();
-
-  // Generate a deterministic color based on the character
-  const charCode = displayChar.charCodeAt(0);
-
-  // Define color pairs (background and text colors)
-  const colorPairs = [
-    { bg: "bg-red-200", text: "text-red-700" },
-    { bg: "bg-blue-200", text: "text-blue-700" },
-    { bg: "bg-green-200", text: "text-green-700" },
-    { bg: "bg-yellow-200", text: "text-yellow-700" },
-    { bg: "bg-purple-200", text: "text-purple-700" },
-    { bg: "bg-pink-200", text: "text-pink-700" },
-    { bg: "bg-indigo-200", text: "text-indigo-700" },
-    { bg: "bg-gray-200", text: "text-gray-700" },
-  ];
-
-  // Select color pair based on character code
-  const colorIndex = charCode % colorPairs.length;
-  const { bg, text } = colorPairs[colorIndex];
-
-  // Determine size classes
-  const sizeClasses = {
-    sm: "h-8 w-8 text-xs",
-    md: "h-10 w-10 text-sm",
-    lg: "h-14 w-14 text-base",
-  };
-
-  return (
-    <div
-      className={`flex items-center justify-center rounded-full ${bg} ${text} font-bold border border-white shadow-sm ${sizeClasses[size]}`}
-    >
-      {displayChar}
-    </div>
-  );
+export type AvatarProps = {
+  name?: string;
+  src?: string;
+  size?: AvatarSize;
+  className?: string;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 };
 
-export default Avatar;
+function getBucket(name: string | undefined) {
+  let bucket = 0;
+  if (name && name.trim() !== "") {
+    const safeName = name.trim();
+    const firstChar = safeName[0]?.toLowerCase() ?? "u";
+    const isAlpha = firstChar >= "a" && firstChar <= "z";
+    const alphaIndex = isAlpha ? firstChar.charCodeAt(0) - 97 : firstChar.charCodeAt(0) % 26;
+    bucket = ((alphaIndex % 26) + 26) % 8;
+  }
+  return bucket;
+}
+
+function getInitial(name: string | undefined) {
+  let initials = "";
+  if (name && name.trim() !== "") {
+    const safeName = name.trim();
+    const words = safeName.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) {
+      initials = `${words[0][0] ?? ""}${words[1][0] ?? ""}`;
+    } else {
+      const lettersOnly = safeName.replace(/[^A-Za-z]/g, "");
+      initials = lettersOnly.slice(0, 2) || safeName.slice(0, 2);
+    }
+    initials = initials.toUpperCase();
+  }
+  return initials;
+}
+
+export default function Avatar({
+  name = "",
+  size = "sm",
+  onClick,
+  className = "",
+}: AvatarProps) {
+  const bucket = getBucket(name);
+  const initials = getInitial(name);
+
+  const bgPaletteCls = [
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-red-500",
+    "bg-yellow-500",
+    "bg-purple-500",
+    "bg-teal-500",
+    "bg-orange-500",
+    "bg-slate-500",
+  ];
+  const textPaletteCls = [
+    "text-white", // on blue
+    "text-white", // on green
+    "text-white", // on red
+    "text-black", // on yellow
+    "text-white", // on purple
+    "text-white", // on teal
+    "text-black", // on orange
+    "text-white", // on slate
+  ];
+
+  const bgClass = bgPaletteCls[bucket];
+  const fgClass = textPaletteCls[bucket];
+
+  // Size configuration
+  const sizeConfig: Record<AvatarSize, string> = {
+    sm: "size-9 text-base font-medium",
+    base: "h-10 w-10 text-base font-medium",
+    lg: "size-12 text-xl font-medium",
+    xl: "size-20 text-4xl font-medium",
+  };
+
+  const baseClasses = "flex items-center justify-center rounded-full select-none cursor-pointer transition-colors";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        baseClasses,
+        sizeConfig[size],
+        bgClass,
+        fgClass,
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {initials}
+    </button>
+  );
+}

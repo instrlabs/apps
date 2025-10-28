@@ -1,1 +1,6 @@
 .idea
+
+# Environment Configuration
+# .env - NEVER commit (contains all secrets and sensitive configuration)
+# Single root .env file for entire project - all services read from here
+.env

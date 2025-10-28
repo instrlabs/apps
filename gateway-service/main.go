@@ -1,48 +1,23 @@
 package main
 
 import (
-	"os"
-	"os/signal"
-	"time"
-
 	"github.com/gofiber/fiber/v2"
-	log "github.com/sirupsen/logrus"
+	"github.com/gofiber/fiber/v2/log"
+	"github.com/instrlabs/gateway-service/internal"
+	initx "github.com/instrlabs/shared/init"
 )
 
 func main() {
-	config := LoadConfig()
+	cfg := internal.LoadConfig()
 
-	app := fiber.New(fiber.Config{
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	})
+	app := fiber.New(fiber.Config{})
 
-	SetupGatewayRoutes(app, config)
+	initx.SetupPrometheus(app)
+	initx.SetupServiceHealth(app)
+	initx.SetupLogger(app)
+	internal.SetupMiddleware(app, cfg)
+	internal.SetupGatewaySwaggerUI(app)
+	internal.SetupGatewayRoutes(app, cfg)
 
-	SetupMiddleware(app)
-
-	go func() {
-		log.WithFields(log.Fields{
-			"port": config.Port,
-		}).Info("Starting gateway server")
-
-		if err := app.Listen(":" + config.Port); err != nil {
-			log.WithFields(log.Fields{
-				"error": err.Error(),
-			}).Fatal("Could not start server")
-		}
-	}()
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	<-c
-
-	if err := app.ShutdownWithTimeout(15 * time.Second); err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Error during server shutdown")
-	}
-
-	log.Info("Server gracefully stopped")
+	log.Fatal(app.Listen(cfg.Port))
 }

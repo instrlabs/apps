@@ -1,31 +1,26 @@
+# IDE/editor
+.idea
+
 # dependencies
 /node_modules
 
-# testing
-/coverage
-
 # next.js
 /.next/
-/out/
 
 # production
 /build
 
 # misc
+.env.staging
 .DS_Store
 *.pem
 
-# debug
+# logs
 npm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env
-.env.staging
-.env.production
-
-# vercel
-.vercel
+.eslintcache
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+
+# turbopack cache (if generated)
+.turbo
