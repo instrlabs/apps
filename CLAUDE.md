@@ -2,11 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Architecture Overview
 
-This is a microservices-based application with a Next.js frontend and four Go backend services communicating via NATS message broker. All services use Fiber web framework and share common infrastructure through `github.com/instrlabs/shared`.
-
-### Services
+## Services
 
 **Gateway Service** (`gateway-service/`)
 - Handle proxies requests to downstream services
@@ -46,3 +43,33 @@ This is a microservices-based application with a Next.js frontend and four Go ba
 │   └── *.go         # Domain models
 └── static/          # Static assets (if any)
 ```
+
+### Origin Header Pattern (`x-user-origin`)
+
+**IMPORTANT:** All backend services use `x-user-origin` for origin validation, NOT the standard `Origin` header.
+
+**Production Request Flow:**
+```
+Browser → Traefik → Next.js → Gateway → Backend Services
+```
+
+1. **Browser** sends request with standard `Origin` header
+2. **Traefik** adds `x-forwarded-proto` and `x-forwarded-host` headers
+3. **Next.js middleware** (`web/middleware.ts`) constructs:
+   ```typescript
+   x-user-origin = x-forwarded-proto + "://" + x-forwarded-host
+   ```
+4. **Gateway** validates `x-user-origin` against allowed origins for CSRF protection
+5. **Backend services** use `x-user-origin` for origin-based logic (e.g., cookie domain)
+
+**Key Points:**
+- Frontend code NEVER manually sets `x-user-origin` - it's automatic via Next.js middleware
+- All Go services check `c.Get("x-user-origin")` for origin validation
+- For testing, manually set `x-user-origin` to simulate production flow
+- Allowed origins configured in `gateway-service/.env` under `ORIGINS_ALLOWED`
+
+## Guidelines
+- Always get environment configuration from `.env`
+- If Testing always refers to the .ai-guides directory in the service folder
+- **Use `x-user-origin` header for all origin validation in backend services**
+- **All test scripts must be created in `/tmp/` directory** - Keep test files temporary and out of version control
