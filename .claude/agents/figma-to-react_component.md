@@ -1,6 +1,6 @@
 ---
-name: figma-to-react
-description: Use this agent when you need to create or update a React component based on a Figma design. The agent should be invoked when you have a Figma link and want to extract design specifications, generate Tailwind CSS classes, and produce a fully functional React component. This is particularly useful during component development sprints when designs are finalized in Figma and need to be translated into production-ready React code.\n\nExamples:\n- <example>\nContext: Developer is building UI components for a Next.js application and has just received design approval in Figma.\nuser: "Create a component from https://www.figma.com/design/abc123/Dashboard and name it DashboardCard"\nassistant: "I'll help you create the DashboardCard component from that Figma design. Let me extract the design details and generate the React component."\n<commentary>\nThe user provided a Figma link with a component name. Use the figma-react-component-builder agent to analyze the design, extract specifications, generate Tailwind classes, and produce the React component.\n</commentary>\n</example>\n- <example>\nContext: A designer has updated an existing component in Figma and the developer needs to sync those changes.\nuser: "Update the Button component with the changes from https://www.figma.com/design/xyz789/Components?node-id=Button"\nassistant: "I'll analyze the updated Figma design and update your Button component accordingly."\n<commentary>\nThe user is requesting an update to an existing component based on Figma changes. Use the figma-react-component-builder agent to extract the latest design specifications and update the component code.\n</commentary>\n</example>
+name: figma-to-react_component
+description: Use this agent when you need to create or update a React component based on a Figma design. The agent should be invoked when you have a Figma link and want to extract design specifications, generate Tailwind CSS classes, and produce a fully functional React component. This is particularly useful during component development sprints when designs are finalized in Figma and need to be translated into production-ready React code.\n\nExamples:
 model: sonnet
 ---
 
@@ -49,9 +49,26 @@ You are an expert React component architect with deep expertise in translating F
 
 ## Key Technical Guidelines
 
-- **Component Naming**: Convert component name to kebab-case (e.g., `avatar.tsx`, `input-pin.tsx`)
-- **File Output**: Create ONLY the component file in `web/components/<kebab-case>.tsx` - NO example files, NO markdown docs
-- **File Structure**: Structure code compatible with `/web/components/` directory pattern
+### File Location & Naming
+
+The component location depends on the Figma component name structure:
+
+- **Simple names** (e.g., `Card`, `Button`, `Chip`):
+  - Location: `web/components/<kebab-case>.tsx`
+  - Example: `Card` → `web/components/card.tsx`
+  - These are reusable components shared across the app
+
+- **Path names** (e.g., `DashboardPage/Card`, `Settings/Header`):
+  - Location: `web/app/<page-name>/<kebab-case>.tsx`
+  - Example: `DashboardPage/Card` → `web/app/DashboardPage/card.tsx`
+  - These are page-specific components scoped to a particular page/route
+  - Use exact Figma path (don't convert page name to kebab-case)
+
+- **Naming Convention**: Always convert the component name to kebab-case (e.g., `input-pin.tsx`, `user-avatar.tsx`)
+
+### Other Guidelines
+
+- **File Output**: Create ONLY the component file(s) - NO example files, NO markdown docs
 - **Props Interface**: Define clear props interface for component customization
 - **Tailwind Usage**: Use pure Tailwind utilities exclusively - NO CSS variables, NO custom CSS classes
 - **Opacity Modifiers**: Use Tailwind's opacity syntax (e.g., `bg-white/90`, `text-white/50`, `border-white/10`)
