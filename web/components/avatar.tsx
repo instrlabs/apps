@@ -1,16 +1,19 @@
+"use client";
+
 import React from "react";
 
 export type AvatarSize = "sm" | "base" | "lg" | "xl";
 
-export type AvatarProps = {
+export type AvatarProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   name?: string;
   src?: string;
   size?: AvatarSize;
-  className?: string;
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 };
 
-function getBucket(name: string | undefined) {
+/**
+ * Determines color bucket (0-7) based on first character of name
+ */
+function getBucket(name: string | undefined): number {
   let bucket = 0;
   if (name && name.trim() !== "") {
     const safeName = name.trim();
@@ -22,7 +25,10 @@ function getBucket(name: string | undefined) {
   return bucket;
 }
 
-function getInitial(name: string | undefined) {
+/**
+ * Extracts initials from name (max 2 characters)
+ */
+function getInitials(name: string | undefined): string {
   let initials = "";
   if (name && name.trim() !== "") {
     const safeName = name.trim();
@@ -38,16 +44,24 @@ function getInitial(name: string | undefined) {
   return initials;
 }
 
+/**
+ * Avatar component with size variants and color bucketing
+ *
+ * Based on Figma design at node 347-1628
+ * Sizes: sm (36px), base (40px), lg (48px), xl (80px)
+ * Colors: 8 color buckets based on name's first character
+ */
 export default function Avatar({
   name = "",
   size = "sm",
-  onClick,
   className = "",
+  ...rest
 }: AvatarProps) {
   const bucket = getBucket(name);
-  const initials = getInitial(name);
+  const initials = getInitials(name);
 
-  const bgPaletteCls = [
+  // Color palette: 8 background colors
+  const bgPalette = [
     "bg-blue-500",
     "bg-green-500",
     "bg-red-500",
@@ -57,43 +71,45 @@ export default function Avatar({
     "bg-orange-500",
     "bg-slate-500",
   ];
-  const textPaletteCls = [
-    "text-white", // on blue
-    "text-white", // on green
-    "text-white", // on red
-    "text-black", // on yellow
-    "text-white", // on purple
-    "text-white", // on teal
-    "text-black", // on orange
-    "text-white", // on slate
+
+  // Text colors corresponding to each background
+  const textPalette = [
+    "text-white",  // on blue
+    "text-white",  // on green
+    "text-white",  // on red
+    "text-black",  // on yellow
+    "text-white",  // on purple
+    "text-white",  // on teal
+    "text-black",  // on orange
+    "text-white",  // on slate
   ];
 
-  const bgClass = bgPaletteCls[bucket];
-  const fgClass = textPaletteCls[bucket];
-
-  // Size configuration
-  const sizeConfig: Record<AvatarSize, string> = {
-    sm: "size-9 text-base font-medium",
-    base: "h-10 w-10 text-base font-medium",
-    lg: "size-12 text-xl font-medium",
-    xl: "size-20 text-4xl font-medium",
-  };
+  const bgClass = bgPalette[bucket];
+  const textClass = textPalette[bucket];
 
   const baseClasses = "flex items-center justify-center rounded-full select-none cursor-pointer transition-colors";
+
+  // Size configuration matching Figma specs
+  const sizeConfig: Record<AvatarSize, string> = {
+    sm: "size-9 text-base leading-6 font-medium",      // 36px, 16px text
+    base: "size-10 text-base leading-6 font-medium",   // 40px, 16px text
+    lg: "size-12 text-xl leading-7 font-medium",       // 48px, 20px text
+    xl: "size-20 text-4xl leading-10 font-medium",     // 80px, 36px text
+  };
 
   return (
     <button
       type="button"
-      onClick={onClick}
       className={[
         baseClasses,
         sizeConfig[size],
         bgClass,
-        fgClass,
+        textClass,
         className,
       ]
         .filter(Boolean)
         .join(" ")}
+      {...rest}
     >
       {initials}
     </button>
