@@ -48,20 +48,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **IMPORTANT:** All backend services use `x-user-origin` for origin validation, NOT the standard `Origin` header.
 
-**Production Request Flow:**
-```
-Browser → Traefik → Next.js → Gateway → Backend Services
-```
-
-1. **Browser** sends request with standard `Origin` header
-2. **Traefik** adds `x-forwarded-proto` and `x-forwarded-host` headers
-3. **Next.js middleware** (`web/middleware.ts`) constructs:
-   ```typescript
-   x-user-origin = x-forwarded-proto + "://" + x-forwarded-host
-   ```
-4. **Gateway** validates `x-user-origin` against allowed origins for CSRF protection
-5. **Backend services** use `x-user-origin` for origin-based logic (e.g., cookie domain)
-
 **Key Points:**
 - Frontend code NEVER manually sets `x-user-origin` - it's automatic via Next.js middleware
 - All Go services check `c.Get("x-user-origin")` for origin validation
