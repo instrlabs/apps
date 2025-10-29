@@ -1,18 +1,15 @@
 .PHONY: help build-all build-web build-gateway build-auth build-image build-notification push-all push-web push-gateway push-auth push-image push-notification clean
 
-# Docker registry/repository prefix (customize as needed)
-REGISTRY ?= instrlabs
-PROJECT_NAME = instrlabs-apps
-
 # Get the short commit hash
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 
 # Image names
-WEB_IMAGE = $(REGISTRY)/web
-GATEWAY_IMAGE = $(REGISTRY)/gateway-service
-AUTH_IMAGE = $(REGISTRY)/auth-service
-IMAGE_SERVICE_IMAGE = $(REGISTRY)/image-service
-NOTIFICATION_IMAGE = $(REGISTRY)/notification-service
+REGISTRY = histweety
+WEB_IMAGE = $(REGISTRY)/instrlabs-web
+GATEWAY_IMAGE = $(REGISTRY)/instrlabs-gateway-service
+AUTH_IMAGE = $(REGISTRY)/instrlabs-auth-service
+IMAGE_SERVICE_IMAGE = $(REGISTRY)/instrlabs-image-service
+NOTIFICATION_IMAGE = $(REGISTRY)/instrlabs-notification-service
 
 # Default target
 help:

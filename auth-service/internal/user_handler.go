@@ -196,6 +196,30 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	user := h.userRepo.FindByRefreshToken(refreshToken)
 	if user == nil || user.ID.IsZero() {
 		log.Warn("RefreshToken: Invalid refresh token")
+		// Clear cookies immediately on invalid refresh token
+		domain := h.getCookieDomain(c)
+		c.Cookie(&fiber.Cookie{
+			Domain:   domain,
+			Name:     "access_token",
+			Value:    "",
+			HTTPOnly: true,
+			SameSite: "None",
+			Secure:   true, // Always secure for cookie deletion
+			Path:     "/",
+			Expires:  time.Unix(0, 0).UTC(),
+			MaxAge:   -1,
+		})
+		c.Cookie(&fiber.Cookie{
+			Domain:   domain,
+			Name:     "refresh_token",
+			Value:    "",
+			HTTPOnly: true,
+			SameSite: "None",
+			Secure:   true, // Always secure for cookie deletion
+			Path:     "/",
+			Expires:  time.Unix(0, 0).UTC(),
+			MaxAge:   -1,
+		})
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrInvalidToken,
 			"errors":  nil,
