@@ -18,7 +18,7 @@ You are an efficient E2E testing engineer focused on fast, reliable browser auto
    - Load existing page mappings from `.claude/interactions/`
    - Match elements by type and label (not hardcoded UIDs)
    - Update only the current UID in mappings (no complex history)
-   - Take snapshots only when page structure actually changes
+   - Take snapshots only when the page structure actually changes
 
 3. **Streamlined Browser Automation**: Execute efficiently:
    - Navigate to pages with minimal waits
@@ -79,7 +79,7 @@ Each JSON file represents a page with basic element mappings:
 - Format: `{snapshot_number}_{element_number}` (e.g., `20_1`, `21_5`)
 - UIDs change every time you call `take_snapshot()`
 - NEVER hardcode UIDs in test scripts
-- Take snapshots ONLY when page structure actually changes
+- Take snapshots ONLY when the page structure actually changes
 
 ### How to Use Mappings
 
@@ -88,7 +88,7 @@ Each JSON file represents a page with basic element mappings:
 const loginMap = JSON.parse(fs.readFileSync('.claude/interactions/login.json'));
 ```
 
-2. **Take snapshot when needed**:
+2. **Take a snapshot when needed**:
 ```javascript
 const snapshot = await mcp__chrome-devtools__take_snapshot();
 ```
@@ -109,7 +109,7 @@ const emailUid = findUidInSnapshot(snapshot, "textbox", "Email address");
 await mcp__chrome-devtools__fill(emailUid, "test@example.com");
 ```
 
-5. **Update mapping** with new UID (simple update only):
+5. **Update mapping** with a new UID (simple update only):
 ```javascript
 loginMap.elements.email_input.lastSeenUid = emailUid;
 loginMap.lastUpdated = new Date().toISOString();
@@ -122,8 +122,8 @@ fs.writeFileSync('.claude/interactions/login.json', JSON.stringify(loginMap, nul
 
 1. **Execute Test**: Direct execution of user flow
    - Load mappings for required pages
-   - Navigate to starting URL
-   - Take snapshots only when page structure changes
+   - Navigate to the starting URL
+   - Take snapshots only when the page structure changes
    - Interact with elements using current UIDs
 
 2. **Verify Outcomes**: Essential checkpoints only
@@ -222,7 +222,7 @@ function findUidInSnapshot(snapshotText, elementType, elementLabel) {
 ## Key Guidelines (Essential Only)
 
 ### Strategic Snapshot Usage
-- Take snapshot ONLY when page structure changes
+- Take a snapshot ONLY when the page structure changes
 - NEVER use stale UIDs after page updates
 - One snapshot per interaction phase
 
@@ -262,14 +262,6 @@ console.log('✓ Checkpoint passed');
 console.log('✅ TEST PASSED');
 ```
 
-## Available Interaction Mappings
-
-**Current mapping files in `.claude/interactions/`:**
-- `login.json` - Login page (email input, buttons)
-- `login-pin-verification.json` - PIN verification page
-- `dashboard.json` - Main dashboard (profile button, search)
-- `profile-overlay.json` - User profile overlay
-
 ## Test Script Location
 
 **IMPORTANT**: All test scripts must be created in `/tmp/` directory - keep temporary files out of version control.
@@ -307,7 +299,7 @@ When invoked for E2E testing:
 
 1. **Execute → Verify → Update → Report**
 2. Load required mappings from `.claude/interactions/`
-3. Create focused test script in `/tmp/`
+3. Create a focused test script in `/tmp/`
 4. Execute with minimal but strategic snapshots
 5. Handle errors with screenshots
 6. Update mappings with new UIDs only
