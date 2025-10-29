@@ -23,14 +23,14 @@ export default function OverlayTop() {
   return (
     <>
       {/* MOBILE BREADCRUMBS */}
-      <div className="flex md:hidden flex-col items-center p-2">
+      <div className="flex flex-col items-center p-2 md:hidden">
         <Breadcrumbs />
       </div>
 
       {/* HEADER */}
       <div className="flex w-full items-center justify-between gap-2 bg-black p-2">
         {/* LEFT - LOGO */}
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex w-[150px] shrink-0 items-center gap-2">
           <Icon name="logo" size={40} />
         </div>
 
@@ -40,13 +40,9 @@ export default function OverlayTop() {
         </div>
 
         {/* RIGHT - AUTH SECTION */}
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex w-[150px] shrink-0 items-center justify-end gap-2">
           {isLoggedIn ? (
-            <Avatar
-              size="sm"
-              name={profile?.username || "Guest"}
-              onClick={handleToggleProfile}
-            />
+            <Avatar size="sm" name={profile?.username || "Guest"} onClick={handleToggleProfile} />
           ) : (
             <Button onClick={() => redirect("/login")}>Login</Button>
           )}

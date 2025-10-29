@@ -54,10 +54,10 @@ export async function getInstructionDetails(id: string) {
   return await fetchGET<{ files: InstructionDetail[] }>(`${IMAGES}/instructions/${id}/details`);
 }
 
-export async function getInstructions() {
-  return await fetchGET<{ instructions: Instruction[] }>(IMAGES + "/instructions");
+export async function getInstructionDetail(instructionId: string, detailId: string) {
+  return await fetchGET<{ detail: InstructionDetail }>(`${IMAGES}/instructions/${instructionId}/details/${detailId}`);
 }
 
-export async function getFile(id: string, fileId: string) {
-  return await fetchGETBytes(`${IMAGES}/instructions/${id}/details/${fileId}`);
+export async function getInstructionDetailsFile(instructionId: string, detailId: string) {
+  return await fetchGETBytes(`${IMAGES}/instructions/${instructionId}/details/${detailId}/file`);
 }

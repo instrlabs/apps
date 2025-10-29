@@ -9,8 +9,10 @@ import { CompressState, ExtendedInstructionFile } from "./types";
 import {
   createInstruction,
   createInstructionDetail,
-  getInstructionDetails,
+  getInstructionDetail,
+  getInstructionDetailsFile,
 } from "@/services/images";
+import { downloadFromArrayBuffer } from "@/utils/download";
 
 export default function ImageCompress() {
   const { showSnackbar } = useSnackbar();
@@ -66,10 +68,7 @@ export default function ImageCompress() {
       setInstructionId(currentInstructionId);
 
       for (let i = 0; i < files.length; i++) {
-        const resCreateInstructionDetail = await createInstructionDetail(
-          currentInstructionId,
-          files[i].file,
-        );
+        const resCreateInstructionDetail = await createInstructionDetail(currentInstructionId, files[i].file);
 
         if (!resCreateInstructionDetail.success) {
           setFiles((prev) =>
@@ -96,8 +95,7 @@ export default function ImageCompress() {
             // Calculate compression stats from input and output
             const inputSize = instructionDetailData.input.file_size;
             const outputSize = instructionDetailData.output.file_size;
-            const compressionPercentage =
-              outputSize > 0 ? Math.round(((inputSize - outputSize) / inputSize) * 100) : 0;
+            const compressionPercentage = outputSize > 0 ? Math.round(((inputSize - outputSize) / inputSize) * 100) : 0;
 
             return {
               ...item,
@@ -136,6 +134,19 @@ export default function ImageCompress() {
     setState("default");
   }, []);
 
+  const handleDownload = useCallback(
+    async (instructionId: string, detailId: string, fileName: string) => {
+      const buff = await getInstructionDetailsFile(instructionId, detailId);
+      downloadFromArrayBuffer(buff.data!, fileName);
+
+      showSnackbar({
+        type: "success",
+        message: `Downloaded ${fileName}!`,
+      });
+    },
+    [showSnackbar],
+  );
+
   useEffect(() => {
     if (files.length === 0) {
       setState("default");
@@ -144,130 +155,116 @@ export default function ImageCompress() {
 
   useEffect(() => {
     if (!message || !instructionId) {
-      console.log("SSE Effect: Missing message or instructionId");
       return;
     }
 
     const data = message.data as {
       user_id?: string;
       instruction_id?: string;
-      instruction_detail_id?: string
+      instruction_detail_id?: string;
     };
 
-    if (message.eventName === "message" && data.instruction_id === instructionId) {
-      console.log("SSE Effect: Received notification for detail:", data.instruction_detail_id);
+    if (message.eventName === "message" && data.instruction_id === instructionId && data.instruction_detail_id) {
+      getInstructionDetail(instructionId, data.instruction_detail_id)
+        .then((response) => {
+          if (!response.success || !response.data) return;
+          const detail = response.data.detail;
 
-      // Update specific file in state when we receive a detail-specific notification
-      if (data.instruction_detail_id) {
-        setFiles((prevFiles) =>
-          prevFiles.map((prevFile) => {
-            if (prevFile.id === data.instruction_detail_id) {
-              // This file was updated, fetch its latest status
-              getInstructionDetails(instructionId)
-                .then((response) => {
-                  if (response.success && response.data) {
-                    const backendFiles = response.data.files;
-                    const inputFiles = backendFiles.filter((f) => !f.output_id || f.id !== f.output_id);
-                    const outputFiles = backendFiles.filter((f) => f.output_id);
+          const isInput = detail.output_id !== undefined;
 
-                    const backendInputFile = inputFiles.find((bf) => bf.id === prevFile.id);
-                    const backendOutputFile = outputFiles.find(
-                      (of) => of.id === backendInputFile?.output_id,
-                    );
-
-                    if (backendInputFile) {
-                      let compressedSize = prevFile.compressedSize;
-                      let compressionPercentage = prevFile.compressionPercentage;
-
-                      if (backendOutputFile && backendOutputFile.status === "DONE") {
-                        const inputSize = backendInputFile.file_size;
-                        const outputSize = backendOutputFile.file_size;
-                        compressedSize = outputSize;
-                        compressionPercentage =
-                          outputSize > 0 ? Math.round(((inputSize - outputSize) / inputSize) * 100) : 0;
-                      }
-
-                      // Update the specific file with fresh data
-                      setFiles((currentFiles) =>
-                        currentFiles.map((file) =>
-                          file.id === data.instruction_detail_id
-                            ? {
-                                ...file,
-                                ...backendInputFile,
-                                outputFile: backendOutputFile,
-                                compressedSize,
-                                compressionPercentage,
-                              }
-                            : file
-                        )
-                      );
+          if (isInput) {
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === data.instruction_detail_id
+                  ? {
+                      ...f,
+                      status: detail.status,
                     }
+                  : f,
+              ),
+            );
+
+            if (detail.output_id) {
+              getInstructionDetail(instructionId, detail.output_id)
+                .then((outputResponse) => {
+                  if (!outputResponse.success || !outputResponse.data) return;
+                  const outputDetail = outputResponse.data.detail;
+
+                  // Update the input file with output file data
+                  setFiles((prev) =>
+                    prev.map((f) =>
+                      f.id === data.instruction_detail_id
+                        ? {
+                            ...f,
+                            outputFile: outputDetail,
+                          }
+                        : f,
+                    ),
+                  );
+
+                  if (outputDetail.status === "DONE") {
+                    const inputSize = detail.file_size;
+                    const outputSize = outputDetail.file_size;
+                    const compressedSize = outputSize;
+                    const compressionPercentage =
+                      outputSize > 0 ? Math.round(((inputSize - outputSize) / inputSize) * 100) : 0;
+
+                    setFiles((prev) =>
+                      prev.map((f) =>
+                        f.id === data.instruction_detail_id
+                          ? {
+                              ...f,
+                              compressedSize,
+                              compressionPercentage,
+                            }
+                          : f,
+                      ),
+                    );
                   }
                 })
                 .catch((error) => {
-                  console.error("Error fetching instruction details:", error);
+                  console.error("Error fetching output file:", error);
                 });
-
-              // Return optimistic update while fetching
-              return {
-                ...prevFile,
-                // Note: We could add optimistic status updates here if needed
-              };
             }
-            return prevFile;
-          })
-        );
-      } else {
-        // Fallback: refetch all files if no specific detail ID (legacy behavior)
-        getInstructionDetails(instructionId)
-          .then((response) => {
-            if (response.success && response.data) {
-              const backendFiles = response.data.files;
-              const inputFiles = backendFiles.filter((f) => !f.output_id || f.id !== f.output_id);
-              const outputFiles = backendFiles.filter((f) => f.output_id);
+          } else {
+            setFiles((prev) =>
+              prev.map((f) => {
+                if (f.output_id === data.instruction_detail_id) {
+                  const updatedFile = {
+                    ...f,
+                    outputFile: detail,
+                  };
 
-              setFiles((prevFiles) =>
-                prevFiles.map((prevFile) => {
-                  const backendInputFile = inputFiles.find((bf) => bf.id === prevFile.id);
-                  if (backendInputFile) {
-                    const backendOutputFile = outputFiles.find(
-                      (of) => of.id === backendInputFile.output_id,
-                    );
-
-                    let compressedSize = prevFile.compressedSize;
-                    let compressionPercentage = prevFile.compressionPercentage;
-
-                    if (backendOutputFile && backendOutputFile.status === "DONE") {
-                      const inputSize = backendInputFile.file_size;
-                      const outputSize = backendOutputFile.file_size;
-                      compressedSize = outputSize;
-                      compressionPercentage =
-                        outputSize > 0 ? Math.round(((inputSize - outputSize) / inputSize) * 100) : 0;
-                    }
+                  if (detail.status === "DONE" && f.file_size) {
+                    const inputSize = f.file_size;
+                    const outputSize = detail.file_size;
+                    const compressedSize = outputSize;
+                    const compressionPercentage =
+                      outputSize > 0 ? Math.round(((inputSize - outputSize) / inputSize) * 100) : 0;
 
                     return {
-                      ...prevFile,
-                      ...backendInputFile,
-                      outputFile: backendOutputFile,
+                      ...updatedFile,
                       compressedSize,
                       compressionPercentage,
                     };
                   }
-                  return prevFile;
-                }),
-              );
-            }
-          })
-          .catch((error) => {
-            console.error("Error fetching instruction details:", error);
-          });
-      }
+
+                  return updatedFile;
+                }
+                return f;
+              }),
+            );
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching instruction detail:", error);
+        });
     }
   }, [message, instructionId]);
 
   return (
-    <div className="flex h-full w-full flex-col gap-2">
-      <div className="flex h-full flex-col gap-4 rounded-lg border border-white/10 bg-white/8 p-4">
+    <div className="flex h-full w-full flex-col gap-2 sm:gap-3">
+      <div className="flex h-full flex-col gap-2 sm:gap-4 rounded-lg border border-white/10 bg-white/8 p-2 sm:p-3 md:p-4">
         <h1 className="text-base leading-6 font-semibold text-white">Image Compress</h1>
 
         {state === "default" && <DefaultState onFilesAdded={handleFilesAdded} />}
@@ -278,12 +275,7 @@ export default function ImageCompress() {
             onRemoveFile={handleRemoveFile}
             onSubmit={handleSubmit}
             onReset={handleReset}
-            onDownload={(fileName) => {
-              showSnackbar({
-                type: "info",
-                message: `Download started for ${fileName}!`,
-              });
-            }}
+            onDownload={handleDownload}
           />
         )}
       </div>

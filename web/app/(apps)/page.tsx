@@ -20,7 +20,7 @@ export default function AppsPage() {
           <h2 className="text-base leading-6 font-semibold text-white">
             Images
           </h2>
-          <div className="grid grid-cols-4 gap-2 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 w-full">
             {images.map((product) => (
               <DashboardCard
                 key={product.id}
