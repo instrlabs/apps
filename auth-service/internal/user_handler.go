@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2/log"
@@ -59,19 +58,7 @@ func (h *UserHandler) generateRefreshToken() (string, error) {
 }
 
 func (h *UserHandler) getCookieDomain(c *fiber.Ctx) string {
-	if h.cfg.Environment == "production" {
-		return ".arthadede.com"
-	}
-
-	userOrigin := c.Get("x-user-origin")
-	if userOrigin != "" {
-		if !strings.HasPrefix(userOrigin, "http://localhost") {
-			domain := strings.Split(userOrigin, "//")[1]
-			return "." + strings.Join(strings.Split(domain, ".")[1:], ".")
-		}
-	}
-
-	return ".localhost"
+	return h.cfg.CookieDomain
 }
 
 func (h *UserHandler) Login(c *fiber.Ctx) error {
