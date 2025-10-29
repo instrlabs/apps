@@ -1,4 +1,15 @@
 services:
+#  web:
+#    build:
+#      context: ./web
+#      dockerfile: Dockerfile
+#    container_name: instrlabs-web
+#    restart: unless-stopped
+#    env_file:
+#      - web/.env.local
+#    ports:
+#      - "8000:3000"
+
   gateway-service:
     build:
       context: ./gateway-service
@@ -10,51 +21,6 @@ services:
     command: [ "./app" ]
     ports:
       - "3000:3000"
-    develop:
-      watch:
-        - action: rebuild
-          path: ./gateway-service
-          target: /app
-          ignore:
-            - .env.staging
-
-  auth-service:
-    build:
-      context: ./auth-service
-      dockerfile: Dockerfile
-    container_name: instrlabs-auth-service
-    restart: unless-stopped
-    env_file:
-      - ./auth-service/.env
-    command: [ "./app" ]
-    ports:
-      - "3001:3000"
-    develop:
-      watch:
-        - action: rebuild
-          path: ./auth-service
-          target: /app
-          ignore:
-            - .env.staging
-
-  image-service:
-    build:
-      context: ./image-service
-      dockerfile: Dockerfile
-    container_name: instrlabs-image-service
-    restart: unless-stopped
-    env_file:
-      - ./image-service/.env
-    command: [ "./app" ]
-    ports:
-      - "3002:3000"
-    develop:
-      watch:
-        - action: rebuild
-          path: ./image-service
-          target: /app
-          ignore:
-            - .env.staging
 
   notification-service:
     build:
@@ -66,31 +32,28 @@ services:
       - ./notification-service/.env
     command: [ "./app" ]
     ports:
-      - "3003:3000"
-    develop:
-      watch:
-        - action: rebuild
-          path: ./notification-service
-          target: /app
-          ignore:
-            - .env.staging
+      - "3001:3000"
 
-  web:
+  auth-service:
     build:
-      context: ./web
+      context: ./auth-service
       dockerfile: Dockerfile
-    container_name: instrlabs-web
+    container_name: instrlabs-auth-service
     restart: unless-stopped
     env_file:
-      - web/.env.staging
+      - ./auth-service/.env
+    command: [ "./app" ]
     ports:
-      - "8000:3000"
-    develop:
-      watch:
-        - action: sync
-          path: ./web
-          target: /app
-          ignore:
-            - node_modules/
-            - .next/
-            - .env.staging
+      - "3002:3000"
+
+  image-service:
+    build:
+      context: ./image-service
+      dockerfile: Dockerfile
+    container_name: instrlabs-image-service
+    restart: unless-stopped
+    env_file:
+      - ./image-service/.env
+    command: [ "./app" ]
+    ports:
+      - "3003:3000"

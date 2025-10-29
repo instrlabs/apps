@@ -21,7 +21,7 @@ export type Instruction = {
   updated_at: string;
 };
 
-export type InstructionFile = {
+export type InstructionDetail = {
   id?: string;
   instruction_id?: string;
   file_name: string;
@@ -44,14 +44,14 @@ export async function createInstruction(productId: string) {
 export async function createInstructionDetail(instructionId: string, file: File) {
   const formData = new FormData();
   formData.append("file", file);
-  return await fetchPOSTFormData<{ input: InstructionFile; output: InstructionFile }>(
+  return await fetchPOSTFormData<{ input: InstructionDetail; output: InstructionDetail }>(
     `${IMAGES}/instructions/${instructionId}/details`,
     formData,
   );
 }
 
 export async function getInstructionDetails(id: string) {
-  return await fetchGET<{ files: InstructionFile[] }>(`${IMAGES}/instructions/${id}/details`);
+  return await fetchGET<{ files: InstructionDetail[] }>(`${IMAGES}/instructions/${id}/details`);
 }
 
 export async function getInstructions() {
