@@ -20,7 +20,7 @@ func main() {
 
 	initx.SetupPrometheus(app)
 	initx.SetupLogger(app)
-	initx.SetupServiceSwagger(app)
+	initx.SetupServiceSwagger(app, cfg.ApiUrl, "/auth")
 	initx.SetupServiceHealth(app)
 	initx.SetupAuthenticated(app, []string{
 		"/login",
