@@ -6,7 +6,7 @@
     "description": "Image processing service API documentation"
   },
   "servers": [
-    { "url": "http://localhost:3000/image", "description": "Local" },
+    { "url": "http://localhost:3000/images", "description": "Local" },
     { "url": "https://api-instrlabs.arthadede.com/images", "description": "Staging" }
   ],
   "components": {
