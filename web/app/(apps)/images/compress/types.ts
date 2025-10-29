@@ -1,10 +1,10 @@
-import { InstructionFile } from "@/services/images";
+import { InstructionDetail } from "@/services/images";
 
 export type CompressState = "default" | "uploaded";
 
-export interface ExtendedInstructionFile extends InstructionFile {
+export interface ExtendedInstructionFile extends InstructionDetail {
   file: File;
-  outputFile?: InstructionFile;
+  outputDetail?: InstructionDetail;
   compressedSize?: number;
   compressionPercentage?: number;
 }

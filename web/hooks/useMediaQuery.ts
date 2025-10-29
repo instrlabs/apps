@@ -31,18 +31,17 @@ function toMediaQuery(input: string): string {
 
 export default function useMediaQuery(queryOrToken: string): boolean {
   const query = useMemo(() => toMediaQuery(queryOrToken), [queryOrToken]);
+  const [matches, setMatches] = useState<boolean>(false); // Always start with false for consistent SSR/client initial state
+  const [hasMounted, setHasMounted] = useState(false);
 
-  const getMatch = () => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-      return false;
-    }
-    return window.matchMedia(query).matches;
-  };
-
-  const [matches, setMatches] = useState<boolean>(getMatch);
-
+  // Mark component as mounted on client-side
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    setHasMounted(true);
+  }, []);
+
+  // Setup media query listener after hydration
+  useEffect(() => {
+    if (!hasMounted || typeof window === "undefined" || typeof window.matchMedia !== "function") {
       return;
     }
 
@@ -58,7 +57,7 @@ export default function useMediaQuery(queryOrToken: string): boolean {
       mql.removeEventListener?.("change", onChange);
       mql.removeListener?.(onChange);
     };
-  }, [query]);
+  }, [query, hasMounted]);
 
   return matches;
 }

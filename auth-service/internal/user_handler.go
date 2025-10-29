@@ -42,9 +42,14 @@ func generateSixDigitPIN() string {
 }
 
 func (h *UserHandler) generateAccessToken(userID string, roles []string) (string, error) {
+	now := time.Now().UTC()
+	expirationTime := now.Add(time.Duration(h.cfg.TokenExpiryHours) * time.Hour)
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userID,
 		"roles":   roles,
+		"iat":     now.Unix(),
+		"exp":     expirationTime.Unix(),
 	})
 	return token.SignedString([]byte(h.cfg.JWTSecret))
 }
@@ -138,7 +143,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 			"data":    nil,
 		})
 	}
-	if err := h.userRepo.UpdateRefreshToken(user.ID.Hex(), refreshToken); err != nil {
+	if err := h.userRepo.UpdateRefreshTokenWithExpiry(user.ID.Hex(), refreshToken, time.Duration(h.cfg.RefreshExpiryHours)*time.Hour); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
 			"errors":  nil,
@@ -393,7 +398,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 			"data":    nil,
 		})
 	}
-	if err := h.userRepo.UpdateRefreshToken(user.ID.Hex(), refreshToken); err != nil {
+	if err := h.userRepo.UpdateRefreshTokenWithExpiry(user.ID.Hex(), refreshToken, time.Duration(h.cfg.RefreshExpiryHours)*time.Hour); err != nil {
 		log.Errorf("GoogleCallback: Failed to update refresh token: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
