@@ -21,11 +21,20 @@ export async function middleware(req: NextRequest) {
 
   let accessToken = req.cookies.get("access_token");
   let refreshToken = req.cookies.get("refresh_token");
+  const attemptedRefresh = req.cookies.get("_refresh_attempted");
 
   info(`Middleware processing request: ${req.method} ${req.nextUrl.pathname}`, req);
   info(`Auth state - Access token: ${accessToken ? "present" : "missing"}, Refresh token: ${refreshToken ? "present" : "missing"}`, req);
 
-  if (!accessToken && refreshToken) {
+  // If we already attempted refresh and it failed, clear everything and redirect
+  if (!accessToken && refreshToken && attemptedRefresh) {
+    info("Refresh already attempted and failed, clearing cookies and redirecting to login", req);
+    const redirect = redirectToLogin(req);
+    redirect.cookies.delete("_refresh_attempted");
+    return redirect;
+  }
+
+  if (!accessToken && refreshToken && !attemptedRefresh) {
     info("Attempting automatic token refresh", req);
 
     try {
@@ -61,11 +70,25 @@ export async function middleware(req: NextRequest) {
       } else {
         const errorText = await res.text();
         error(`Token refresh failed with status ${res.status}`, req, new Error(errorText));
-        return redirectToLogin(req);
+        const redirect = redirectToLogin(req);
+        redirect.cookies.set("_refresh_attempted", "true", {
+          maxAge: 5,
+          httpOnly: true,
+          sameSite: "lax",
+          path: "/",
+        });
+        return redirect;
       }
     } catch (err) {
       error("Network error during token refresh", req, err);
-      return redirectToLogin(req);
+      const redirect = redirectToLogin(req);
+      redirect.cookies.set("_refresh_attempted", "true", {
+        maxAge: 5,
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+      });
+      return redirect;
     }
   }
 
