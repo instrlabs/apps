@@ -2,14 +2,14 @@
   "page": "login",
   "url": "http://localhost:8000/login",
   "description": "Login page with email and Google authentication options",
-  "lastUpdated": "2025-10-28T16:45:00Z",
+  "lastUpdated": "2025-10-29T16:00:00Z",
   "elements": {
     "email_input": {
       "type": "textbox",
       "label": "Email address",
       "selector": "textbox[label='Email address']",
       "purpose": "Enter user email for authentication",
-      "lastSeenUid": "1_1",
+      "lastSeenUid": "35_1",
       "history": [
         {
           "uid": "1_1",
@@ -30,6 +30,11 @@
           "uid": "1_1",
           "timestamp": "2025-10-28T16:45:00Z",
           "test": "e2e-login-pin-flow"
+        },
+        {
+          "uid": "35_1",
+          "timestamp": "2025-10-29T16:00:00Z",
+          "test": "login-pin-flow-happy-path"
         }
       ]
     },
@@ -38,7 +43,7 @@
       "label": "Continue with Email",
       "selector": "button[label='Continue with Email']",
       "purpose": "Submit email and proceed to PIN verification",
-      "lastSeenUid": "2_2",
+      "lastSeenUid": "36_2",
       "history": [
         {
           "uid": "2_2",
@@ -59,6 +64,11 @@
           "uid": "2_2",
           "timestamp": "2025-10-28T16:45:00Z",
           "test": "e2e-login-pin-flow"
+        },
+        {
+          "uid": "36_2",
+          "timestamp": "2025-10-29T16:00:00Z",
+          "test": "login-pin-flow-happy-path"
         }
       ]
     },

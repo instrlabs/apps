@@ -2,7 +2,7 @@
   "page": "dashboard",
   "url": "http://localhost:8000/",
   "description": "Main dashboard page showing available products and services",
-  "lastUpdated": "2025-10-28T16:45:00Z",
+  "lastUpdated": "2025-10-29T16:00:00Z",
   "elements": {
     "app_logo": {
       "type": "navigation",
@@ -28,7 +28,7 @@
       "label": "TE",
       "selector": "button[label='TE']",
       "purpose": "Open user profile overlay",
-      "lastSeenUid": "8_3",
+      "lastSeenUid": "42_3",
       "history": [
         {
           "uid": "7_3",
@@ -44,6 +44,11 @@
           "uid": "8_3",
           "timestamp": "2025-10-28T16:45:00Z",
           "test": "e2e-login-pin-flow"
+        },
+        {
+          "uid": "42_3",
+          "timestamp": "2025-10-29T16:00:00Z",
+          "test": "login-pin-flow-happy-path"
         }
       ]
     },
@@ -72,7 +77,7 @@
       "level": 2,
       "selector": "heading[level='2'][label='Images']",
       "purpose": "Section heading for image-related products",
-      "lastSeenUid": "8_5",
+      "lastSeenUid": "42_5",
       "history": [
         {
           "uid": "28_5",
@@ -83,6 +88,11 @@
           "uid": "8_5",
           "timestamp": "2025-10-28T16:45:00Z",
           "test": "e2e-login-pin-flow"
+        },
+        {
+          "uid": "42_5",
+          "timestamp": "2025-10-29T16:00:00Z",
+          "test": "login-pin-flow-happy-path"
         }
       ]
     },

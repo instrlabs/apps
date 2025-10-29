@@ -2,7 +2,7 @@
   "page": "login-pin-verification",
   "url": "http://localhost:8000/login",
   "description": "PIN verification page shown after email submission",
-  "lastUpdated": "2025-10-28T16:45:00Z",
+  "lastUpdated": "2025-10-29T16:00:00Z",
   "elements": {
     "verification_heading": {
       "type": "heading",
@@ -10,7 +10,7 @@
       "level": 3,
       "selector": "heading[level='3'][label='Verification']",
       "purpose": "Display verification page title",
-      "lastSeenUid": "4_1",
+      "lastSeenUid": "38_1",
       "history": [
         {
           "uid": "4_1",
@@ -31,6 +31,11 @@
           "uid": "4_1",
           "timestamp": "2025-10-28T16:45:00Z",
           "test": "e2e-login-pin-flow"
+        },
+        {
+          "uid": "38_1",
+          "timestamp": "2025-10-29T16:00:00Z",
+          "test": "login-pin-flow-happy-path"
         }
       ]
     },
@@ -40,7 +45,7 @@
       "position": 1,
       "selector": "textbox[position='1']",
       "purpose": "Enter first digit of 6-digit PIN code",
-      "lastSeenUid": "4_5",
+      "lastSeenUid": "38_5",
       "history": [
         {
           "uid": "4_5",
@@ -65,7 +70,7 @@
       "position": 2,
       "selector": "textbox[position='2']",
       "purpose": "Enter second digit of 6-digit PIN code",
-      "lastSeenUid": "4_6",
+      "lastSeenUid": "38_6",
       "history": [
         {
           "uid": "4_6",
@@ -90,7 +95,7 @@
       "position": 3,
       "selector": "textbox[position='3']",
       "purpose": "Enter third digit of 6-digit PIN code",
-      "lastSeenUid": "4_7",
+      "lastSeenUid": "38_7",
       "history": [
         {
           "uid": "24_7",
@@ -110,7 +115,7 @@
       "position": 4,
       "selector": "textbox[position='4']",
       "purpose": "Enter fourth digit of 6-digit PIN code",
-      "lastSeenUid": "4_8",
+      "lastSeenUid": "38_8",
       "history": [
         {
           "uid": "24_8",
@@ -130,7 +135,7 @@
       "position": 5,
       "selector": "textbox[position='5']",
       "purpose": "Enter fifth digit of 6-digit PIN code",
-      "lastSeenUid": "4_9",
+      "lastSeenUid": "38_9",
       "history": [
         {
           "uid": "24_9",
@@ -150,7 +155,7 @@
       "position": 6,
       "selector": "textbox[position='6']",
       "purpose": "Enter sixth digit of 6-digit PIN code",
-      "lastSeenUid": "4_10",
+      "lastSeenUid": "38_10",
       "history": [
         {
           "uid": "24_10",
@@ -169,7 +174,7 @@
       "label": "Continue",
       "selector": "button[label='Continue']",
       "purpose": "Submit PIN code for verification",
-      "lastSeenUid": "6_11",
+      "lastSeenUid": "39_11",
       "history": [
         {
           "uid": "5_11",
@@ -185,6 +190,11 @@
           "uid": "6_11",
           "timestamp": "2025-10-28T16:45:00Z",
           "test": "e2e-login-pin-flow"
+        },
+        {
+          "uid": "39_11",
+          "timestamp": "2025-10-29T16:00:00Z",
+          "test": "login-pin-flow-happy-path"
         }
       ]
     },
