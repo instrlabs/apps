@@ -68,14 +68,16 @@ export default function ImagePreview({
       }}
       style={{ width: `${size}px`, height: `${size}px` }}
     >
-      <Image
-        src={src}
-        alt={alt}
-        width={width}
-        height={height}
-        quality={30}
-        className="object-contain object-center"
-      />
+      {src && (
+        <Image
+          src={src}
+          alt={alt}
+          width={width}
+          height={height}
+          quality={30}
+          className="object-contain object-center"
+        />
+      )}
       <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity hover:opacity-100" />
     </div>
   );
