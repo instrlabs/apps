@@ -53,11 +53,7 @@ export async function middleware(req: NextRequest) {
   }
 
   function redirectToLogin(request: NextRequest) {
-    const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
-    redirectResponse.cookies.delete("access_token");
-    redirectResponse.cookies.delete("refresh_token");
-    info("Redirected to login due to authentication failure", request);
-    return redirectResponse;
+    return NextResponse.redirect(new URL("/api/clear", request.url));
   }
 
   return next;
