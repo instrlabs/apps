@@ -34,7 +34,7 @@ func main() {
 
 	initx.SetupPrometheus(app)
 	initx.SetupLogger(app)
-	initx.SetupServiceSwagger(app)
+	initx.SetupServiceSwagger(app, cfg.ApiUrl, "/images")
 	initx.SetupServiceHealth(app)
 	initx.SetupAuthenticated(app, []string{
 		"/products",

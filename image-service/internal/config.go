@@ -22,6 +22,8 @@ type Config struct {
 	NatsURI                     string
 	NatsSubjectImageRequests    string
 	NatsSubjectNotificationsSSE string
+
+	ApiUrl string
 }
 
 func LoadConfig() *Config {
@@ -44,5 +46,7 @@ func LoadConfig() *Config {
 		NatsURI:                     initx.GetEnv("NATS_URI", "nats://nats:4222"),
 		NatsSubjectImageRequests:    initx.GetEnv("NATS_SUBJECT_IMAGE_REQUESTS", "image.requests"),
 		NatsSubjectNotificationsSSE: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS_SSE", "notifications.sse"),
+
+		ApiUrl: initx.GetEnv("GATEWAY_URL", ""),
 	}
 }

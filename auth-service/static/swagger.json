@@ -5,10 +5,7 @@
         "version": "1.0.0",
         "description": "Authentication service API documentation"
     },
-    "servers": [
-      { "url": "http://localhost:3000/auth", "description": "Local" },
-      { "url": "https://api-instrlabs.arthadede.com/auth", "description": "Staging" }
-    ],
+    "servers": [],
     "paths": {
       "/health": {
         "get": {
@@ -30,302 +27,566 @@
           }
         }
       },
-        "/google": {
-            "get": {
-                "description": "Redirect user to Google OAuth consent screen",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Initiate Google OAuth login",
-                "responses": {
-                    "302": {
-                        "description": "Redirect to Google OAuth consent screen",
-                        "schema": {
-                            "type": "string"
+      "/login": {
+        "post": {
+          "description": "Authenticate a user with email and 6-digit PIN",
+          "tags": ["auth"],
+          "summary": "Login user",
+          "requestBody": {
+            "required": true,
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "required": ["email", "pin"],
+                        "properties": {
+                            "email": {"type": "string", "format": "email", "example": "user@example.com"},
+                            "pin": {"type": "string", "minLength": 6, "maxLength": 6, "description": "6-digit code", "example": "123456"}
                         }
                     }
                 }
             }
-        },
-        "/google/callback": {
-            "get": {
-                "description": "Process the OAuth code from Google, set HTTP-only cookies with tokens, and redirect to frontend",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Handle Google OAuth callback",
-                "parameters": [
-                    {
+          },
+          "responses": {
+            "200": {
+              "description": "Login successful. Tokens are set as HTTP-only cookies: access_token and refresh_token.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
                         "type": "string",
-                        "description": "OAuth authorization code",
-                        "name": "code",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "302": {
-                        "description": "Redirect to frontend with tokens set as HTTP-only cookies",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid or missing code parameter",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/login": {
-            "post": {
-                "description": "Authenticate a user with email and 6-digit PIN",
-                "tags": ["auth"],
-                "summary": "Login user",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "required": ["email", "pin"],
-                                "properties": {
-                                    "email": {"type": "string", "format": "email"},
-                                    "pin": {"type": "string", "minLength": 6, "maxLength": 6, "description": "6-digit code"}
-                                }
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Login successful. Tokens are set as HTTP-only cookies: AccessToken and RefreshToken.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": { "type": "string", "example": "Login successful" },
-                                        "errors": { "type": ["null", "array"], "items": { "type": "object" } },
-                                        "data": { "type": ["null", "object"], "nullable": true }
-                                    }
-                                }
-                            }
+                        "example": "Login successful"
+                      },
+                      "errors": {
+                        "type": [
+                          "null",
+                          "array"
+                        ],
+                        "items": {
+                          "type": "object"
                         },
-                        "headers": {
-                            "Set-Cookie": {
-                                "description": "HTTP-only cookies set by the server: AccessToken and RefreshToken.",
-                                "schema": { "type": "string" }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body or validation error",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
+                        "nullable": true
+                      },
+                      "data": {
+                        "type": [
+                          "null",
+                          "object"
+                        ],
+                        "nullable": true
+                      }
                     }
+                  }
                 }
-            }
-        },
-        "/logout": {
-            "post": {
-                "description": "Logout a user by clearing their refresh token and cookies",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Logout user",
-                "responses": {
-                    "200": {
-                        "description": "Logout successful",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Missing or invalid access token",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
+              },
+              "headers": {
+                "Set-Cookie": {
+                  "description": "HTTP-only cookies set by the server: access_token and refresh_token",
+                  "schema": {
+                    "type": "string",
+                    "example": "access_token=jwt_token; HttpOnly; Secure; SameSite=None; Path=/"
+                  }
                 }
-            }
-        },
-        "/refresh": {
-            "post": {
-                "description": "Get a new access token using a refresh token",
-                "tags": ["auth"],
-                "summary": "Refresh access token",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "required": ["refresh_token"],
-                                "properties": {"refresh_token": {"type": "string"}}
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Token refreshed successfully. New tokens are set as HTTP-only cookies: AccessToken and RefreshToken.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": { "type": "string", "example": "Token refreshed successfully" },
-                                        "errors": { "type": ["null", "array"], "items": { "type": "object" } },
-                                        "data": { "type": ["null", "object"], "nullable": true }
-                                    }
-                                }
-                            }
+              }
+            },
+            "400": {
+              "description": "Invalid request body or validation error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "Invalid request body"
+                      },
+                      "errors": {
+                        "type": [
+                          "null",
+                          "array"
+                        ],
+                        "items": {
+                          "type": "object"
                         },
-                        "headers": {
-                            "Set-Cookie": {
-                                "description": "HTTP-only cookies set by the server: AccessToken and RefreshToken.",
-                                "schema": { "type": "string" }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body, missing refresh_token, or validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
+                        "nullable": true
+                      },
+                      "data": {
+                        "type": [
+                          "null",
+                          "object"
+                        ],
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Invalid credentials",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "Invalid credentials"
+                      },
+                      "errors": {
+                        "type": [
+                          "null",
+                          "array"
+                        ],
+                        "items": {
+                          "type": "object"
+                        },
+                        "nullable": true
+                      },
+                      "data": {
+                        "type": [
+                          "null",
+                          "object"
+                        ],
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/logout": {
+        "post": {
+          "description": "Logout a user by clearing their refresh token and authentication cookies",
+          "tags": ["auth"],
+          "summary": "Logout user",
+          "responses": {
+            "200": {
+              "description": "Logout successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "Logout successful"
+                      },
+                      "errors": {
+                        "type": [
+                          "null",
+                          "array"
+                        ],
+                        "items": {
+                          "type": "object"
+                        },
+                        "nullable": true
+                      },
+                      "data": {
+                        "type": [
+                          "null",
+                          "object"
+                        ],
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              },
+              "headers": {
+                "Set-Cookie": {
+                  "description": "HTTP-only cookies cleared by the server: access_token and refresh_token",
+                  "schema": {
+                    "type": "string",
+                    "example": "access_token=; HttpOnly; Secure; SameSite=None; Path=/; MaxAge=0"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Internal server error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "Internal server error"
+                      },
+                      "errors": {
+                        "type": [
+                          "null",
+                          "array"
+                        ],
+                        "items": {
+                          "type": "object"
+                        },
+                        "nullable": true
+                      },
+                      "data": {
+                        "type": [
+                          "null",
+                          "object"
+                        ],
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/refresh": {
+        "post": {
+          "description": "Get a new access token using a refresh token from headers",
+          "tags": [
+            "auth"
+          ],
+          "summary": "Refresh access token",
+          "requestBody": {
+            "required": false,
+            "description": "Refresh token should be provided in x-user-refresh header"
+          },
+          "responses": {
+            "200": {
+              "description": "Token refreshed successfully. New tokens are set as HTTP-only cookies: access_token and refresh_token.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "Token refreshed successfully"
+                      },
+                      "errors": {
+                        "type": [
+                          "null",
+                          "array"
+                        ],
+                        "items": {
+                          "type": "object"
+                        },
+                        "nullable": true
+                      },
+                      "data": {
+                        "type": [
+                          "null",
+                          "object"
+                        ],
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              },
+              "headers": {
+                "Set-Cookie": {
+                  "description": "HTTP-only cookies set by the server: access_token and refresh_token",
+                  "schema": {
+                    "type": "string",
+                    "example": "access_token=jwt_token; HttpOnly; Secure; SameSite=None; Path=/"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Invalid refresh token",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "Invalid token"
+                      },
+                      "errors": {
+                        "type": [
+                          "null",
+                          "array"
+                        ],
+                        "items": {
+                          "type": "object"
+                        },
+                        "nullable": true
+                      },
+                      "data": {
+                        "type": [
+                          "null",
+                          "object"
+                        ],
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Internal server error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "Internal server error"
+                      },
+                      "errors": {
+                        "type": [
+                          "null",
+                          "array"
+                        ],
+                        "items": {
+                          "type": "object"
+                        },
+                        "nullable": true
+                      },
+                      "data": {
+                        "type": [
+                          "null",
+                          "object"
+                        ],
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/google": {
+        "get": {
+          "description": "Redirect user to Google OAuth consent screen",
+          "tags": ["auth"],
+          "summary": "Initiate Google OAuth login",
+          "responses": {
+            "302": {
+              "description": "Redirect to Google OAuth consent screen",
+              "headers": {
+                "Location": {
+                  "description": "Google OAuth URL",
+                  "schema": { "type": "string", "format": "uri" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/google/callback": {
+        "get": {
+          "description": "Process the OAuth code from Google, set HTTP-only cookies with tokens, and redirect to frontend",
+          "tags": ["auth"],
+          "summary": "Handle Google OAuth callback",
+          "parameters": [
+            {
+              "name": "code",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "OAuth authorization code"
+              }
+            }
+          ],
+          "responses": {
+            "302": {
+              "description": "Redirect to frontend with tokens set as HTTP-only cookies",
+              "headers": {
+                "Location": {
+                  "description": "Frontend URL where user will be redirected after successful authentication",
+                  "schema": { "type": "string", "format": "uri" }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid or missing code parameter",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                        "message": { "type": "string", "example": "Invalid token" },
+                        "errors": { "type": ["null", "array"], "items": { "type": "object" }, "nullable": true },
+                        "data": { "type": ["null", "object"], "nullable": true }
+                    }
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Internal server error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                        "message": { "type": "string", "example": "Internal server error" },
+                        "errors": { "type": ["null", "array"], "items": { "type": "object" }, "nullable": true },
+                        "data": { "type": ["null", "object"], "nullable": true }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/profile": {
+        "get": {
+          "description": "Get the authenticated user's profile information",
+          "tags": ["user"],
+          "summary": "Get user profile",
+          "security": [{"bearerAuth": []}],
+          "responses": {
+            "200": {
+                "description": "Profile fetched successfully",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": { "type": "string", "example": "Profile retrieved successfully" },
+                                "errors": { "type": ["null", "array"], "items": { "type": "object" }, "nullable": true },
+                                "data": {
                                     "type": "object",
                                     "properties": {
-                                        "message": { "type": "string" },
-                                        "errors": { "type": ["null", "array"], "items": { "type": "object" } },
-                                        "data": { "type": ["null", "object"], "nullable": true }
+                                        "user": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": { "type": "string", "example": "507f1f77bcf86cd799439011" },
+                                                "email": { "type": "string", "format": "email", "example": "user@example.com" },
+                                                "username": { "type": "string", "example": "user" },
+                                                "registered_at": { "type": "string", "format": "date-time", "example": "2024-01-01T00:00:00Z" },
+                                                "created_at": { "type": "string", "format": "date-time", "example": "2024-01-01T00:00:00Z" },
+                                                "updated_at": { "type": "string", "format": "date-time", "example": "2024-01-01T00:00:00Z" }
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
-        },
-        "/profile": {
-            "get": {
-                "description": "Get the authenticated user's profile",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "Get user profile",
-                "responses": {
-                    "200": {
-                        "description": "Profile fetched successfully",
+            },
+            "401": {
+                "description": "Unauthorized - missing or invalid authentication",
+                "content": {
+                    "application/json": {
                         "schema": {
                             "type": "object",
                             "properties": {
-                                "data": { "type": "object" },
-                                "message": { "type": "string" }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": { "type": "string" }
+                                "message": { "type": "string", "example": "User not found" },
+                                "errors": { "type": ["null", "array"], "items": { "type": "object" }, "nullable": true },
+                                "data": { "type": ["null", "object"], "nullable": true }
                             }
                         }
                     }
                 }
             }
-        },
-        "/send-pin": {
-            "post": {
-                "description": "Send a 6-digit PIN to the email. If the email is not found, a user account is created first, then the PIN is sent.",
-                "tags": ["auth"],
-                "summary": "Send one-time PIN (create if not exists)",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "required": ["email"],
-                                "properties": {
-                                    "email": {"type": "string", "format": "email"}
-                                }
+          }
+        }
+      },
+      "/send-pin": {
+        "post": {
+          "description": "Send a 6-digit PIN to the email. If the email is not found, a user account is created first, then the PIN is sent. If PIN_ENABLED is false, returns success with fixed PIN '000000'.",
+          "tags": ["auth"],
+          "summary": "Send one-time PIN (create if not exists)",
+          "requestBody": {
+            "required": true,
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "required": ["email"],
+                        "properties": {
+                            "email": {"type": "string", "format": "email", "example": "user@example.com"}
+                        }
+                    }
+                }
+            }
+          },
+          "responses": {
+            "200": {
+                "description": "PIN sent successfully (or would be sent in production)",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": { "type": "string", "example": "PIN sent" },
+                                "errors": { "type": ["null", "array"], "items": { "type": "object" }, "nullable": true },
+                                "data": { "type": ["null", "object"], "nullable": true }
                             }
                         }
                     }
-                },
-                "responses": {
-                    "200": {
-                        "description": "PIN sent",
-                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
-                    },
-                    "400": {
-                        "description": "Invalid request body or validation error",
-                        "content": {"application/json": {"schema": {"type": "object", "properties": {"message": {"type": "string"}}}}}
+                }
+            },
+            "400": {
+                "description": "Invalid request body or validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": { "type": "string", "example": "Email is required" },
+                                "errors": { "type": ["null", "array"], "items": { "type": "object" }, "nullable": true },
+                                "data": { "type": ["null", "object"], "nullable": true }
+                            }
+                        }
                     }
                 }
+            },
+            "500": {
+                "description": "Internal server error - email sending failed",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": { "type": "string", "example": "Internal server error" },
+                                "errors": { "type": ["null", "array"], "items": { "type": "object" }, "nullable": true },
+                                "data": { "type": ["null", "object"], "nullable": true }
+                            }
+                        }
+                    }
+                }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+        "schemas": {
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "string", "example": "507f1f77bcf86cd799439011" },
+                    "email": { "type": "string", "format": "email", "example": "user@example.com" },
+                    "username": { "type": "string", "example": "user" },
+                    "registered_at": { "type": "string", "format": "date-time", "example": "2024-01-01T00:00:00Z" },
+                    "created_at": { "type": "string", "format": "date-time", "example": "2024-01-01T00:00:00Z" },
+                    "updated_at": { "type": "string", "format": "date-time", "example": "2024-01-01T00:00:00Z" }
+                }
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "JWT token in x-user-id header"
             }
         }
     }
