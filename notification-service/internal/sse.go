@@ -50,7 +50,7 @@ func NewSSEService(cfg *Config) *SSEService {
 }
 
 func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
-	userId := c.Locals("userId").(string)
+	userId := c.Get("x-user-id")
 	c.Set("content-type", "text/event-stream")
 	c.Set("cache-control", "no-cache")
 	c.Set("connection", "keep-alive")

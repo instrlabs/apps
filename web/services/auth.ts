@@ -42,5 +42,5 @@ export async function getProfile() {
 }
 
 export async function loginByGoogle(): Promise<ApiResponse<User>> {
-  return redirect(`${process.env.GATEWAY_URL}${AUTH}/google`);
+  return redirect(`${process.env.API_URL}${AUTH}/google`);
 }

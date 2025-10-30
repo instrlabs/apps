@@ -76,45 +76,34 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(func(c *fiber.Ctx) error {
 		accessToken := c.Cookies("access_token")
 		refreshToken := c.Cookies("refresh_token")
-		clientIP := c.Get("x-user-ip")
-		requestPath := c.Path()
+
+		if accessToken == "" && refreshToken != "" {
+			httpResp, err := RefreshAccessToken(refreshToken)
+			if err != nil {
+				log.Errorf("RefreshAccessToken: Failed - Error: %v", err)
+				c.Request().Header.Set("x-authenticated", "false")
+				c.Request().Header.Set("x-user-id", "")
+				return c.Next()
+			}
+
+			setCookieHeaders := httpResp.Header["Set-Cookie"]
+			for _, setCookieHeader := range setCookieHeaders {
+				c.Response().Header.Add("Set-Cookie", setCookieHeader)
+				c.Request().Header.Add("Cookie", setCookieHeader)
+			}
+
+			cookies := httpResp.Cookies()
+			for _, cookie := range cookies {
+				if cookie.Name == "access_token" {
+					accessToken = cookie.Value
+					break
+				}
+			}
+		}
 
 		c.Request().Header.Del("cookie")
 		c.Request().Header.Del("x-authenticated")
 		c.Request().Header.Del("x-user-id")
-		c.Request().Header.Del("x-user-roles")
-
-		if accessToken == "" && refreshToken != "" {
-			newTokens, err := RefreshAccessToken(refreshToken)
-			if err != nil {
-				log.Warnf("Token refresh failed - IP: %s, Path: %s, Error: %v", clientIP, requestPath, err)
-				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"message": "Unauthorized",
-					"errors":  nil,
-					"data":    nil,
-				})
-			}
-
-			c.Cookie(&fiber.Cookie{
-				Name:     "access_token",
-				Value:    newTokens.AccessToken,
-				HTTPOnly: true,
-				Secure:   true,
-				SameSite: "None",
-				Path:     "/",
-			})
-			c.Cookie(&fiber.Cookie{
-				Name:     "refresh_token",
-				Value:    newTokens.RefreshToken,
-				HTTPOnly: true,
-				Secure:   true,
-				SameSite: "None",
-				Path:     "/",
-			})
-
-			accessToken = newTokens.AccessToken
-			log.Infof("Token refreshed - IP: %s, Path: %s", clientIP, requestPath)
-		}
 
 		if accessToken != "" {
 			info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken)
@@ -125,6 +114,9 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 				c.Request().Header.Set("x-authenticated", "true")
 				c.Request().Header.Set("x-user-id", info.UserID)
 			}
+		} else {
+			c.Request().Header.Set("x-authenticated", "false")
+			c.Request().Header.Set("x-user-id", "")
 		}
 
 		return c.Next()

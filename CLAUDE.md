@@ -24,9 +24,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Environment Configuration
 
-- Each service requires its own `.env` file. 
-- And root `.env` file for shared environment variables.
-- See `.env.example` for example configuration.
+Environment variables are separated into two categories for clarity:
+
+### Public Exposed URLs (`*_URL`)
+These are services accessible from the frontend and external clients:
+- `WEB_URL` - Next.js web application (e.g., `http://localhost:3000`)
+- `API_URL` - Backend API gateway (e.g., `http://localhost:3001`)
+- `NOTIFICATION_URL` - SSE notification service (e.g., `http://localhost:3002`)
+
+**Used by:** Web frontend and browser-based clients
+
+### Internal Service URLs (`*_SERVICE`)
+These are services that can only be accessed within the Docker network:
+- `AUTH_SERVICE` - Authentication service (e.g., `http://auth-service:3000`)
+- `IMAGE_SERVICE` - Image processing service (e.g., `http://image-service:3000`)
+- `GATEWAY_SERVICE` - Backend API gateway service (e.g., `http://gateway-service:3000`)
+- `NOTIFICATION_SERVICE` - SSE notification service (e.g., `http://notification-service:3000`)
+
+**Used by:** Backend services (Gateway, Notification) for internal communication
+
+### Configuration Files
+- **Root `.env`** - Contains all public and internal URL definitions
+- **Service `.env` files** - Reference root variables using `${VAR_NAME}` syntax
+  - `gateway-service/.env` - Uses `AUTH_SERVICE` and `IMAGE_SERVICE`
+  - `auth-service/.env` - Uses `API_URL` and `WEB_URL`
+  - `notification-service/.env` - Uses only public `ORIGINS_ALLOWED`
+  - `web/.env.local` - Uses `API_URL` and `NOTIFICATION_URL`
+
+See `.env.example` for complete configuration template.
 
 ## Code Patterns
 

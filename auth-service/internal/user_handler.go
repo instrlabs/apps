@@ -66,6 +66,32 @@ func (h *UserHandler) getCookieDomain(c *fiber.Ctx) string {
 	return h.cfg.CookieDomain
 }
 
+func (h *UserHandler) clearAuth(c *fiber.Ctx) {
+	domain := h.getCookieDomain(c)
+	c.Cookie(&fiber.Cookie{
+		Domain:   domain,
+		Name:     "access_token",
+		Value:    "",
+		HTTPOnly: true,
+		SameSite: "None",
+		Secure:   true,
+		Path:     "/",
+		Expires:  time.Unix(0, 0).UTC(),
+		MaxAge:   -1,
+	})
+	c.Cookie(&fiber.Cookie{
+		Domain:   domain,
+		Name:     "refresh_token",
+		Value:    "",
+		HTTPOnly: true,
+		SameSite: "None",
+		Secure:   true,
+		Path:     "/",
+		Expires:  time.Unix(0, 0).UTC(),
+		MaxAge:   -1,
+	})
+}
+
 func (h *UserHandler) Login(c *fiber.Ctx) error {
 	log.Info("Login: Processing login request")
 
@@ -194,32 +220,10 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	refreshToken := c.Get("x-user-refresh")
 	log.Infof("RefreshToken: Refresh token: %s", refreshToken)
 	user := h.userRepo.FindByRefreshToken(refreshToken)
-	if user == nil || user.ID.IsZero() {
+	if user == nil {
 		log.Warn("RefreshToken: Invalid refresh token")
 		// Clear cookies immediately on invalid refresh token
-		domain := h.getCookieDomain(c)
-		c.Cookie(&fiber.Cookie{
-			Domain:   domain,
-			Name:     "access_token",
-			Value:    "",
-			HTTPOnly: true,
-			SameSite: "None",
-			Secure:   true, // Always secure for cookie deletion
-			Path:     "/",
-			Expires:  time.Unix(0, 0).UTC(),
-			MaxAge:   -1,
-		})
-		c.Cookie(&fiber.Cookie{
-			Domain:   domain,
-			Name:     "refresh_token",
-			Value:    "",
-			HTTPOnly: true,
-			SameSite: "None",
-			Secure:   true, // Always secure for cookie deletion
-			Path:     "/",
-			Expires:  time.Unix(0, 0).UTC(),
-			MaxAge:   -1,
-		})
+		h.clearAuth(c)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrInvalidToken,
 			"errors":  nil,
@@ -498,31 +502,7 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 		})
 	}
 
-	domain := h.getCookieDomain(c)
-
-	c.Cookie(&fiber.Cookie{
-		Domain:   domain,
-		Name:     "access_token",
-		Value:    "",
-		HTTPOnly: true,
-		SameSite: "None",
-		Secure:   h.cfg.Environment == "production",
-		Path:     "/",
-		Expires:  time.Unix(0, 0).UTC(),
-		MaxAge:   -1,
-	})
-
-	c.Cookie(&fiber.Cookie{
-		Domain:   domain,
-		Name:     "refresh_token",
-		Value:    "",
-		HTTPOnly: true,
-		SameSite: "None",
-		Secure:   h.cfg.Environment == "production",
-		Path:     "/",
-		Expires:  time.Unix(0, 0).UTC(),
-		MaxAge:   -1,
-	})
+	h.clearAuth(c)
 
 	log.Infof("Logout: User logged out successfully: %s", userId)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
