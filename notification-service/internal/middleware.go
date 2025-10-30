@@ -2,11 +2,9 @@ package internal
 
 import (
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
@@ -15,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 )
 
+// SetupMiddleware sets up middleware with cookie-to-header conversion for shared RefreshTokenIfNeeded
 func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(helmet.New())
 	app.Use(requestid.New())
@@ -33,66 +32,32 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		AllowCredentials: true,
 	}))
 
-	// AUTH
+	// Refreshed token
 	app.Use(func(c *fiber.Ctx) error {
 		accessToken := c.Cookies("access_token")
 		refreshToken := c.Cookies("refresh_token")
-		clientIP := c.IP()
-		requestPath := c.Path()
 
-		c.Request().Header.Del("cookie")
-		c.Request().Header.Del("x-authenticated")
-		c.Request().Header.Del("x-user-id")
-		c.Request().Header.Del("x-user-roles")
-
-		if accessToken == "" && refreshToken != "" {
-			newTokens, err := RefreshAccessToken(refreshToken)
-			if err == nil {
-				c.Cookie(&fiber.Cookie{
-					Name:     "access_token",
-					Value:    newTokens.AccessToken,
-					HTTPOnly: true,
-					Secure:   true,
-					SameSite: "None",
-					Path:     "/",
-				})
-				c.Cookie(&fiber.Cookie{
-					Name:     "refresh_token",
-					Value:    newTokens.RefreshToken,
-					HTTPOnly: true,
-					Secure:   true,
-					SameSite: "None",
-					Path:     "/",
-				})
-				accessToken = newTokens.AccessToken
-				log.Infof("Token refreshed - IP: %s, Path: %s", clientIP, requestPath)
-			} else {
-				log.Warnf("Token refresh failed - IP: %s, Path: %s, Error: %v", clientIP, requestPath, err)
-				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"message": "Unauthorized",
-					"errors":  nil,
-					"data":    nil,
-				})
+		needsRefresh := false
+		if accessToken == "" {
+			needsRefresh = true
+		} else {
+			_, err := ExtractTokenInfo(cfg.JWTSecret, accessToken)
+			if err != nil && (errors.Is(err, ErrTokenExpired) || errors.Is(err, ErrTokenInvalid)) {
+				needsRefresh = true
 			}
 		}
 
+		c.Request().Header.Set("x-user-id", "")
+		c.Request().Header.Set("x-user-refresh-token", "")
+
 		if accessToken != "" {
 			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
-				c.Request().Header.Set("x-authenticated", "true")
 				c.Request().Header.Set("x-user-id", info.UserID)
-				c.Request().Header.Set("x-user-roles", strings.Join(info.Roles, ","))
-			} else {
-				log.Warnf("ExtractTokenInfo: Failed to extract token info: %v", err)
-				if !errors.Is(err, ErrTokenEmpty) {
-					return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-						"message": err.Error(),
-						"errors":  nil,
-						"data":    nil,
-					})
-				}
-
-				c.Request().Header.Set("x-authenticated", "false")
 			}
+		}
+
+		if needsRefresh && refreshToken != "" {
+			c.Request().Header.Set("x-user-refresh-token", refreshToken)
 		}
 
 		return c.Next()

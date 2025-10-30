@@ -26,7 +26,7 @@ func main() {
 	initx.SetupServiceHealth(app)
 	initx.SetupLogger(app)
 	internal.SetupMiddleware(app, cfg)
-	//internal.SetupGatewaySwaggerUI(app)
+	initx.RefreshTokenIfNeeded(app)
 	initx.SetupAuthenticated(app, []string{})
 
 	app.Get("/sse", sseService.HandleSSE)
