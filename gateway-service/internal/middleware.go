@@ -77,46 +77,27 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		accessToken := c.Cookies("access_token")
 		refreshToken := c.Cookies("refresh_token")
 
-		if accessToken == "" && refreshToken != "" {
-			httpResp, err := RefreshAccessToken(refreshToken)
-			if err != nil {
-				log.Errorf("RefreshAccessToken: Failed - Error: %v", err)
-				c.Request().Header.Set("x-authenticated", "false")
-				c.Request().Header.Set("x-user-id", "")
-				return c.Next()
-			}
-
-			setCookieHeaders := httpResp.Header["Set-Cookie"]
-			for _, setCookieHeader := range setCookieHeaders {
-				c.Response().Header.Add("Set-Cookie", setCookieHeader)
-				c.Request().Header.Add("Cookie", setCookieHeader)
-			}
-
-			cookies := httpResp.Cookies()
-			for _, cookie := range cookies {
-				if cookie.Name == "access_token" {
-					accessToken = cookie.Value
-					break
-				}
+		needsRefresh := false
+		if accessToken == "" {
+			needsRefresh = true
+		} else {
+			_, err := ExtractTokenInfo(cfg.JWTSecret, accessToken)
+			if err != nil && (errors.Is(err, ErrTokenExpired) || errors.Is(err, ErrTokenInvalid)) {
+				needsRefresh = true
 			}
 		}
 
-		c.Request().Header.Del("cookie")
-		c.Request().Header.Del("x-authenticated")
-		c.Request().Header.Del("x-user-id")
+		c.Request().Header.Set("x-user-id", "")
+		c.Request().Header.Set("x-user-refresh-token", "")
 
 		if accessToken != "" {
-			info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken)
-			if err != nil {
-				c.Request().Header.Set("x-authenticated", "false")
-				c.Request().Header.Set("x-user-id", "")
-			} else {
-				c.Request().Header.Set("x-authenticated", "true")
+			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
 				c.Request().Header.Set("x-user-id", info.UserID)
 			}
-		} else {
-			c.Request().Header.Set("x-authenticated", "false")
-			c.Request().Header.Set("x-user-id", "")
+		}
+
+		if needsRefresh && refreshToken != "" {
+			c.Request().Header.Set("x-user-refresh-token", refreshToken)
 		}
 
 		return c.Next()
