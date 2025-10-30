@@ -23,17 +23,17 @@ services:
     ports:
       - "3000:3000"
 
-#  notification-service:
-#    build:
-#      context: ./notification-service
-#      dockerfile: Dockerfile
-#    container_name: instrlabs-notification-service
-#    restart: unless-stopped
-#    env_file:
-#      - ./notification-service/.env
-#    command: [ "./app" ]
-#    ports:
-#      - "3001:3000"
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: instrlabs-notification-service
+    restart: unless-stopped
+    env_file:
+      - ./notification-service/.env
+    command: [ "./app" ]
+    ports:
+      - "3001:3000"
 
   auth-service:
     build:
@@ -46,15 +46,15 @@ services:
     command: [ "./app" ]
     ports:
       - "3002:3000"
-#
-#  image-service:
-#    build:
-#      context: ./image-service
-#      dockerfile: Dockerfile
-#    container_name: instrlabs-image-service
-#    restart: unless-stopped
-#    env_file:
-#      - ./image-service/.env
-#    command: [ "./app" ]
-#    ports:
-#      - "3003:3000"
+
+  image-service:
+    build:
+      context: ./image-service
+      dockerfile: Dockerfile
+    container_name: instrlabs-image-service
+    restart: unless-stopped
+    env_file:
+      - ./image-service/.env
+    command: [ "./app" ]
+    ports:
+      - "3003:3000"
