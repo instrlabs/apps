@@ -22,6 +22,9 @@ func main() {
 	initx.SetupLogger(app)
 	initx.SetupServiceSwagger(app, cfg.ApiUrl, "/auth")
 	initx.SetupServiceHealth(app)
+
+	app.Use(internal.RefreshTokenIfNeeded())
+
 	initx.SetupAuthenticated(app, []string{
 		"/login",
 		"/refresh",

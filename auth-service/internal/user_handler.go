@@ -284,6 +284,8 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		MaxAge:   h.cfg.RefreshExpiryHours * 3600,
 	})
 
+	c.Response().Header.Set("x-user-id", user.ID.Hex())
+
 	log.Info("RefreshToken: Token refreshed successfully")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Token refreshed successfully",
@@ -472,7 +474,7 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 
 	userId, _ := c.Locals("userId").(string)
 	user := h.userRepo.FindByID(userId)
-	if user == nil || user.ID.IsZero() {
+	if user == nil {
 		log.Infof("GetProfile: User not found for userId %s", userId)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrUserNotFound,
