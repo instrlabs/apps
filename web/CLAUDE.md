@@ -38,7 +38,6 @@ The application uses Next.js route groups to organize pages with different layou
 1. **`(non-auth)/`** - Public pages without authentication (e.g., login, register)
 2. **`(site)/`** - Authenticated pages with full layout including navigation, overlays, and context providers
 3. **`debug/`** - Development/testing pages
-4. **`api/`** - API routes (e.g., SSE _proxy at `/api/sse`)
 
 The authenticated site layout (`app/(site)/layout.tsx`) wraps all authenticated pages in a nested provider hierarchy:
 ```

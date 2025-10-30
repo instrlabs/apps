@@ -8,12 +8,17 @@ import { cookies } from 'next/headers';
  * Security defaults:
  * - httpOnly: true (prevents XSS attacks - JavaScript cannot access)
  * - secure: true (HTTPS only in production)
- * - sameSite: 'lax' (CSRF protection)
+ * - sameSite: 'none' (allow cross-site cookies when necessary)
  * - path: '/' (accessible from all routes)
+ * - domain: from COOKIE_DOMAIN env variable
  *
  * IMPORTANT: When deleting cookies, the path MUST match the path used when creating!
  * Example: If created with path='/', must delete with path='/'
  */
+
+const getCookieDomain = () => {
+  return process.env.COOKIE_DOMAIN || undefined
+}
 
 export const setServerCookie = async (options: {
   name: string;
@@ -24,12 +29,15 @@ export const setServerCookie = async (options: {
   maxAge?: number;
 }) => {
   const cookieStore = await cookies()
-  const { name, value, httpOnly = true, secure = true, sameSite = 'lax', maxAge } = options
+  const { name, value, httpOnly = true, secure = true, sameSite = 'none', maxAge } = options
+  const domain = getCookieDomain()
+
   cookieStore.set(name, value, {
     httpOnly,
     secure,
     sameSite,
     path: '/',
+    ...(domain && { domain }),
     ...(maxAge && { maxAge })
   })
   return { success: true, message: `Set cookie "${name}"` }
@@ -37,7 +45,8 @@ export const setServerCookie = async (options: {
 
 export const deleteServerCookie = async (name: string) => {
   const cookieStore = await cookies()
-  cookieStore.delete({ name, path: '/' })
+  const domain = getCookieDomain()
+  cookieStore.delete({ name, path: '/', ...(domain && { domain }) })
   return { success: true, message: `Deleted cookie "${name}"` }
 }
 
@@ -76,10 +85,11 @@ export const manageCookie = async (options: {
     client = true,
     httpOnly = true,
     secure = true,
-    sameSite = 'lax',
+    sameSite = 'none',
     maxAge
   } = options
 
+  const domain = getCookieDomain()
   const operations: string[] = []
 
   // Handle server-side cookie operation
@@ -92,12 +102,13 @@ export const manageCookie = async (options: {
           secure,
           sameSite,
           path: '/',
+          ...(domain && { domain }),
           ...(maxAge && { maxAge })
         })
         operations.push(`server cookie "${key}"`)
       } else if (action === 'delete') {
         const cookieStore = await cookies()
-        cookieStore.delete({ name: key, path: '/' })
+        cookieStore.delete({ name: key, path: '/', ...(domain && { domain }) })
         operations.push(`server cookie "${key}"`)
       }
     } catch (error) {

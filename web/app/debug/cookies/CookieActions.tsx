@@ -16,17 +16,18 @@ export default function CookieActions() {
         action: 'set',
         server: true,
         client: true,
-        sameSite: 'lax',
+        httpOnly: true,
+        sameSite: 'none',
         maxAge: 3600
       })
 
-      // Set client-side cookie
+      // Set client-side cookie (HttpOnly cannot be set client-side, so we set what we can)
       const cookieOptions = [
         `${encodeURIComponent('test-cookies')}=${encodeURIComponent('test-value')}`
       ]
       cookieOptions.push('Path=/')
       cookieOptions.push('Secure')
-      cookieOptions.push('SameSite=lax')
+      cookieOptions.push('SameSite=None')
       document.cookie = cookieOptions.join('; ')
 
       setOperationResult(result.message)
