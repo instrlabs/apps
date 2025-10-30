@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import useSSE from "@/hooks/useSSE";
 
-export default function DebugSSEPage() {
+export function SSEConsoleDisplay() {
   const { message } = useSSE();
   const [logs, setLogs] = useState<string[]>([]);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -25,9 +25,7 @@ export default function DebugSSEPage() {
   return (
     <div
       ref={boxRef}
-      className={`
-      w-screen h-screen bg-gray-950 text-gray-200
-      font-mono p-8 overflow-auto whitespace-pre-wrap`}
+      className="h-screen w-screen overflow-auto bg-gray-950 p-8 font-mono whitespace-pre-wrap text-gray-200"
     >
       {content}
     </div>

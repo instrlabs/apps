@@ -1,10 +1,10 @@
-import React, { Suspense } from "react";
+import React from "react";
 import { NotificationProvider, NotificationWidget } from "@/hooks/useSnackbar";
 
-export default function LoginLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function LoginLayout({ children }: { children: React.ReactNode }) {
   return (
     <NotificationProvider>
-      <Suspense>{children}</Suspense>
+      {children}
       <NotificationWidget />
     </NotificationProvider>
   );
