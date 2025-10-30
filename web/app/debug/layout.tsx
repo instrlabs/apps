@@ -8,20 +8,20 @@ import { getProfile } from "@/services/auth";
 export const dynamic = "force-dynamic";
 
 export default async function DebugLayout({ children }: { children: React.ReactNode }) {
-  if (process.env.NODE_ENV === "production") {
-    notFound();
-  }
+  // if (process.env.NODE_ENV === "production") {
+  //   notFound();
+  // }
 
   const res = await getProfile();
 
   return (
     <ProfileProvider data={res.data?.user || null}>
-    <SSEProvider>
-    <NotificationProvider>
-      {children}
-      <NotificationWidget />
-    </NotificationProvider>
-    </SSEProvider>
+      <SSEProvider>
+        <NotificationProvider>
+          {children}
+          <NotificationWidget />
+        </NotificationProvider>
+      </SSEProvider>
     </ProfileProvider>
   );
 }
