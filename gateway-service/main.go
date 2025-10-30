@@ -15,8 +15,8 @@ func main() {
 	initx.SetupPrometheus(app)
 	initx.SetupServiceHealth(app)
 	initx.SetupLogger(app)
-	internal.SetupMiddleware(app, cfg)
 	internal.SetupGatewaySwaggerUI(app)
+	internal.SetupMiddleware(app, cfg)
 	internal.SetupGatewayRoutes(app, cfg)
 
 	log.Fatal(app.Listen(cfg.Port))

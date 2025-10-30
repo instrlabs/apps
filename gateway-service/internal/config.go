@@ -32,12 +32,12 @@ func LoadConfig() *Config {
 		Services: []ServiceConfig{
 			{
 				Name:   "auth-service",
-				URL:    initx.GetEnv("AUTH_SERVICE_URL", "http://auth-service:3000"),
+				URL:    initx.GetEnv("AUTH_SERVICE", "http://auth-service:3000"),
 				Prefix: "/auth",
 			},
 			{
 				Name:   "image-service",
-				URL:    initx.GetEnv("IMAGE_SERVICE_URL", "http://image-service:3000"),
+				URL:    initx.GetEnv("IMAGE_SERVICE", "http://image-service:3000"),
 				Prefix: "/images",
 			},
 		},
