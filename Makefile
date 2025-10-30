@@ -39,7 +39,7 @@ build-all: build-web build-gateway build-auth build-image build-notification
 # Build individual services
 build-web:
 	@echo "Building web service with commit hash $(COMMIT_HASH)..."
-	docker build -t $(WEB_IMAGE):$(COMMIT_HASH) -t $(WEB_IMAGE):latest ./web
+	docker build --platform linux/amd64 -t $(WEB_IMAGE):$(COMMIT_HASH) -t $(WEB_IMAGE):latest ./web
 	@echo "Built: $(WEB_IMAGE):$(COMMIT_HASH)"
 
 build-gateway:
