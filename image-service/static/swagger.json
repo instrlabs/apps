@@ -260,7 +260,6 @@
           "401": { "description": "Not authenticated" },
           "404": { "description": "Instruction not found" },
           "500": { "description": "Internal server error" }
-          }
         }
       },
       "post": {

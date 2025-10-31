@@ -1,7 +1,6 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
-import { ResponseCookie, ResponseCookies } from "next/dist/compiled/@edge-runtime/cookies";
+import { headers } from "next/headers";
 
 export type ApiResponse<TBody> = {
   success: boolean;
@@ -19,9 +18,6 @@ export type FormErrors =
 
 export type EmptyBody = Record<string, unknown>;
 
-const ACCESS_TOKEN = "access_token";
-const REFRESH_TOKEN = "refresh_token";
-
 async function getHeaders(): Promise<Headers> {
   const h = await headers();
   const customHeaders = new Headers();
@@ -34,45 +30,8 @@ async function getHeaders(): Promise<Headers> {
   return customHeaders;
 }
 
-async function updateCookiesFromResponse(res: Response): Promise<void> {
-  const cookieStore = await cookies();
-
-  const setCookieHeaders = res.headers.getSetCookie?.() || [];
-  console.log("[updateCookiesFromResponse] Set-Cookie headers count:", setCookieHeaders.length);
-  console.log("[updateCookiesFromResponse] Set-Cookie headers:", setCookieHeaders);
-
-  if (setCookieHeaders.length === 0) {
-    console.log("[updateCookiesFromResponse] No Set-Cookie headers found");
-    return;
-  }
-
-  for (const setCookieHeader of setCookieHeaders) {
-    console.log("[updateCookiesFromResponse] Processing Set-Cookie:", setCookieHeader.substring(0, 50));
-
-    const cookieName = setCookieHeader.split("=")[0].trim();
-    console.log("[updateCookiesFromResponse] Cookie name:", cookieName);
-
-    if (cookieName === ACCESS_TOKEN || cookieName === REFRESH_TOKEN) {
-      try {
-        const resCookies = new ResponseCookies(new Headers({ "set-cookie": setCookieHeader }));
-        const cookie = resCookies.get(cookieName);
-
-        if (cookie) {
-          console.log("[updateCookiesFromResponse] Setting cookie:", cookieName);
-          cookieStore.set(cookie as ResponseCookie);
-        }
-      } catch (error) {
-        console.error("[updateCookiesFromResponse] Error setting cookie:", cookieName, error);
-      }
-    }
-  }
-}
-
-export async function fetchGET<T>(
-  path: string,
-  queries: Record<string, string> = {},
-): Promise<ApiResponse<T>> {
-  let url = process.env.API_URL + path;
+export async function fetchGET<T>(path: string, queries: Record<string, string> = {}): Promise<ApiResponse<T>> {
+  let url = process.env.GATEWAY_SERVICE + path;
   const params = new URLSearchParams(queries);
   if (queries) url += "?" + params.toString();
 
@@ -84,10 +43,7 @@ export async function fetchGET<T>(
     credentials: "include",
   });
 
-  console.log("[fetchGET] URL:", url, "Response status:", res.status);
-  console.log("[fetchGET] Response headers:", Array.from(res.headers.entries()));
-
-  await updateCookiesFromResponse(res);
+  console.log(`set-cookie: ${res.headers.getSetCookie()}`);
 
   const isOK = res.ok;
   const resBody = await res.json();
@@ -101,7 +57,7 @@ export async function fetchGET<T>(
 }
 
 export async function fetchPOST<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
-  const url = process.env.API_URL + path;
+  const url = process.env.GATEWAY_SERVICE + path;
 
   const headers = await getHeaders();
   headers.set("content-type", "application/json");
@@ -112,9 +68,7 @@ export async function fetchPOST<T>(path: string, body?: unknown): Promise<ApiRes
     credentials: "include",
   });
 
-  console.log("[fetchPOST] URL:", url, "Response status:", res.status);
-
-  await updateCookiesFromResponse(res);
+  console.log(`set-cookie: ${res.headers.getSetCookie()}`);
 
   const isOK = res.ok;
   const resBody = await res.json();
@@ -127,7 +81,7 @@ export async function fetchPOST<T>(path: string, body?: unknown): Promise<ApiRes
 }
 
 export async function fetchPUT<T>(path: string, body: unknown): Promise<ApiResponse<T>> {
-  const url = process.env.API_URL + path;
+  const url = process.env.GATEWAY_SERVICE + path;
 
   const headers = await getHeaders();
   headers.set("content-type", "application/json");
@@ -137,8 +91,6 @@ export async function fetchPUT<T>(path: string, body: unknown): Promise<ApiRespo
     body: JSON.stringify(body),
     credentials: "include",
   });
-
-  await updateCookiesFromResponse(res);
 
   const isOK = res.ok;
   const resBody = await res.json();
@@ -151,7 +103,7 @@ export async function fetchPUT<T>(path: string, body: unknown): Promise<ApiRespo
 }
 
 export async function fetchPATCH<T>(path: string, body: unknown): Promise<ApiResponse<T>> {
-  const url = process.env.API_URL + path;
+  const url = process.env.GATEWAY_SERVICE + path;
 
   const headers = await getHeaders();
   headers.set("content-type", "application/json");
@@ -161,8 +113,6 @@ export async function fetchPATCH<T>(path: string, body: unknown): Promise<ApiRes
     body: JSON.stringify(body),
     credentials: "include",
   });
-
-  await updateCookiesFromResponse(res);
 
   const isOK = res.ok;
   const resBody = await res.json();
@@ -175,15 +125,13 @@ export async function fetchPATCH<T>(path: string, body: unknown): Promise<ApiRes
 }
 
 export async function fetchGETBytes(path: string): Promise<ApiResponse<ArrayBuffer>> {
-  const url = process.env.API_URL + path;
+  const url = process.env.GATEWAY_SERVICE + path;
 
   const res = await fetch(url, {
     method: "GET",
     headers: await getHeaders(),
     credentials: "include",
   });
-
-  await updateCookiesFromResponse(res);
 
   const isOK = res.ok;
 
@@ -202,9 +150,7 @@ export async function fetchGETBytes(path: string): Promise<ApiResponse<ArrayBuff
       const resBody = await res.json();
       message = resBody.message ?? message;
       errors = resBody.errors ?? null;
-    } catch {
-      // ignore parse error
-    }
+    } catch {}
     return {
       success: false,
       message,
@@ -214,11 +160,8 @@ export async function fetchGETBytes(path: string): Promise<ApiResponse<ArrayBuff
   }
 }
 
-export async function fetchPOSTFormData<T>(
-  path: string,
-  formData: FormData,
-): Promise<ApiResponse<T>> {
-  const url = process.env.API_URL + path;
+export async function fetchPOSTFormData<T>(path: string, formData: FormData): Promise<ApiResponse<T>> {
+  const url = process.env.GATEWAY_SERVICE + path;
 
   const res = await fetch(url, {
     method: "POST",
@@ -226,8 +169,6 @@ export async function fetchPOSTFormData<T>(
     body: formData,
     credentials: "include",
   });
-
-  await updateCookiesFromResponse(res);
 
   const isOK = res.ok;
   const resBody = await res.json();

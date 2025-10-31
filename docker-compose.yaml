@@ -1,15 +1,14 @@
 services:
-#  web:
-#    build:
-#      context: ./web
-#      dockerfile: Dockerfile
-#    container_name: instrlabs-web
-#    restart: unless-stopped
-#    env_file:
-#      - .env
-#      - web/.env.local
-#    ports:
-#      - "8000:3000"
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: instrlabs-web
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8000:3000"
 
   gateway-service:
     build:

@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const notificationUrl = process.env.NOTIFICATION_URL;
+  const notificationUrl = process.env.NOTIFICATION_SERVICE;
   if (!notificationUrl) {
     return new Response(JSON.stringify({ error: "Service unavailable" }), {
       status: 500,
@@ -52,10 +52,7 @@ export async function GET(req: NextRequest) {
   }
 
   const headers = new Headers();
-  headers.set(
-    "Content-Type",
-    upstream.headers.get("content-type") ?? "text/event-stream; charset=utf-8"
-  );
+  headers.set("Content-Type", upstream.headers.get("content-type") ?? "text/event-stream; charset=utf-8");
   headers.set("Cache-Control", "no-cache, no-transform");
   headers.set("Connection", "keep-alive");
 
