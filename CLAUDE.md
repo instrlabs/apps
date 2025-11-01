@@ -12,6 +12,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Auth Service** (`auth-service/`)
 - Handle Authentication and Authorization
 - Handle OAuth & JWT Flows
+- Session-Based Token Binding with device validation (IP + User-Agent hash)
+- Support multiple concurrent sessions with per-device revocation
 
 **Image Service** (`image-service/`)
 - Handle Image processing requests (via NATS, API, Scheduling)

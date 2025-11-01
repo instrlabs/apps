@@ -22,11 +22,11 @@ import (
 
 type UserHandler struct {
 	cfg         *Config
-	userRepo    *UserRepository
-	sessionRepo *SessionRepository
+	userRepo    IUserRepository
+	sessionRepo ISessionRepository
 }
 
-func NewUserHandler(cfg *Config, userRepo *UserRepository, sessionRepo *SessionRepository) *UserHandler {
+func NewUserHandler(cfg *Config, userRepo IUserRepository, sessionRepo ISessionRepository) *UserHandler {
 	return &UserHandler{
 		cfg:         cfg,
 		userRepo:    userRepo,

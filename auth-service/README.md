@@ -10,6 +10,8 @@ Authentication and authorization service for Instrlabs platform.
 - Refresh token management
 - Email verification
 - User session management
+- Session-Based Token Binding with device validation (IP + User-Agent hash)
+- Multiple concurrent sessions per user with per-device revocation
 
 ## Prerequisites
 
@@ -102,6 +104,73 @@ The service will start on the port specified in `PORT` environment variable (def
 2. System clears refresh token from database
 3. Clears `access_token` and `refresh_token` cookies (sets to expired)
 
+### 6. Session-Based Token Binding with Device Validation
+
+**Overview**
+This feature prevents token theft by binding JWT tokens to specific users AND devices. Each login creates a unique session tied to the device (identified by IP + User-Agent hash). If a token is used from a different device, the session is immediately deactivated.
+
+**Device Hash Mechanism**
+- Device Hash = `SHA256(IP + User-Agent)`
+- IP and User-Agent extracted from `x-user-ip` and `x-user-agent` headers
+- Headers set by `SetupAuthenticated()` middleware as fiber.Ctx locals
+- Each session stores the device hash for validation
+
+**Session Lifecycle**
+
+**Login (PIN or OAuth)**
+1. User authenticates successfully
+2. System generates unique SessionID
+3. Device hash calculated from current IP + User-Agent
+4. Session record created in MongoDB with:
+   - UserID, SessionID, DeviceHash, IPAddress, UserAgent
+   - RefreshToken, IsActive=true, ExpiresAt (7 days default)
+5. JWT access token generated with `sessionId` claim
+6. Refresh token (long-lived) stored in session document
+
+**Token Refresh**
+1. Client sends refresh token with current request headers
+2. System finds session by refresh token
+3. Validates session is active and not expired
+4. **Device validation**: Current device hash compared with stored hash
+   - If mismatch: Session deactivated immediately, refresh rejected
+   - If match: New access token issued, activity timestamp updated
+5. New access token includes session_id claim
+
+**Device Mismatch Detection**
+- Occurs during token refresh
+- Indicates token may have been compromised or stolen
+- Immediate action: Session deactivated to prevent further use
+- User must re-authenticate from original device
+
+**Multiple Concurrent Sessions**
+- Each device login creates independent session
+- Sessions don't interfere with each other
+- User can have different sessions on phone, laptop, tablet simultaneously
+- Each session can be revoked independently
+
+**Device Management Endpoints**
+- `GET /devices` - Lists all active sessions for authenticated user
+- `POST /devices/:sessionId/revoke` - Deactivates specific device session
+- `POST /devices/revoke-all` - Deactivates all sessions for user
+
+**Data Storage (MongoDB)**
+```
+users_sessions collection:
+{
+  _id: ObjectID,
+  userId: string,
+  sessionId: string,           # Unique per session
+  deviceHash: string,          # SHA256(IP + User-Agent)
+  ipAddress: string,
+  userAgent: string,
+  refreshToken: string,        # Hashed refresh token
+  isActive: boolean,
+  lastActivityAt: timestamp,
+  createdAt: timestamp,
+  expiresAt: timestamp
+}
+```
+
 ## API Endpoints
 
 All endpoints are served through the Gateway service. Refer to the API documentation for available routes.
@@ -116,6 +185,8 @@ auth-service/
 │   ├── user.go                  # User domain model
 │   ├── user_handler.go          # HTTP handlers
 │   ├── user_repository.go       # Database access
+│   ├── session.go               # Session domain model and device hashing
+│   ├── session_repository.go    # Session database operations
 │   └── errors.go                # Error definitions
 └── Dockerfile                   # Container definition
 ```
