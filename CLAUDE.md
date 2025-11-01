@@ -84,3 +84,110 @@ See `.env.example` for complete configuration template.
 - If Testing always refers to the .ai-guides directory in the service folder
 - **Use `x-user-origin` header for all origin validation in backend services**
 - **All test scripts must be created in `/tmp/` directory** - Keep test files temporary and out of version control
+
+## AI Workflow Documentation Standards
+
+**IMPORTANT:** All complex multi-step workflows MUST follow this documentation pattern to maintain context continuity.
+
+### Documentation Structure
+
+For any significant implementation task, create a master planning document:
+
+**Format:** `.tmp/{JOB_NAME}_PLANS.md`
+
+**Example:** `.tmp/AUTHENTICATION_REFACTOR_PLANS.md`, `.tmp/API_MIGRATION_PLANS.md`
+
+### Master Document Requirements
+
+The master planning document MUST contain:
+
+1. **Project Header**
+   - Task name and date
+   - Current status
+   - Last update timestamp
+
+2. **Overview Section**
+   - Business context/requirements
+   - Key information from user
+   - High-level architecture
+
+3. **File Impact Map**
+   - List all files to be modified/created
+   - Current vs. target state
+   - Dependency relationships
+
+4. **Implementation Cycles**
+   - One section per cycle
+   - Format: `## Cycle N: {Description}`
+   - For each cycle include:
+     - File(s) affected
+     - What to change (exact line numbers)
+     - Implementation details
+     - **Status field: [PENDING], [IN_PROGRESS], [COMPLETED]**
+     - Build verification step
+
+5. **Progress Tracking Table**
+   - Simple table showing all cycles
+   - Update status after each cycle completion
+   - Include lines added/modified count
+
+6. **Context Management Section**
+   - When to read this document again
+   - Key assumptions to remember
+   - Important links/references
+
+### Cycle Progress Updates
+
+**AFTER COMPLETING EACH CYCLE:**
+
+1. Update the `Status` field for that cycle: `[COMPLETED]`
+2. Add completion timestamp
+3. Update the progress tracking table
+4. Document any issues encountered
+5. Note any context discovered for next cycles
+
+### Context Token Management
+
+**When approaching maximum context tokens:**
+
+1. **STOP** - Do not continue with implementation
+2. **READ** - Re-read the master planning document completely
+3. **VERIFY** - Check which cycles are completed vs. pending
+4. **RESUME** - Continue from next pending cycle
+5. **REFERENCE** - Always cite the document when resuming
+
+**Pattern to resume work:**
+```
+Reading from .tmp/{JOB_NAME}_PLANS.md:
+- Completed cycles: [list]
+- Current cycle: [number and description]
+- Next action: [specific task]
+```
+
+### Documentation Examples
+
+See `.tmp/` directory for examples:
+- `REVISED_IMPLEMENTATION_PLAN.md` - Master plan structure
+- `CYCLE_*.md` - Individual cycle details
+- `IMPLEMENTATION_COMPLETE.md` - Final summary
+
+### Benefits
+
+✅ No context loss between sessions
+✅ Easy to resume interrupted work
+✅ Clear progress tracking
+✅ Documentation serves as reference
+✅ Reduces mistakes and rework
+✅ Helpful for code reviews
+
+### Checklist for Documentation
+
+- [ ] Create `.tmp/{JOB_NAME}_PLANS.md` at start of work
+- [ ] Document all files to be changed
+- [ ] Break implementation into numbered cycles
+- [ ] Add status field to each cycle
+- [ ] Update status after completing each cycle
+- [ ] Add timestamp for each update
+- [ ] Include verification step for each cycle
+- [ ] Create summary document at end
+- [ ] Reference document when resuming work
