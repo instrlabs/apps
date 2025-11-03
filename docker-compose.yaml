@@ -46,3 +46,15 @@ services:
     command: [ "./app" ]
     ports:
       - "3003:3000"
+
+  pdf-service:
+    build:
+      context: ./pdf-service
+      dockerfile: Dockerfile
+    container_name: instrlabs-pdf-service
+    restart: unless-stopped
+    env_file:
+      - ./pdf-service/.env
+    command: [ "./app" ]
+    ports:
+      - "3004:3000"

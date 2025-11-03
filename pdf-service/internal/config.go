@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"log"
-
 	initx "github.com/instrlabs/shared/init"
 	"github.com/joho/godotenv"
 )
@@ -33,9 +31,7 @@ type Config struct {
 }
 
 func LoadConfig() *Config {
-	if err := godotenv.Load(); err != nil {
-		log.Printf("Warning: Could not load .env file: %v", err)
-	}
+	_ = godotenv.Load()
 
 	return &Config{
 		Environment: initx.GetEnv("ENVIRONMENT", "development"),

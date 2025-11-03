@@ -77,5 +77,5 @@ func main() {
 
 	app.Get("/products", productHandler.ListProducts)
 
-	log.Fatal(app.Listen(":" + cfg.Port))
+	log.Fatal(app.Listen(cfg.Port))
 }
