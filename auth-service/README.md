@@ -1,192 +1,121 @@
 # Auth Service
 
-Authentication and authorization service for Instrlabs platform.
+Authentication service for Instrlabs platform with session-based token binding and device validation.
 
 ## Features
 
-- User authentication (PIN-based, OAuth)
-- Google OAuth integration
+- PIN-based and Google OAuth authentication
 - JWT token generation and validation
-- Refresh token management
-- Email verification
-- User session management
-- Session-Based Token Binding with device validation (IP + User-Agent hash)
-- Multiple concurrent sessions per user with per-device revocation
+- Session management with device binding (IP + User-Agent hash)
+- Multiple concurrent sessions with per-device revocation
+- Email verification via SMTP
 
-## Prerequisites
+## Quick Start
 
-- Go 1.23+
-- MongoDB
-- SMTP server (for email verification)
+```bash
+# Local Setup
+cp .env.example .env
+go mod download
+go run main.go
+
+# Docker Setup
+docker-compose up -d --build auth-service
+```
 
 ## Configuration
 
-Create a `.env` file based on `.env.example`:
+Refer to `.env.example` file for the list of required environment variables and their default values.
 
-```bash
-cp .env.example .env
+## Authentication Flows
+
+### PIN Authentication
+
+```
+POST /auth/send-pin
+- Generate 6-digit PIN (or 000000 if PIN_ENABLED=false)
+- Hash with bcrypt, 10-min expiry
+- Send via email
+
+POST /auth/login
+- Validate email + PIN
+- Create session with device hash (SHA256(IP + User-Agent))
+- Return JWT access token + refresh token in response body
 ```
 
-Required environment variables:
-- `MONGO_URI` - MongoDB connection string
-- `MONGO_DB` - Database name
-- `JWT_SECRET` - Secret for signing JWT tokens
-- `SMTP_*` - Email server configuration
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` - Google OAuth credentials
-- `GATEWAY_URL` - Gateway service URL
-- `WEB_URL` - Frontend application URL
+### Google OAuth
 
-## Running
+```
+GET /auth/google
+- Redirect to Google OAuth consent
 
-```bash
-# Install dependencies
-go mod download
-
-# Run the service
-go run main.go
+GET /auth/google/callback
+- Exchange code for access token
+- Fetch user profile
+- Create/update user and session
+- Redirect to frontend with tokens as URL parameters
 ```
 
-The service will start on the port specified in `PORT` environment variable (default: `:3000`).
+### Session Management
 
-## Feature Workflows
-
-### 1. PIN-Based Authentication
-
-**Send PIN**
-1. User submits email address
-2. System checks if user exists, creates new user if needed
-3. Generates 6-digit PIN (or fixed `000000` if `PIN_ENABLED=false`)
-4. Hashes PIN with bcrypt and stores with 10-minute expiry
-5. Sends PIN via email (if `PIN_ENABLED=true`)
-
-**Login with PIN**
-1. User submits email and PIN
-2. System validates credentials against stored hash
-3. Clears PIN after successful validation
-4. Generates JWT access token and refresh token
-5. Sets secure HTTP-only cookies (`access_token`, `refresh_token`)
-6. Sets `RegisteredAt` timestamp on first successful login
-
-### 2. Google OAuth Flow
-
-**Initiate OAuth**
-1. User clicks "Login with Google"
-2. System generates OAuth state parameter
-3. Redirects to Google OAuth consent screen
-
-**OAuth Callback**
-1. Google redirects back with authorization code
-2. System exchanges code for access token
-3. Fetches user profile from Google API
-4. Finds or creates user by Google ID or email
-5. Generates JWT access token and refresh token
-6. Sets secure HTTP-only cookies
-7. Redirects to web application
-
-### 3. Token Refresh
-
-1. Client sends request with `x-user-refresh` header (refresh token)
-2. System validates refresh token against database
-3. Generates new access token and refresh token
-4. Updates refresh token in database
-5. Sets new cookies with updated tokens
-
-### 4. User Profile
-
-1. Client sends authenticated request (access token in cookie)
-2. Gateway validates JWT and sets `userId` in request context
-3. System retrieves user profile from database
-4. Returns user data
-
-### 5. Logout
-
-1. Client sends authenticated logout request
-2. System clears refresh token from database
-3. Clears `access_token` and `refresh_token` cookies (sets to expired)
-
-### 6. Session-Based Token Binding with Device Validation
-
-**Overview**
-This feature prevents token theft by binding JWT tokens to specific users AND devices. Each login creates a unique session tied to the device (identified by IP + User-Agent hash). If a token is used from a different device, the session is immediately deactivated.
-
-**Device Hash Mechanism**
-- Device Hash = `SHA256(IP + User-Agent)`
-- IP and User-Agent extracted from `x-user-ip` and `x-user-agent` headers
-- Headers set by `SetupAuthenticated()` middleware as fiber.Ctx locals
-- Each session stores the device hash for validation
-
-**Session Lifecycle**
-
-**Login (PIN or OAuth)**
-1. User authenticates successfully
-2. System generates unique SessionID
-3. Device hash calculated from current IP + User-Agent
-4. Session record created in MongoDB with:
-   - UserID, SessionID, DeviceHash, IPAddress, UserAgent
-   - RefreshToken, IsActive=true, ExpiresAt (7 days default)
-5. JWT access token generated with `sessionId` claim
-6. Refresh token (long-lived) stored in session document
+**Device Binding**
+- Each session tied to device via `SHA256(IP + User-Agent)`
+- Device hash validated on token refresh
+- Mismatch detection deactivates session immediately
 
 **Token Refresh**
-1. Client sends refresh token with current request headers
-2. System finds session by refresh token
-3. Validates session is active and not expired
-4. **Device validation**: Current device hash compared with stored hash
-   - If mismatch: Session deactivated immediately, refresh rejected
-   - If match: New access token issued, activity timestamp updated
-5. New access token includes session_id claim
-
-**Device Mismatch Detection**
-- Occurs during token refresh
-- Indicates token may have been compromised or stolen
-- Immediate action: Session deactivated to prevent further use
-- User must re-authenticate from original device
-
-**Multiple Concurrent Sessions**
-- Each device login creates independent session
-- Sessions don't interfere with each other
-- User can have different sessions on phone, laptop, tablet simultaneously
-- Each session can be revoked independently
-
-**Device Management Endpoints**
-- `GET /devices` - Lists all active sessions for authenticated user
-- `POST /devices/:sessionId/revoke` - Deactivates specific device session
-- `POST /devices/revoke-all` - Deactivates all sessions for user
-
-**Data Storage (MongoDB)**
 ```
-users_sessions collection:
-{
-  _id: ObjectID,
-  userId: string,
-  sessionId: string,           # Unique per session
-  deviceHash: string,          # SHA256(IP + User-Agent)
-  ipAddress: string,
-  userAgent: string,
-  refreshToken: string,        # Hashed refresh token
-  isActive: boolean,
-  lastActivityAt: timestamp,
-  createdAt: timestamp,
-  expiresAt: timestamp
+POST /auth/refresh
+Body: {"refresh_token": "<refresh_token>"}
+- Validate refresh token from request body
+- Check device hash match
+- Issue new access and refresh tokens
+- Return tokens in response body
+- Update session activity
+```
+
+**Session Schema**
+```go
+type Session struct {
+    UserID         string
+    SessionID      string    // Unique per device
+    DeviceHash     string    // SHA256(IP + User-Agent)
+    IPAddress      string
+    UserAgent      string
+    RefreshToken   string    // Hashed
+    IsActive       bool
+    LastActivityAt time.Time
+    ExpiresAt      time.Time // 7 days default
 }
 ```
 
-## API Endpoints
-
-All endpoints are served through the Gateway service. Refer to the API documentation for available routes.
+**Device Management**
+```
+GET    /devices              - List all active sessions
+POST   /devices/:id/revoke   - Revoke specific session
+POST   /devices/revoke-all   - Revoke all sessions
+DELETE /auth/logout          - Clear current session
+```
 
 ## Project Structure
 
 ```
 auth-service/
-├── main.go                      # Entry point
+├── main.go                    # Fiber app entry point
 ├── internal/
-│   ├── config.go                # Environment configuration
-│   ├── user.go                  # User domain model
-│   ├── user_handler.go          # HTTP handlers
-│   ├── user_repository.go       # Database access
-│   ├── session.go               # Session domain model and device hashing
-│   ├── session_repository.go    # Session database operations
-│   └── errors.go                # Error definitions
-└── Dockerfile                   # Container definition
+│   ├── config.go              # Config & env vars
+│   ├── user.go                # User model
+│   ├── user_handler.go        # User handlers
+│   ├── user_repository.go     # User DB ops
+│   ├── session.go             # Session model + device hashing
+│   ├── session_repository.go  # Session DB ops
+│   └── errors.go              # Error types
+├── static/swagger.json        # API documentation
+└── Dockerfile
 ```
+
+## Dependencies
+
+- [Fiber](https://github.com/gofiber/fiber) - Web framework
+- [MongoDB Go Driver](https://github.com/mongodb/mongo-go-driver) - Database
+- [JWT Go](https://github.com/golang-jwt/jwt) - Token handling
+- [Bcrypt](https://pkg.go.dev/golang.org/x/crypto/bcrypt) - Password hashing

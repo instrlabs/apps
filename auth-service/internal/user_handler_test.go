@@ -212,7 +212,6 @@ func newMockConfig() *Config {
 		ApiUrl:             "http://localhost:3001",
 		WebUrl:             "http://localhost:3000",
 		PinEnabled:         true,
-		CookieDomain:       "localhost",
 	}
 }
 

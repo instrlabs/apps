@@ -24,7 +24,6 @@ type Config struct {
 	ApiUrl             string
 	WebUrl             string
 	PinEnabled         bool
-	CookieDomain       string
 }
 
 func LoadConfig() *Config {
@@ -55,7 +54,5 @@ func LoadConfig() *Config {
 		WebUrl: initx.GetEnv("WEB_URL", ""),
 
 		PinEnabled: initx.GetEnvBool("PIN_ENABLED", false),
-
-		CookieDomain: initx.GetEnv("COOKIE_DOMAIN", "localhost"),
 	}
 }

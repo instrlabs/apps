@@ -2,6 +2,7 @@ package internal
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -28,14 +29,23 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.Origins,
 		AllowMethods:     "GET, OPTIONS",
-		AllowHeaders:     "content-type, cookie",
+		AllowHeaders:     "content-type, cookie, authorization",
 		AllowCredentials: true,
 	}))
 
 	// Refreshed token
 	app.Use(func(c *fiber.Ctx) error {
-		accessToken := c.Cookies("access_token")
-		refreshToken := c.Cookies("refresh_token")
+		var accessToken, refreshToken string
+
+		authHeader := c.Get("Authorization")
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				accessToken = parts[1]
+			}
+		}
+
+		refreshToken = c.Get("x-user-refresh")
 
 		needsRefresh := false
 		if accessToken == "" {

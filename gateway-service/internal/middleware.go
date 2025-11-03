@@ -53,7 +53,7 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.Origins,
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
-		AllowHeaders:     "content-type, cookie",
+		AllowHeaders:     "content-type, cookie, authorization",
 		AllowCredentials: true,
 	}))
 
@@ -74,30 +74,23 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 
 	// Refreshed token
 	app.Use(func(c *fiber.Ctx) error {
-		accessToken := c.Cookies("access_token")
-		refreshToken := c.Cookies("refresh_token")
+		var accessToken string
 
-		needsRefresh := false
-		if accessToken == "" {
-			needsRefresh = true
-		} else {
-			_, err := ExtractTokenInfo(cfg.JWTSecret, accessToken)
-			if err != nil && (errors.Is(err, ErrTokenExpired) || errors.Is(err, ErrTokenInvalid)) {
-				needsRefresh = true
+		authHeader := c.Get("Authorization")
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				accessToken = parts[1]
 			}
 		}
 
 		c.Request().Header.Set("x-user-id", "")
-		c.Request().Header.Set("x-user-refresh-token", "")
 
 		if accessToken != "" {
 			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
+				log.Info("Extracted user info: ", info.UserID)
 				c.Request().Header.Set("x-user-id", info.UserID)
 			}
-		}
-
-		if needsRefresh && refreshToken != "" {
-			c.Request().Header.Set("x-user-refresh-token", refreshToken)
 		}
 
 		return c.Next()
