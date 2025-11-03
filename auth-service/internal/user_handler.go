@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2/log"
@@ -21,14 +23,16 @@ import (
 )
 
 type UserHandler struct {
-	cfg      *Config
-	userRepo *UserRepository
+	cfg         *Config
+	userRepo    IUserRepository
+	sessionRepo ISessionRepository
 }
 
-func NewUserHandler(cfg *Config, userRepo *UserRepository) *UserHandler {
+func NewUserHandler(cfg *Config, userRepo IUserRepository, sessionRepo ISessionRepository) *UserHandler {
 	return &UserHandler{
-		cfg:      cfg,
-		userRepo: userRepo,
+		cfg:         cfg,
+		userRepo:    userRepo,
+		sessionRepo: sessionRepo,
 	}
 }
 
@@ -41,15 +45,16 @@ func generateSixDigitPIN() string {
 	return fmt.Sprintf("%06d", n.Int64())
 }
 
-func (h *UserHandler) generateAccessToken(userID string, roles []string) (string, error) {
+func (h *UserHandler) generateAccessToken(userID string, roles []string, sessionID string) (string, error) {
 	now := time.Now().UTC()
 	expirationTime := now.Add(time.Duration(h.cfg.TokenExpiryHours) * time.Hour)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": userID,
-		"roles":   roles,
-		"iat":     now.Unix(),
-		"exp":     expirationTime.Unix(),
+		"user_id":    userID,
+		"roles":      roles,
+		"session_id": sessionID,
+		"iat":        now.Unix(),
+		"exp":        expirationTime.Unix(),
 	})
 	return token.SignedString([]byte(h.cfg.JWTSecret))
 }
@@ -60,10 +65,6 @@ func (h *UserHandler) generateRefreshToken() (string, error) {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
-}
-
-func (h *UserHandler) getCookieDomain(c *fiber.Ctx) string {
-	return h.cfg.CookieDomain
 }
 
 func (h *UserHandler) Login(c *fiber.Ctx) error {
@@ -127,7 +128,22 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		}
 	}
 
-	accessToken, err := h.generateAccessToken(user.ID.Hex(), []string{"user"})
+	// Extract device info from locals (set by SetupAuthenticated middleware)
+	userIP, _ := c.Locals("userIP").(string)
+	userAgent, _ := c.Locals("userAgent").(string)
+
+	// Create session with device binding
+	session, err := h.sessionRepo.CreateSession(user.ID.Hex(), userIP, userAgent)
+	if err != nil {
+		log.Errorf("Login: Failed to create session: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": ErrInternalServer,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	accessToken, err := h.generateAccessToken(user.ID.Hex(), []string{"user"}, session.SessionID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
@@ -143,7 +159,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 			"data":    nil,
 		})
 	}
-	if err := h.userRepo.UpdateRefreshTokenWithExpiry(user.ID.Hex(), refreshToken, time.Duration(h.cfg.RefreshExpiryHours)*time.Hour); err != nil {
+	if err := h.sessionRepo.UpdateSessionRefreshToken(session.SessionID, refreshToken); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
 			"errors":  nil,
@@ -151,75 +167,50 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	now := time.Now().UTC()
-	domain := h.getCookieDomain(c)
-
-	log.Info("Login: Setting access token cookie")
-	c.Cookie(&fiber.Cookie{
-		Domain:   domain,
-		Name:     "access_token",
-		Value:    accessToken,
-		HTTPOnly: true,
-		SameSite: "None",
-		Secure:   h.cfg.Environment == "production",
-		Path:     "/",
-		Expires:  now.Add(time.Duration(h.cfg.TokenExpiryHours) * time.Hour),
-		MaxAge:   h.cfg.TokenExpiryHours * 3600,
-	})
-
-	log.Info("Login: Setting refresh token cookie")
-	c.Cookie(&fiber.Cookie{
-		Domain:   domain,
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		HTTPOnly: true,
-		SameSite: "None",
-		Secure:   h.cfg.Environment == "production",
-		Path:     "/",
-		Expires:  now.Add(time.Duration(h.cfg.RefreshExpiryHours) * time.Hour),
-		MaxAge:   h.cfg.RefreshExpiryHours * 3600,
-	})
-
 	log.Infof("Login: User logged in successfully: %s", input.Email)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Login successful",
 		"errors":  nil,
-		"data":    nil,
+		"data": fiber.Map{
+			"access_token":  accessToken,
+			"refresh_token": refreshToken,
+			"token_type":    "Bearer",
+			"expires_in":    h.cfg.TokenExpiryHours * 3600,
+		},
 	})
 }
 
 func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	log.Info("RefreshToken: Processing token refresh request")
 
-	refreshToken := c.Get("x-user-refresh")
-	log.Infof("RefreshToken: Refresh token: %s", refreshToken)
-	user := h.userRepo.FindByRefreshToken(refreshToken)
-	if user == nil || user.ID.IsZero() {
-		log.Warn("RefreshToken: Invalid refresh token")
-		// Clear cookies immediately on invalid refresh token
-		domain := h.getCookieDomain(c)
-		c.Cookie(&fiber.Cookie{
-			Domain:   domain,
-			Name:     "access_token",
-			Value:    "",
-			HTTPOnly: true,
-			SameSite: "None",
-			Secure:   true, // Always secure for cookie deletion
-			Path:     "/",
-			Expires:  time.Unix(0, 0).UTC(),
-			MaxAge:   -1,
+	var input struct {
+		RefreshToken string `json:"refresh_token" validate:"required"`
+	}
+
+	if err := c.BodyParser(&input); err != nil {
+		log.Warnf("RefreshToken: Invalid request body: %v", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": ErrInvalidRequestBody,
+			"errors":  nil,
+			"data":    nil,
 		})
-		c.Cookie(&fiber.Cookie{
-			Domain:   domain,
-			Name:     "refresh_token",
-			Value:    "",
-			HTTPOnly: true,
-			SameSite: "None",
-			Secure:   true, // Always secure for cookie deletion
-			Path:     "/",
-			Expires:  time.Unix(0, 0).UTC(),
-			MaxAge:   -1,
+	}
+
+	if input.RefreshToken == "" {
+		log.Info("RefreshToken: Refresh token is required")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Refresh token is required",
+			"errors":  nil,
+			"data":    nil,
 		})
+	}
+
+	refreshToken := input.RefreshToken
+	log.Infof("RefreshToken: Refresh token received from request body")
+
+	session, err := h.sessionRepo.FindSessionByRefreshToken(refreshToken)
+	if session == nil || err != nil {
+		log.Warn("RefreshToken: Invalid refresh token or session")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrInvalidToken,
 			"errors":  nil,
@@ -227,7 +218,33 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
-	newAccessToken, err := h.generateAccessToken(user.ID.Hex(), []string{"user"})
+	// Get device info from locals
+	userIP, _ := c.Locals("userIP").(string)
+	userAgent, _ := c.Locals("userAgent").(string)
+	deviceHash := GenerateDeviceHash(userIP, userAgent)
+
+	if !h.sessionRepo.ValidateSession(session.SessionID, session.UserID, deviceHash) {
+		log.Warn("RefreshToken: Device hash mismatch - possible token theft")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": ErrInvalidToken,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	// Get user for roles
+	user := h.userRepo.FindByID(session.UserID)
+	if user == nil || user.ID.IsZero() {
+		log.Warn("RefreshToken: User not found")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": ErrUserNotFound,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	// Generate new access token with SAME session ID
+	newAccessToken, err := h.generateAccessToken(user.ID.Hex(), []string{"user"}, session.SessionID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
@@ -235,6 +252,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 			"data":    nil,
 		})
 	}
+
 	newRefreshToken, err := h.generateRefreshToken()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -243,7 +261,9 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 			"data":    nil,
 		})
 	}
-	if err := h.userRepo.UpdateRefreshToken(user.ID.Hex(), newRefreshToken); err != nil {
+
+	// Update session with new refresh token
+	if err := h.sessionRepo.UpdateSessionRefreshToken(session.SessionID, newRefreshToken); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
 			"errors":  nil,
@@ -251,40 +271,16 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
-	now := time.Now().UTC()
-	domain := h.getCookieDomain(c)
-
-	log.Info("RefreshToken: Update access token cookie")
-	c.Cookie(&fiber.Cookie{
-		Domain:   domain,
-		Name:     "access_token",
-		Value:    newAccessToken,
-		HTTPOnly: true,
-		SameSite: "None",
-		Secure:   h.cfg.Environment == "production",
-		Path:     "/",
-		Expires:  now.Add(time.Duration(h.cfg.TokenExpiryHours) * time.Hour),
-		MaxAge:   h.cfg.TokenExpiryHours * 3600,
-	})
-
-	log.Info("RefreshToken: Setting new refresh token cookie")
-	c.Cookie(&fiber.Cookie{
-		Domain:   domain,
-		Name:     "refresh_token",
-		Value:    newRefreshToken,
-		HTTPOnly: true,
-		SameSite: "None",
-		Secure:   h.cfg.Environment == "production",
-		Path:     "/",
-		Expires:  now.Add(time.Duration(h.cfg.RefreshExpiryHours) * time.Hour),
-		MaxAge:   h.cfg.RefreshExpiryHours * 3600,
-	})
-
 	log.Info("RefreshToken: Token refreshed successfully")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Token refreshed successfully",
 		"errors":  nil,
-		"data":    nil,
+		"data": fiber.Map{
+			"access_token":  newAccessToken,
+			"refresh_token": newRefreshToken,
+			"token_type":    "Bearer",
+			"expires_in":    h.cfg.TokenExpiryHours * 3600,
+		},
 	})
 }
 
@@ -404,7 +400,21 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		}
 	}
 
-	accessToken, err := h.generateAccessToken(user.ID.Hex(), []string{"user"})
+	// Create session with device binding
+	userIP, _ := c.Locals("userIP").(string)
+	userAgent, _ := c.Locals("userAgent").(string)
+
+	session, err := h.sessionRepo.CreateSession(user.ID.Hex(), userIP, userAgent)
+	if err != nil {
+		log.Errorf("GoogleCallback: Failed to create session: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": ErrInternalServer,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	accessToken, err := h.generateAccessToken(user.ID.Hex(), []string{"user"}, session.SessionID)
 	if err != nil {
 		log.Errorf("GoogleCallback: Failed to generate access token: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -422,7 +432,7 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 			"data":    nil,
 		})
 	}
-	if err := h.userRepo.UpdateRefreshTokenWithExpiry(user.ID.Hex(), refreshToken, time.Duration(h.cfg.RefreshExpiryHours)*time.Hour); err != nil {
+	if err := h.sessionRepo.UpdateSessionRefreshToken(session.SessionID, refreshToken); err != nil {
 		log.Errorf("GoogleCallback: Failed to update refresh token: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrInternalServer,
@@ -431,36 +441,16 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		})
 	}
 
-	now := time.Now().UTC()
-	domain := h.getCookieDomain(c)
-
-	log.Info("GoogleCallback: Setting access token cookie")
-	c.Cookie(&fiber.Cookie{
-		Domain:   domain,
-		Name:     "access_token",
-		Value:    accessToken,
-		HTTPOnly: true,
-		SameSite: "None",
-		Secure:   h.cfg.Environment == "production",
-		Path:     "/",
-		Expires:  now.Add(time.Duration(h.cfg.TokenExpiryHours) * time.Hour),
-		MaxAge:   h.cfg.TokenExpiryHours * 3600,
-	})
-
-	c.Cookie(&fiber.Cookie{
-		Domain:   domain,
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		HTTPOnly: true,
-		SameSite: "None",
-		Secure:   h.cfg.Environment == "production",
-		Path:     "/",
-		Expires:  now.Add(time.Duration(h.cfg.RefreshExpiryHours) * time.Hour),
-		MaxAge:   h.cfg.RefreshExpiryHours * 3600,
-	})
+	expiresIn := h.cfg.TokenExpiryHours * 3600
+	redirectURL := fmt.Sprintf("%s?access_token=%s&refresh_token=%s&token_type=Bearer&expires_in=%s",
+		h.cfg.WebUrl,
+		url.QueryEscape(accessToken),
+		url.QueryEscape(refreshToken),
+		strconv.Itoa(expiresIn),
+	)
 
 	log.Infof("GoogleCallback: User logged in successfully: %s", googleInfo.Email)
-	return c.Redirect(h.cfg.WebUrl, fiber.StatusFound)
+	return c.Redirect(redirectURL, fiber.StatusFound)
 }
 
 func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
@@ -489,6 +479,15 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 	log.Info("Logout: Processing logout request using Locals UserID")
 
 	userId, _ := c.Locals("userId").(string)
+	sessionId, _ := c.Locals("sessionId").(string)
+
+	// Deactivate this specific session
+	if sessionId != "" {
+		if err := h.sessionRepo.DeactivateSession(sessionId); err != nil {
+			log.Errorf("Logout: Failed to deactivate session: %v", err)
+		}
+	}
+
 	if err := h.userRepo.ClearRefreshToken(userId); err != nil {
 		log.Errorf("Logout: Failed to logout user: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -498,35 +497,100 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 		})
 	}
 
-	domain := h.getCookieDomain(c)
-
-	c.Cookie(&fiber.Cookie{
-		Domain:   domain,
-		Name:     "access_token",
-		Value:    "",
-		HTTPOnly: true,
-		SameSite: "None",
-		Secure:   h.cfg.Environment == "production",
-		Path:     "/",
-		Expires:  time.Unix(0, 0).UTC(),
-		MaxAge:   -1,
-	})
-
-	c.Cookie(&fiber.Cookie{
-		Domain:   domain,
-		Name:     "refresh_token",
-		Value:    "",
-		HTTPOnly: true,
-		SameSite: "None",
-		Secure:   h.cfg.Environment == "production",
-		Path:     "/",
-		Expires:  time.Unix(0, 0).UTC(),
-		MaxAge:   -1,
-	})
-
 	log.Infof("Logout: User logged out successfully: %s", userId)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Logout successful",
+		"errors":  nil,
+		"data":    nil,
+	})
+}
+
+// GetDevices returns all active sessions for the authenticated user
+func (h *UserHandler) GetDevices(c *fiber.Ctx) error {
+	log.Info("GetDevices: Retrieving user devices")
+
+	userId, _ := c.Locals("userId").(string)
+	sessions, err := h.sessionRepo.GetUserSessions(userId)
+	if err != nil {
+		log.Errorf("GetDevices: Failed to get sessions: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": ErrInternalServer,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	log.Infof("GetDevices: Retrieved %d devices for user %s", len(sessions), userId)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Devices retrieved successfully",
+		"errors":  nil,
+		"data": map[string]interface{}{
+			"devices": sessions,
+		},
+	})
+}
+
+// RevokeDevice deactivates a specific device session
+func (h *UserHandler) RevokeDevice(c *fiber.Ctx) error {
+	log.Info("RevokeDevice: Revoking device access")
+
+	userId, _ := c.Locals("userId").(string)
+	sessionId := c.Params("sessionId")
+
+	session, err := h.sessionRepo.FindSessionByID(sessionId, userId)
+	if err != nil {
+		log.Errorf("RevokeDevice: Failed to find session: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": ErrInternalServer,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	if session == nil {
+		log.Warnf("RevokeDevice: Session %s not found for user %s", sessionId, userId)
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Device not found",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	if err := h.sessionRepo.DeactivateSession(sessionId); err != nil {
+		log.Errorf("RevokeDevice: Failed to deactivate session: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": ErrInternalServer,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	log.Infof("RevokeDevice: Device %s revoked for user %s", sessionId, userId)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Device revoked successfully",
+		"errors":  nil,
+		"data":    nil,
+	})
+}
+
+// LogoutAllDevices deactivates all sessions for the user (logout from all devices)
+func (h *UserHandler) LogoutAllDevices(c *fiber.Ctx) error {
+	log.Info("LogoutAllDevices: Logging out from all devices")
+
+	userId, _ := c.Locals("userId").(string)
+
+	if err := h.sessionRepo.ClearAllUserSessions(userId); err != nil {
+		log.Errorf("LogoutAllDevices: Failed to deactivate sessions: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": ErrInternalServer,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	log.Infof("LogoutAllDevices: User %s logged out from all devices", userId)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Logged out from all devices",
 		"errors":  nil,
 		"data":    nil,
 	})

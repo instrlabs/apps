@@ -1,121 +1,121 @@
 # Auth Service
 
-Authentication and authorization service for Instrlabs platform.
+Authentication service for Instrlabs platform with session-based token binding and device validation.
 
 ## Features
 
-- User authentication (PIN-based, OAuth)
-- Google OAuth integration
+- PIN-based and Google OAuth authentication
 - JWT token generation and validation
-- Refresh token management
-- Email verification
-- User session management
+- Session management with device binding (IP + User-Agent hash)
+- Multiple concurrent sessions with per-device revocation
+- Email verification via SMTP
 
-## Prerequisites
+## Quick Start
 
-- Go 1.23+
-- MongoDB
-- SMTP server (for email verification)
+```bash
+# Local Setup
+cp .env.example .env
+go mod download
+go run main.go
+
+# Docker Setup
+docker-compose up -d --build auth-service
+```
 
 ## Configuration
 
-Create a `.env` file based on `.env.example`:
+Refer to `.env.example` file for the list of required environment variables and their default values.
 
-```bash
-cp .env.example .env
+## Authentication Flows
+
+### PIN Authentication
+
+```
+POST /auth/send-pin
+- Generate 6-digit PIN (or 000000 if PIN_ENABLED=false)
+- Hash with bcrypt, 10-min expiry
+- Send via email
+
+POST /auth/login
+- Validate email + PIN
+- Create session with device hash (SHA256(IP + User-Agent))
+- Return JWT access token + refresh token in response body
 ```
 
-Required environment variables:
-- `MONGO_URI` - MongoDB connection string
-- `MONGO_DB` - Database name
-- `JWT_SECRET` - Secret for signing JWT tokens
-- `SMTP_*` - Email server configuration
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` - Google OAuth credentials
-- `GATEWAY_URL` - Gateway service URL
-- `WEB_URL` - Frontend application URL
+### Google OAuth
 
-## Running
+```
+GET /auth/google
+- Redirect to Google OAuth consent
 
-```bash
-# Install dependencies
-go mod download
-
-# Run the service
-go run main.go
+GET /auth/google/callback
+- Exchange code for access token
+- Fetch user profile
+- Create/update user and session
+- Redirect to frontend with tokens as URL parameters
 ```
 
-The service will start on the port specified in `PORT` environment variable (default: `:3000`).
+### Session Management
 
-## Feature Workflows
+**Device Binding**
+- Each session tied to device via `SHA256(IP + User-Agent)`
+- Device hash validated on token refresh
+- Mismatch detection deactivates session immediately
 
-### 1. PIN-Based Authentication
+**Token Refresh**
+```
+POST /auth/refresh
+Body: {"refresh_token": "<refresh_token>"}
+- Validate refresh token from request body
+- Check device hash match
+- Issue new access and refresh tokens
+- Return tokens in response body
+- Update session activity
+```
 
-**Send PIN**
-1. User submits email address
-2. System checks if user exists, creates new user if needed
-3. Generates 6-digit PIN (or fixed `000000` if `PIN_ENABLED=false`)
-4. Hashes PIN with bcrypt and stores with 10-minute expiry
-5. Sends PIN via email (if `PIN_ENABLED=true`)
+**Session Schema**
+```go
+type Session struct {
+    UserID         string
+    SessionID      string    // Unique per device
+    DeviceHash     string    // SHA256(IP + User-Agent)
+    IPAddress      string
+    UserAgent      string
+    RefreshToken   string    // Hashed
+    IsActive       bool
+    LastActivityAt time.Time
+    ExpiresAt      time.Time // 7 days default
+}
+```
 
-**Login with PIN**
-1. User submits email and PIN
-2. System validates credentials against stored hash
-3. Clears PIN after successful validation
-4. Generates JWT access token and refresh token
-5. Sets secure HTTP-only cookies (`access_token`, `refresh_token`)
-6. Sets `RegisteredAt` timestamp on first successful login
-
-### 2. Google OAuth Flow
-
-**Initiate OAuth**
-1. User clicks "Login with Google"
-2. System generates OAuth state parameter
-3. Redirects to Google OAuth consent screen
-
-**OAuth Callback**
-1. Google redirects back with authorization code
-2. System exchanges code for access token
-3. Fetches user profile from Google API
-4. Finds or creates user by Google ID or email
-5. Generates JWT access token and refresh token
-6. Sets secure HTTP-only cookies
-7. Redirects to web application
-
-### 3. Token Refresh
-
-1. Client sends request with `x-user-refresh` header (refresh token)
-2. System validates refresh token against database
-3. Generates new access token and refresh token
-4. Updates refresh token in database
-5. Sets new cookies with updated tokens
-
-### 4. User Profile
-
-1. Client sends authenticated request (access token in cookie)
-2. Gateway validates JWT and sets `userId` in request context
-3. System retrieves user profile from database
-4. Returns user data
-
-### 5. Logout
-
-1. Client sends authenticated logout request
-2. System clears refresh token from database
-3. Clears `access_token` and `refresh_token` cookies (sets to expired)
-
-## API Endpoints
-
-All endpoints are served through the Gateway service. Refer to the API documentation for available routes.
+**Device Management**
+```
+GET    /devices              - List all active sessions
+POST   /devices/:id/revoke   - Revoke specific session
+POST   /devices/revoke-all   - Revoke all sessions
+DELETE /auth/logout          - Clear current session
+```
 
 ## Project Structure
 
 ```
 auth-service/
-├── main.go                      # Entry point
+├── main.go                    # Fiber app entry point
 ├── internal/
-│   ├── config.go                # Environment configuration
-│   ├── user.go                  # User domain model
-│   ├── user_handler.go          # HTTP handlers
-│   ├── user_repository.go       # Database access
-│   └── errors.go                # Error definitions
-└── Dockerfile                   # Container definition
+│   ├── config.go              # Config & env vars
+│   ├── user.go                # User model
+│   ├── user_handler.go        # User handlers
+│   ├── user_repository.go     # User DB ops
+│   ├── session.go             # Session model + device hashing
+│   ├── session_repository.go  # Session DB ops
+│   └── errors.go              # Error types
+├── static/swagger.json        # API documentation
+└── Dockerfile
 ```
+
+## Dependencies
+
+- [Fiber](https://github.com/gofiber/fiber) - Web framework
+- [MongoDB Go Driver](https://github.com/mongodb/mongo-go-driver) - Database
+- [JWT Go](https://github.com/golang-jwt/jwt) - Token handling
+- [Bcrypt](https://pkg.go.dev/golang.org/x/crypto/bcrypt) - Password hashing

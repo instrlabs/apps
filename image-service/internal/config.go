@@ -47,6 +47,6 @@ func LoadConfig() *Config {
 		NatsSubjectImageRequests:    initx.GetEnv("NATS_SUBJECT_IMAGE_REQUESTS", "image.requests"),
 		NatsSubjectNotificationsSSE: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS_SSE", "notifications.sse"),
 
-		ApiUrl: initx.GetEnv("GATEWAY_URL", ""),
+		ApiUrl: initx.GetEnv("API_URL", ""),
 	}
 }

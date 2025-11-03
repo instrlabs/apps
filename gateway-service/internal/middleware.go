@@ -35,28 +35,14 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(etag.New())
 	app.Use(compress.New())
 
-	// Global rate limiting
+	// Rate limiter
 	app.Use(limiter.New(limiter.Config{
 		Max:        100,
 		Expiration: time.Duration(60) * time.Second,
 		LimitReached: func(c *fiber.Ctx) error {
-			log.Warnf("Global rate limit exceeded for IP: %s", c.IP())
+			log.Warnf("Rate Limit exceeded for IP: %s", c.IP())
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"message": "Rate limit exceeded",
-				"errors":  nil,
-				"data":    nil,
-			})
-		},
-	}))
-
-	// Enhanced rate limiting for auth endpoints
-	app.Use("/auth", limiter.New(limiter.Config{
-		Max:        10,
-		Expiration: time.Duration(60) * time.Second,
-		LimitReached: func(c *fiber.Ctx) error {
-			log.Warnf("Auth rate limit exceeded for IP: %s, Path: %s", c.IP(), c.Path())
-			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"message": "Too many authentication attempts. Please try again later.",
 				"errors":  nil,
 				"data":    nil,
 			})
@@ -67,73 +53,47 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.Origins,
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
-		AllowHeaders:     "content-type, cookie",
+		AllowHeaders:     "content-type, cookie, authorization",
 		AllowCredentials: true,
 	}))
 
 	// CSRF protection
 	app.Use(func(c *fiber.Ctx) error {
-		method := c.Method()
-		if method == fiber.MethodOptions || method == fiber.MethodGet {
-			return c.Next()
-		}
-
-		if method == fiber.MethodPost || method == fiber.MethodPut || method == fiber.MethodPatch || method == fiber.MethodDelete {
-			origin := c.Get("x-user-origin")
-			if !isAllowedOrigin(origin, cfg.Origins) && cfg.CSRFEnabled {
-				log.Warnf("CSRF protection: Forbidden origin: %s", origin)
-				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-					"message": ErrForbiddenOrigin.Error(),
-					"errors":  nil,
-					"data":    nil,
-				})
-			}
+		origin := c.Get("x-user-origin")
+		if !isAllowedOrigin(origin, cfg.Origins) && cfg.CSRFEnabled {
+			log.Warnf("CSRF protection: Forbidden origin: %s", origin)
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"message": ErrForbiddenOrigin.Error(),
+				"errors":  nil,
+				"data":    nil,
+			})
 		}
 
 		return c.Next()
 	})
 
-	// AUTH with enhanced security logging
+	// JWT token extraction and user authentication
 	app.Use(func(c *fiber.Ctx) error {
-		accessToken := c.Cookies("access_token")
-		refreshToken := c.Cookies("refresh_token")
-		requestPath := c.Path()
-		clientIP := c.IP()
-		userAgent := c.Get("User-Agent")
-		userOrigin := c.Get("x-user-origin")
+		var accessToken string
 
-		c.Request().Header.Del("cookie")
-		c.Request().Header.Del("x-authenticated")
-		c.Request().Header.Del("x-user-id")
-		c.Request().Header.Del("x-user-roles")
-
-		if accessToken != "" {
-			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
-				c.Request().Header.Set("x-authenticated", "true")
-				c.Request().Header.Set("x-user-id", info.UserID)
-				c.Request().Header.Set("x-user-roles", strings.Join(info.Roles, ","))
-			} else {
-				log.Warnf("Authentication failed - Path: %s, IP: %s, Error: %v",
-					requestPath, clientIP, err)
-				if !errors.Is(err, ErrTokenEmpty) {
-					log.Warnf("Invalid token attempt - Path: %s, IP: %s, User-Agent: %s, Origin: %s",
-						requestPath, clientIP, userAgent, userOrigin)
-					return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-						"message": err.Error(),
-						"errors":  nil,
-						"data":    nil,
-					})
-				}
-				c.Request().Header.Set("x-authenticated", "false")
+		authHeader := c.Get("Authorization")
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				accessToken = parts[1]
 			}
 		}
 
-		if refreshToken != "" && requestPath == "/auth/refresh" {
-			c.Request().Header.Set("x-user-refresh", refreshToken)
-			log.Infof("Token refresh attempt - IP: %s, User-Agent: %s", clientIP, userAgent)
-		}
+		c.Request().Header.Set("x-user-id", "")
 
-		c.Request().Header.Set("x-gateway", "true")
+		if accessToken != "" {
+			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
+				log.Infof("Authenticated user %s for %s %s", info.UserID, c.Method(), c.Path())
+				c.Request().Header.Set("x-user-id", info.UserID)
+			} else {
+				log.Warnf("Token extraction failed for %s %s: %v", c.Method(), c.Path(), err)
+			}
+		}
 
 		return c.Next()
 	})

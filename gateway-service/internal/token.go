@@ -16,7 +16,6 @@ var ErrTokenEmpty = errors.New("TOKEN_EMPTY")
 
 type TokenInfo struct {
 	UserID string
-	Roles  []string
 }
 
 func ExtractTokenInfo(secret string, tokenString string) (*TokenInfo, error) {
@@ -45,7 +44,6 @@ func ExtractTokenInfo(secret string, tokenString string) (*TokenInfo, error) {
 	}
 
 	userID := toString(claims["user_id"])
-	roles := extractRoles(claims["roles"])
 
 	if date, err := claims.GetExpirationTime(); err == nil && date != nil {
 		if time.Now().UTC().After(date.Time) {
@@ -54,37 +52,7 @@ func ExtractTokenInfo(secret string, tokenString string) (*TokenInfo, error) {
 		}
 	}
 
-	return &TokenInfo{UserID: userID, Roles: roles}, nil
-}
-
-func extractRoles(v any) []string {
-	if v == nil {
-		return nil
-	}
-	switch vv := v.(type) {
-	case []string:
-		return vv
-	case []any:
-		out := make([]string, 0, len(vv))
-		for _, it := range vv {
-			if s := strings.TrimSpace(toString(it)); s != "" {
-				out = append(out, s)
-			}
-		}
-		return out
-	case string:
-		parts := strings.Split(vv, ",")
-		out := make([]string, 0, len(parts))
-		for _, p := range parts {
-			p = strings.TrimSpace(p)
-			if p != "" {
-				out = append(out, p)
-			}
-		}
-		return out
-	default:
-		return nil
-	}
+	return &TokenInfo{UserID: userID}, nil
 }
 
 func toString(v any) string {

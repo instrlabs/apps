@@ -24,7 +24,6 @@ type Config struct {
 	ApiUrl             string
 	WebUrl             string
 	PinEnabled         bool
-	CookieDomain       string
 }
 
 func LoadConfig() *Config {
@@ -51,11 +50,9 @@ func LoadConfig() *Config {
 		GoogleClientSecret: initx.GetEnv("GOOGLE_CLIENT_SECRET", ""),
 		GoogleRedirectUrl:  initx.GetEnv("GOOGLE_REDIRECT_URL", ""),
 
-		ApiUrl: initx.GetEnv("GATEWAY_URL", ""),
+		ApiUrl: initx.GetEnv("API_URL", ""),
 		WebUrl: initx.GetEnv("WEB_URL", ""),
 
 		PinEnabled: initx.GetEnvBool("PIN_ENABLED", false),
-
-		CookieDomain: initx.GetEnv("COOKIE_DOMAIN", ".localhost"),
 	}
 }
