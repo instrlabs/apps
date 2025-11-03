@@ -72,7 +72,7 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		return c.Next()
 	})
 
-	// Refreshed token
+	// JWT token extraction and user authentication
 	app.Use(func(c *fiber.Ctx) error {
 		var accessToken string
 
@@ -88,8 +88,10 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 
 		if accessToken != "" {
 			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
-				log.Info("Extracted user info: ", info.UserID)
+				log.Infof("Authenticated user %s for %s %s", info.UserID, c.Method(), c.Path())
 				c.Request().Header.Set("x-user-id", info.UserID)
+			} else {
+				log.Warnf("Token extraction failed for %s %s: %v", c.Method(), c.Path(), err)
 			}
 		}
 
