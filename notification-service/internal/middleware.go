@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"errors"
 	"strings"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 )
 
-// SetupMiddleware sets up middleware with cookie-to-header conversion for shared RefreshTokenIfNeeded
+// SetupMiddleware sets up middleware for authentication
 func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(helmet.New())
 	app.Use(requestid.New())
@@ -33,9 +32,9 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		AllowCredentials: true,
 	}))
 
-	// Refreshed token
+	// Token extraction
 	app.Use(func(c *fiber.Ctx) error {
-		var accessToken, refreshToken string
+		var accessToken string
 
 		authHeader := c.Get("Authorization")
 		if authHeader != "" {
@@ -45,29 +44,12 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 			}
 		}
 
-		refreshToken = c.Get("x-user-refresh")
-
-		needsRefresh := false
-		if accessToken == "" {
-			needsRefresh = true
-		} else {
-			_, err := ExtractTokenInfo(cfg.JWTSecret, accessToken)
-			if err != nil && (errors.Is(err, ErrTokenExpired) || errors.Is(err, ErrTokenInvalid)) {
-				needsRefresh = true
-			}
-		}
-
 		c.Request().Header.Set("x-user-id", "")
-		c.Request().Header.Set("x-user-refresh-token", "")
 
 		if accessToken != "" {
 			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
 				c.Request().Header.Set("x-user-id", info.UserID)
 			}
-		}
-
-		if needsRefresh && refreshToken != "" {
-			c.Request().Header.Set("x-user-refresh-token", refreshToken)
 		}
 
 		return c.Next()

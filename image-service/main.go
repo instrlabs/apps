@@ -36,8 +36,6 @@ func main() {
 	initx.SetupLogger(app)
 	initx.SetupServiceSwagger(app, cfg.ApiUrl, "/images")
 	initx.SetupServiceHealth(app)
-
-	initx.RefreshTokenIfNeeded(app)
 	initx.SetupAuthenticated(app, []string{
 		"/products",
 	})

@@ -9,7 +9,7 @@ Real-time notification service for Instrlabs platform providing Server-Sent Even
 - **User-Specific Streams**: Individual notification streams per user with isolation
 - **Connection Management**: Automatic connection tracking and cleanup
 - **Keep-Alive System**: Ping mechanism to maintain connection health
-- **JWT Authentication**: Secure user identification and authorization
+- **User Authentication**: User identification and authorization
 - **Rate Limiting**: Protection against connection spam and abuse
 
 ## Quick Start
@@ -36,13 +36,11 @@ Refer to `.env.example` file for the list of required environment variables and 
 ```
 GET /sse
 - Establish SSE connection for real-time notifications
-- Requires JWT authentication via headers
 - Returns text/event-stream content type
 - User-specific notification delivery
 ```
 
 **Required Headers:**
-- `Authorization: Bearer <jwt_token>` - JWT authentication token
 - `X-User-ID: <user_id>` - User identification (automatically added by auth middleware)
 
 **SSE Event Types:**
@@ -96,7 +94,6 @@ notification-service/
 ### SSE Connection Lifecycle
 
 1. **Connection Establishment**
-   - JWT token validation
    - User identification and authentication
    - SSE stream initialization
    - Connection event sent to client
@@ -152,9 +149,7 @@ NATS_SUBJECT_NOTIFICATIONS_SSE=notifications.sse
 
 ### Authentication
 
-- **JWT Token Validation**: Bearer token required for all connections
 - **User Identification**: X-User-ID header automatically populated
-- **Token Refresh**: Automatic token refresh for long-lived connections
 - **CORS Protection**: Configurable origin validation
 
 ### Rate Limiting
@@ -186,7 +181,7 @@ RATE_WINDOW=60s     # time window
 
 **Connection Errors:**
 - **400 Bad Request**: Missing headers or invalid parameters
-- **401 Unauthorized**: Invalid or expired JWT token
+- **401 Unauthorized**: Authentication required
 - **403 Forbidden**: User access denied
 - **500 Internal Server Error**: Service or NATS connection issues
 

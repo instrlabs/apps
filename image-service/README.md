@@ -202,9 +202,7 @@ NATS_SUBJECT_NOTIFICATIONS_SSE=notifications.sse
 
 ### Authentication
 
-- JWT-based authentication via shared middleware
 - User identification through `X-User-ID` header
-- Token validation and refresh handling
 - Ownership validation for resource access
 
 ### Rate Limiting
@@ -228,7 +226,7 @@ NATS_SUBJECT_NOTIFICATIONS_SSE=notifications.sse
 ### Error Responses
 
 - **400 Bad Request**: Validation errors, malformed data
-- **401 Unauthorized**: Authentication required or invalid token
+- **401 Unauthorized**: Authentication required
 - **403 Forbidden**: Resource access denied (ownership validation)
 - **404 Not Found**: Resource does not exist
 - **500 Internal Server Error**: Processing or system errors
