@@ -1,0 +1,243 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Notification Service API",
+    "version": "1.0.0",
+    "description": "Real-time notification service providing Server-Sent Events (SSE) for instruction notifications"
+  },
+  "servers": [],
+  "paths": {
+    "/sse": {
+      "get": {
+        "summary": "Subscribe to real-time notifications via SSE",
+        "description": "Establishes a persistent Server-Sent Events connection for receiving real-time instruction notifications. The endpoint expects user authentication via x-user-id header and maintains a long-lived connection for pushing notifications.",
+        "tags": ["notifications"],
+        "operationId": "subscribeSSE",
+        "responses": {
+          "200": {
+            "description": "SSE connection established successfully",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Server-Sent Events stream with real-time notifications"
+                },
+                "examples": {
+                  "connected_event": {
+                    "summary": "Connection established event",
+                    "value": "event: connected\ndata: {\"connected\": true}\n\n"
+                  },
+                  "ping_event": {
+                    "summary": "Keep-alive ping event",
+                    "value": "event: ping\ndata: {\"time\": \"2024-01-15T10:30:00Z\"}\n\n"
+                  },
+                  "notification_event": {
+                    "summary": "Instruction notification event",
+                    "value": "event: message\ndata: {\"user_id\": \"user123\", \"instruction_id\": \"instr456\", \"instruction_detail_id\": \"detail789\"}\n\n"
+                  }
+                }
+              }
+            },
+            "headers": {
+              "content-type": {
+                "description": "Content type for SSE stream",
+                "schema": {
+                  "type": "string",
+                  "example": "text/event-stream"
+                }
+              },
+              "cache-control": {
+                "description": "Cache control directive for SSE",
+                "schema": {
+                  "type": "string",
+                  "example": "no-cache"
+                }
+              },
+              "connection": {
+                "description": "Connection type for SSE",
+                "schema": {
+                  "type": "string",
+                  "example": "keep-alive"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid user ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Success message",
+            "example": "Operation completed successfully"
+          },
+          "errors": {
+            "type": ["array", "null"],
+            "nullable": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "description": "Field name that caused the error",
+                  "example": "email"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Error message",
+                  "example": "Email is required"
+                }
+              }
+            },
+            "example": null
+          },
+          "data": {
+            "type": ["object", "null"],
+            "nullable": true,
+            "description": "Response data",
+            "example": null
+          }
+        },
+        "required": ["message"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Error message",
+            "example": "Operation failed"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "description": "Field name that caused the error",
+                  "example": "user_id"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Error message",
+                  "example": "User ID is required"
+                }
+              }
+            },
+            "example": [
+              {
+                "field": "user_id",
+                "message": "User ID is required and must be provided in x-user-id header"
+              }
+            ]
+          },
+          "data": {
+            "type": "null",
+            "description": "Always null for error responses",
+            "example": null
+          }
+        },
+        "required": ["message", "errors"]
+      },
+      "InstructionNotification": {
+        "type": "object",
+        "description": "Instruction notification payload sent via SSE",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "Identifier of the user receiving the notification",
+            "example": "user123"
+          },
+          "instruction_id": {
+            "type": "string",
+            "description": "Identifier of the instruction",
+            "example": "instr456"
+          },
+          "instruction_detail_id": {
+            "type": "string",
+            "description": "Identifier of the instruction detail",
+            "example": "detail789"
+          }
+        },
+        "required": ["user_id", "instruction_id", "instruction_detail_id"]
+      }
+    },
+    "responses": {
+      "sseConnected": {
+        "description": "SSE connection established",
+        "content": {
+          "text/event-stream": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token for user authentication. Must be provided in Authorization header as 'Bearer <token>'."
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "notifications",
+      "description": "Real-time notification endpoints for SSE subscriptions"
+    }
+  ]
+}

@@ -3,7 +3,7 @@
   "info": {
     "title": "Image Service API",
     "version": "1.0.0",
-    "description": "Image processing service API documentation"
+    "description": "Image processing service API for handling image compression and file management operations. The service provides instructions for image processing, tracks file status through different processing stages, and manages file storage through S3 integration."
   },
   "servers": [],
   "components": {
@@ -11,10 +11,10 @@
       "Product": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "507f1f77bcf86cd799439011" },
-          "key": { "type": "string", "example": "product_key" },
-          "title": { "type": "string", "example": "Product Title" },
-          "description": { "type": "string", "example": "Product Description" },
+          "id": { "type": "string", "format": "ObjectId", "example": "507f1f77bcf86cd799439011" },
+          "key": { "type": "string", "example": "images/compress" },
+          "title": { "type": "string", "example": "Image Compression" },
+          "description": { "type": "string", "example": "Compress images with optimized quality settings" },
           "product_type": { "type": "string", "example": "IMAGE_PROCESSING" },
           "is_active": { "type": "boolean", "example": true },
           "is_free": { "type": "boolean", "example": false },
@@ -25,9 +25,9 @@
       "Instruction": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "507f1f77bcf86cd799439011" },
-          "user_id": { "type": "string", "example": "507f1f77bcf86cd799439011" },
-          "product_id": { "type": "string", "example": "507f1f77bcf86cd799439011" },
+          "id": { "type": "string", "format": "ObjectId", "example": "507f1f77bcf86cd799439011" },
+          "user_id": { "type": "string", "format": "ObjectId", "example": "507f1f77bcf86cd799439011" },
+          "product_id": { "type": "string", "format": "ObjectId", "example": "507f1f77bcf86cd799439011" },
           "created_at": { "type": "string", "format": "date-time", "example": "2024-01-01T00:00:00Z" },
           "updated_at": { "type": "string", "format": "date-time", "example": "2024-01-01T00:00:00Z" }
         }
@@ -35,13 +35,22 @@
       "InstructionDetail": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "507f1f77bcf86cd799439011" },
-          "instruction_id": { "type": "string", "example": "507f1f77bcf86cd799439011" },
-          "file_name": { "type": "string", "example": "example.jpg" },
-          "file_size": { "type": "integer", "format": "int64", "example": 1024 },
+          "id": { "type": "string", "format": "ObjectId", "example": "507f1f77bcf86cd799439011" },
+          "instruction_id": { "type": "string", "format": "ObjectId", "example": "507f1f77bcf86cd799439011" },
+          "file_name": { "type": "string", "example": "images/6051f77bcf86cd799439011.jpg" },
+          "file_size": { "type": "integer", "format": "int64", "example": 1024000 },
           "mime_type": { "type": "string", "example": "image/jpeg" },
-          "status": { "type": "string", "enum": ["PENDING", "PROCESSING", "DONE", "FAILED"], "example": "DONE" },
-          "output_id": { "type": ["string", "null"], "nullable": true, "example": "507f1f77bcf86cd799439011" },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "PROCESSING", "DONE", "FAILED"],
+            "example": "DONE"
+          },
+          "output_id": {
+            "type": ["string", "null"],
+            "format": "ObjectId",
+            "nullable": true,
+            "example": "507f1f77bcf86cd799439012"
+          },
           "is_cleaned": { "type": "boolean", "example": false },
           "created_at": { "type": "string", "format": "date-time", "example": "2024-01-01T00:00:00Z" },
           "updated_at": { "type": "string", "format": "date-time", "example": "2024-01-01T00:00:00Z" }
@@ -51,8 +60,188 @@
         "type": "object",
         "required": ["product_id"],
         "properties": {
-          "product_id": { "type": "string", "example": "507f1f77bcf86cd799439011" }
+          "product_id": {
+            "type": "string",
+            "format": "ObjectId",
+            "example": "507f1f77bcf86cd799439011",
+            "description": "The ID of the product to create an instruction for"
+          }
         }
+      },
+      "CreateInstructionDetailRequest": {
+        "type": "object",
+        "required": ["file"],
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "description": "Image file to process (JPEG, PNG, etc.)",
+            "example": "binary image data"
+          }
+        }
+      },
+      "PaginatedProductResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "Products retrieved successfully" },
+          "errors": {
+            "type": ["array", "null"],
+            "items": { "type": "object" },
+            "nullable": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "products": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/Product" },
+                "example": [
+                  {
+                    "id": "507f1f77bcf86cd799439011",
+                    "key": "images/compress",
+                    "title": "Image Compression",
+                    "description": "Compress images with optimized quality settings",
+                    "product_type": "IMAGE_PROCESSING",
+                    "is_active": true,
+                    "is_free": false,
+                    "createdAt": "2024-01-01T00:00:00Z",
+                    "updatedAt": "2024-01-01T00:00:00Z"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "PaginatedInstructionResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "Instructions retrieved successfully" },
+          "errors": {
+            "type": ["array", "null"],
+            "items": { "type": "object" },
+            "nullable": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "instructions": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/Instruction" },
+                "example": [
+                  {
+                    "id": "507f1f77bcf86cd799439011",
+                    "user_id": "507f1f77bcf86cd799439011",
+                    "product_id": "507f1f77bcf86cd799439011",
+                    "created_at": "2024-01-01T00:00:00Z",
+                    "updated_at": "2024-01-01T00:00:00Z"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "FileStatusResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "ok" },
+          "errors": {
+            "type": ["array", "null"],
+            "items": { "type": "object" },
+            "nullable": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "files": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/InstructionDetail" },
+                "example": [
+                  {
+                    "id": "507f1f77bcf86cd799439011",
+                    "instruction_id": "507f1f77bcf86cd799439011",
+                    "file_name": "images/6051f77bcf86cd799439011.jpg",
+                    "file_size": 1024000,
+                    "mime_type": "image/jpeg",
+                    "status": "DONE",
+                    "output_id": "507f1f77bcf86cd799439012",
+                    "is_cleaned": false,
+                    "created_at": "2024-01-01T00:00:00Z",
+                    "updated_at": "2024-01-01T00:00:00Z"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "instruction not found" },
+                "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
+                "data": { "type": "null" }
+              }
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Invalid request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "invalid request body" },
+                "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
+                "data": { "type": "null" }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Access denied",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string", "example": "forbidden" },
+                "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
+                "data": { "type": "null" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "x-authenticated": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-authenticated",
+        "description": "Authentication status header (true/false)"
+      },
+      "x-user-id": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-user-id",
+        "description": "User ID header for authentication"
+      },
+      "x-user-origin": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-user-origin",
+        "description": "Origin header for validation"
       }
     }
   },
@@ -60,6 +249,8 @@
     "/health": {
       "get": {
         "summary": "Health check",
+        "description": "Check if the service is running and healthy",
+        "tags": ["health"],
         "responses": {
           "200": {
             "description": "Service is healthy",
@@ -80,6 +271,7 @@
     "/products": {
       "get": {
         "summary": "List available products",
+        "description": "Get list of all available image processing products",
         "tags": ["products"],
         "security": [
           {
@@ -93,25 +285,33 @@
             "description": "Products retrieved successfully",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": { "type": "string", "example": "Products retrieved successfully" },
-                    "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
-                    "data": { "type": "object", "properties": { "products": { "type": "array", "items": { "$ref": "#/components/schemas/Product" } } } }
-                  }
-                }
+                "schema": { "$ref": "#/components/schemas/PaginatedProductResponse" }
               }
             }
           },
-          "401": { "description": "Not authenticated" },
-          "500": { "description": "Internal server error" }
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          }
         }
       }
     },
     "/instructions": {
       "post": {
-        "summary": "Create a new image processing instruction for a product",
+        "summary": "Create a new image processing instruction",
+        "description": "Create a new instruction for processing images with a specific product. Each instruction belongs to a user and a product.",
         "tags": ["instructions"],
         "security": [
           {
@@ -122,9 +322,18 @@
         ],
         "requestBody": {
           "required": true,
+          "description": "Instruction creation payload",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateInstructionRequest" }
+              "schema": { "$ref": "#/components/schemas/CreateInstructionRequest" },
+              "examples": {
+                "standard": {
+                  "summary": "Create image compression instruction",
+                  "value": {
+                    "product_id": "507f1f77bcf86cd799439011"
+                  }
+                }
+              }
             }
           }
         },
@@ -138,20 +347,54 @@
                   "properties": {
                     "message": { "type": "string", "example": "instruction created" },
                     "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
-                    "data": { "type": "object", "properties": { "instruction": { "$ref": "#/components/schemas/Instruction" } } }
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "instruction": { "$ref": "#/components/schemas/Instruction" }
+                      }
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "description": "Invalid request body" },
-          "401": { "description": "Not authenticated" },
-          "404": { "description": "Product not found" },
-          "500": { "description": "Internal server error" }
+          "400": {
+            "description": "Invalid request body or missing product ID",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/NotFound" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          }
         }
       },
       "get": {
-        "summary": "Get latest instructions for authenticated user",
+        "summary": "List user instructions",
+        "description": "Get the latest instructions for the authenticated user (max 10)",
         "tags": ["instructions"],
         "security": [
           {
@@ -165,25 +408,33 @@
             "description": "Instructions retrieved successfully",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": { "type": "string", "example": "Instructions retrieved successfully" },
-                    "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
-                    "data": { "type": "object", "properties": { "instructions": { "type": "array", "items": { "$ref": "#/components/schemas/Instruction" } } } }
-                  }
-                }
+                "schema": { "$ref": "#/components/schemas/PaginatedInstructionResponse" }
               }
             }
           },
-          "401": { "description": "Not authenticated" },
-          "500": { "description": "Internal server error" }
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          }
         }
       }
     },
     "/instructions/{id}": {
       "get": {
-        "summary": "Get a specific instruction by ID",
+        "summary": "Get instruction by ID",
+        "description": "Retrieve a specific instruction by its ID. User must be the owner of the instruction.",
         "tags": ["instructions"],
         "security": [
           {
@@ -197,7 +448,12 @@
             "in": "path",
             "name": "id",
             "required": true,
-            "schema": { "type": "string", "example": "507f1f77bcf86cd799439011" }
+            "description": "Instruction ID",
+            "schema": {
+              "type": "string",
+              "format": "ObjectId",
+              "example": "507f1f77bcf86cd799439011"
+            }
           }
         ],
         "responses": {
@@ -208,23 +464,50 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": { "type": "string", "example": "Instruction retrieved successfully" },
+                    "message": { "type": "string", "example": "ok" },
                     "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
-                    "data": { "type": "object", "properties": { "instruction": { "$ref": "#/components/schemas/Instruction" } } }
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "instruction": { "$ref": "#/components/schemas/Instruction" }
+                      }
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "description": "Not authenticated" },
-          "404": { "description": "Instruction not found" },
-          "500": { "description": "Internal server error" }
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          },
+          "404": {
+            "description": "Instruction not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/NotFound" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          }
         }
       }
     },
     "/instructions/{id}/details": {
       "get": {
-        "summary": "Get all details for a specific instruction",
+        "summary": "Get instruction details",
+        "description": "Get all file details for a specific instruction. User must be the owner of the instruction.",
         "tags": ["instructions", "files"],
         "security": [
           {
@@ -238,7 +521,12 @@
             "in": "path",
             "name": "id",
             "required": true,
-            "schema": { "type": "string", "example": "507f1f77bcf86cd799439011" }
+            "description": "Instruction ID",
+            "schema": {
+              "type": "string",
+              "format": "ObjectId",
+              "example": "507f1f77bcf86cd799439011"
+            }
           }
         ],
         "responses": {
@@ -249,21 +537,59 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": { "type": "string", "example": "Instruction details retrieved successfully" },
+                    "message": { "type": "string", "example": "ok" },
                     "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
-                    "data": { "type": "object", "properties": { "instruction_details": { "type": "array", "items": { "$ref": "#/components/schemas/InstructionDetail" } } } }
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "files": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/InstructionDetail" }
+                        }
+                      }
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "description": "Not authenticated" },
-          "404": { "description": "Instruction not found" },
-          "500": { "description": "Internal server error" }
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/Forbidden" }
+              }
+            }
+          },
+          "404": {
+            "description": "Instruction not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/NotFound" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          }
         }
       },
       "post": {
-        "summary": "Add new details to an existing instruction",
+        "summary": "Add file to instruction",
+        "description": "Upload a file to an existing instruction for processing. Creates input and output file records.",
         "tags": ["instructions", "files"],
         "security": [
           {
@@ -277,17 +603,35 @@
             "in": "path",
             "name": "id",
             "required": true,
-            "schema": { "type": "string", "example": "507f1f77bcf86cd799439011" }
+            "description": "Instruction ID",
+            "schema": {
+              "type": "string",
+              "format": "ObjectId",
+              "example": "507f1f77bcf86cd799439011"
+            }
           }
         ],
         "requestBody": {
           "required": true,
+          "description": "File upload for processing",
           "content": {
             "multipart/form-data": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "file": { "type": "string", "format": "binary", "description": "Image file to process" }
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Image file to process (JPEG, PNG, etc.)"
+                  }
+                }
+              },
+              "examples": {
+                "image_upload": {
+                  "summary": "Upload JPEG image",
+                  "value": {
+                    "file": "binary image data"
+                  }
                 }
               }
             }
@@ -295,30 +639,73 @@
         },
         "responses": {
           "200": {
-            "description": "Instruction details created successfully",
+            "description": "File uploaded and processing started",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": { "type": "string", "example": "instruction details created" },
+                    "message": { "type": "string", "example": "file created" },
                     "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
-                    "data": { "type": "object", "properties": { "instruction_detail": { "$ref": "#/components/schemas/InstructionDetail" } } }
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "input": { "$ref": "#/components/schemas/InstructionDetail" },
+                        "output": { "$ref": "#/components/schemas/InstructionDetail" }
+                      }
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "description": "Invalid request" },
-          "401": { "description": "Not authenticated" },
-          "404": { "description": "Instruction not found" },
-          "500": { "description": "Internal server error" }
+          "400": {
+            "description": "Invalid request or no file uploaded",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/Forbidden" }
+              }
+            }
+          },
+          "404": {
+            "description": "Instruction not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/NotFound" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          }
         }
       }
     },
     "/instructions/{id}/details/{detailId}": {
       "get": {
-        "summary": "Get specific details for an instruction",
+        "summary": "Get specific instruction detail",
+        "description": "Retrieve details for a specific file within an instruction. User must be the owner of the instruction.",
         "tags": ["instructions", "files"],
         "security": [
           {
@@ -332,13 +719,23 @@
             "in": "path",
             "name": "id",
             "required": true,
-            "schema": { "type": "string", "example": "507f1f77bcf86cd799439011" }
+            "description": "Instruction ID",
+            "schema": {
+              "type": "string",
+              "format": "ObjectId",
+              "example": "507f1f77bcf86cd799439011"
+            }
           },
           {
             "in": "path",
             "name": "detailId",
             "required": true,
-            "schema": { "type": "string", "example": "507f1f77bcf86cd799439011" }
+            "description": "Detail (file) ID",
+            "schema": {
+              "type": "string",
+              "format": "ObjectId",
+              "example": "507f1f77bcf86cd799439011"
+            }
           }
         ],
         "responses": {
@@ -349,23 +746,58 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": { "type": "string", "example": "instruction detail retrieved" },
+                    "message": { "type": "string", "example": "ok" },
                     "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
-                    "data": { "type": "object", "properties": { "instruction_detail": { "$ref": "#/components/schemas/InstructionDetail" } } }
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "detail": { "$ref": "#/components/schemas/InstructionDetail" }
+                      }
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "description": "Not authenticated" },
-          "404": { "description": "Instruction detail not found" },
-          "500": { "description": "Internal server error" }
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/Forbidden" }
+              }
+            }
+          },
+          "404": {
+            "description": "Instruction detail not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/NotFound" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          }
         }
       }
     },
     "/instructions/{id}/details/{detailId}/file": {
       "get": {
-        "summary": "Get the file for a specific instruction detail",
+        "summary": "Download file",
+        "description": "Download the actual file content for a specific instruction detail. User must be the owner of the instruction.",
         "tags": ["instructions", "files"],
         "security": [
           {
@@ -379,13 +811,23 @@
             "in": "path",
             "name": "id",
             "required": true,
-            "schema": { "type": "string", "example": "507f1f77bcf86cd799439011" }
+            "description": "Instruction ID",
+            "schema": {
+              "type": "string",
+              "format": "ObjectId",
+              "example": "507f1f77bcf86cd799439011"
+            }
           },
           {
             "in": "path",
             "name": "detailId",
             "required": true,
-            "schema": { "type": "string", "example": "507f1f77bcf86cd799439011" }
+            "description": "Detail (file) ID",
+            "schema": {
+              "type": "string",
+              "format": "ObjectId",
+              "example": "507f1f77bcf86cd799439011"
+            }
           }
         ],
         "responses": {
@@ -397,15 +839,45 @@
               }
             }
           },
-          "401": { "description": "Not authenticated" },
-          "404": { "description": "File not found" },
-          "500": { "description": "Internal server error" }
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/Forbidden" }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/NotFound" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          }
         }
       }
     },
     "/files": {
       "get": {
-        "summary": "List files that haven't been cleaned up yet",
+        "summary": "List uncleaned files",
+        "description": "List files that haven't been cleaned up yet (admin/monitoring use). Returns files older than 1 hour that need cleanup.",
         "tags": ["files"],
         "security": [
           {
@@ -419,55 +891,53 @@
             "description": "Files retrieved successfully",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": { "type": "string", "example": "Files retrieved successfully" },
-                    "errors": { "type": ["array", "null"], "items": { "type": "object" }, "nullable": true },
-                    "data": { "type": "object", "properties": { "files": { "type": "array", "items": { "$ref": "#/components/schemas/InstructionDetail" } } } }
-                  }
-                }
+                "schema": { "$ref": "#/components/schemas/FileStatusResponse" }
               }
             }
           },
-          "401": { "description": "Not authenticated" },
-          "500": { "description": "Internal server error" }
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/responses/BadRequest" }
+              }
+            }
+          }
         }
       }
     }
   },
-  "securityDefinitions": {
-    "x-authenticated": {
-      "type": "apiKey",
-      "in": "header",
-      "name": "x-authenticated",
-      "description": "Authentication status header"
-    },
-    "x-user-id": {
-      "type": "apiKey",
-      "in": "header",
-      "name": "x-user-id",
-      "description": "User ID header"
-    },
-    "x-user-origin": {
-      "type": "apiKey",
-      "in": "header",
-      "name": "x-user-origin",
-      "description": "Origin header for validation"
-    }
-  },
   "tags": [
     {
+      "name": "health",
+      "description": "Service health and status endpoints"
+    },
+    {
       "name": "products",
-      "description": "Product management endpoints"
+      "description": "Product management and listing"
     },
     {
       "name": "instructions",
-      "description": "Instruction management endpoints"
+      "description": "Instruction creation and management"
     },
     {
       "name": "files",
-      "description": "File management endpoints"
+      "description": "File upload, download, and management"
+    }
+  ],
+  "security": [
+    {
+      "x-authenticated": [],
+      "x-user-id": [],
+      "x-user-origin": []
     }
   ]
 }
