@@ -2,58 +2,90 @@
   "openapi": "3.0.3",
   "info": {
     "title": "PDF Service API",
-    "description": "API for PDF compression and processing",
+    "description": "Microservice for PDF compression and processing with file management, instruction tracking, and S3 storage integration",
     "version": "1.0.0",
     "contact": {
       "name": "InstrLabs API Support",
       "email": "api@instrlabs.com"
+    },
+    "license": {
+      "name": "MIT"
     }
   },
   "servers": [],
   "paths": {
-    "/api/v1/instructions": {
+    "/instructions": {
       "get": {
         "tags": ["Instructions"],
         "summary": "List user's PDF processing instructions",
-        "description": "Retrieve a paginated list of PDF processing instructions for the authenticated user",
-        "security": [{"bearerAuth": []}],
+        "description": "Retrieve a paginated list of PDF processing instructions for the authenticated user. Returns instructions ordered by most recent first.",
+        "operationId": "listInstructions",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
             "in": "query",
-            "description": "Maximum number of instructions to return (max 100)",
+            "description": "Maximum number of instructions to return (1-100, default 10)",
             "required": false,
-            "schema": {"type": "integer", "default": 10, "minimum": 1, "maximum": 100}
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "example": 10
           }
         ],
         "responses": {
           "200": {
-            "description": "List of instructions",
+            "description": "Successfully retrieved list of instructions",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {"type": "string"},
-                    "errors": {"type": "array", "items": {"type": "string"}},
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "errors": {
+                      "type": "null",
+                      "nullable": true
+                    },
                     "data": {
                       "type": "array",
-                      "items": {"$ref": "#/components/schemas/Instruction"}
+                      "items": {
+                        "$ref": "#/components/schemas/Instruction"
+                      }
                     }
-                  }
+                  },
+                  "required": ["message", "errors", "data"]
                 }
               }
             }
           },
-          "401": {"$ref": "#/components/responses/Unauthorized"},
-          "500": {"$ref": "#/components/responses/InternalServerError"}
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       },
       "post": {
         "tags": ["Instructions"],
         "summary": "Create a new PDF processing instruction",
-        "description": "Create a new instruction for PDF processing with specified product",
-        "security": [{"bearerAuth": []}],
+        "description": "Create a new instruction for PDF processing with the specified product. This creates an empty instruction record that can then receive file uploads.",
+        "operationId": "createInstruction",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -64,10 +96,14 @@
                 "properties": {
                   "productId": {
                     "type": "string",
-                    "description": "Product ID for PDF processing",
+                    "description": "Valid MongoDB ObjectID of the product to use for PDF processing",
+                    "pattern": "^[a-f0-9]{24}$",
                     "example": "507f1f77bcf86cd799439011"
                   }
                 }
+              },
+              "example": {
+                "productId": "507f1f77bcf86cd799439011"
               }
             }
           }
@@ -80,117 +116,200 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {"type": "string"},
-                    "errors": {"type": "array", "items": {"type": "string"}},
-                    "data": {"$ref": "#/components/schemas/Instruction"}
-                  }
+                    "message": {
+                      "type": "string",
+                      "example": "Instruction created successfully"
+                    },
+                    "errors": {
+                      "type": "null",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Instruction"
+                    }
+                  },
+                  "required": ["message", "errors", "data"]
                 }
               }
             }
           },
-          "400": {"$ref": "#/components/responses/BadRequest"},
-          "401": {"$ref": "#/components/responses/Unauthorized"},
-          "404": {"$ref": "#/components/responses/NotFound"},
-          "500": {"$ref": "#/components/responses/InternalServerError"}
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
-    "/api/v1/instructions/{id}": {
+    "/instructions/{id}": {
       "get": {
         "tags": ["Instructions"],
         "summary": "Get PDF instruction by ID",
-        "description": "Retrieve a specific PDF processing instruction by ID",
-        "security": [{"bearerAuth": []}],
+        "description": "Retrieve a specific PDF processing instruction by ID. User must own the instruction to access it.",
+        "operationId": "getInstruction",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "Instruction ID",
-            "schema": {"type": "string"}
+            "description": "Instruction ID (MongoDB ObjectID format)",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{24}$"
+            },
+            "example": "507f1f77bcf86cd799439011"
           }
         ],
         "responses": {
           "200": {
-            "description": "Instruction details",
+            "description": "Successfully retrieved instruction",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {"type": "string"},
-                    "errors": {"type": "array", "items": {"type": "string"}},
-                    "data": {"$ref": "#/components/schemas/Instruction"}
-                  }
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "errors": {
+                      "type": "null",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Instruction"
+                    }
+                  },
+                  "required": ["message", "errors", "data"]
                 }
               }
             }
           },
-          "400": {"$ref": "#/components/responses/BadRequest"},
-          "401": {"$ref": "#/components/responses/Unauthorized"},
-          "403": {"$ref": "#/components/responses/Forbidden"},
-          "404": {"$ref": "#/components/responses/NotFound"},
-          "500": {"$ref": "#/components/responses/InternalServerError"}
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
-    "/api/v1/instructions/{id}/details": {
+    "/instructions/{id}/details": {
       "get": {
         "tags": ["Instructions"],
-        "summary": "Get instruction details (files)",
-        "description": "Retrieve all file details associated with a specific instruction",
-        "security": [{"bearerAuth": []}],
+        "summary": "Get all instruction file details",
+        "description": "Retrieve metadata for all files (input and compressed output) associated with a specific instruction. Includes file status, size, and processing information.",
+        "operationId": "getInstructionDetails",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "Instruction ID",
-            "schema": {"type": "string"}
+            "description": "Instruction ID (MongoDB ObjectID format)",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{24}$"
+            },
+            "example": "507f1f77bcf86cd799439011"
           }
         ],
         "responses": {
           "200": {
-            "description": "Instruction details",
+            "description": "Successfully retrieved instruction details",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {"type": "string"},
-                    "errors": {"type": "array", "items": {"type": "string"}},
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "errors": {
+                      "type": "null",
+                      "nullable": true
+                    },
                     "data": {
                       "type": "array",
-                      "items": {"$ref": "#/components/schemas/InstructionDetail"}
+                      "items": {
+                        "$ref": "#/components/schemas/InstructionDetail"
+                      }
                     }
-                  }
+                  },
+                  "required": ["message", "errors", "data"]
                 }
               }
             }
           },
-          "400": {"$ref": "#/components/responses/BadRequest"},
-          "401": {"$ref": "#/components/responses/Unauthorized"},
-          "403": {"$ref": "#/components/responses/Forbidden"},
-          "404": {"$ref": "#/components/responses/NotFound"},
-          "500": {"$ref": "#/components/responses/InternalServerError"}
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       },
       "post": {
         "tags": ["Instructions"],
         "summary": "Upload PDF file for processing",
-        "description": "Upload a PDF file to be processed according to the instruction",
-        "security": [{"bearerAuth": []}],
+        "description": "Upload a PDF file to be processed (compressed) according to the instruction. Creates both input and output file records, with compression processing triggered via NATS message queue. File is validated before upload.",
+        "operationId": "createInstructionDetails",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "Instruction ID",
-            "schema": {"type": "string"}
+            "description": "Instruction ID (MongoDB ObjectID format)",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{24}$"
+            },
+            "example": "507f1f77bcf86cd799439011"
           }
         ],
         "requestBody": {
           "required": true,
+          "description": "PDF file upload with multipart form data",
           "content": {
             "multipart/form-data": {
               "schema": {
@@ -200,7 +319,7 @@
                   "file": {
                     "type": "string",
                     "format": "binary",
-                    "description": "PDF file to compress (max 50MB)"
+                    "description": "PDF file to compress. Must be a valid PDF file. Maximum file size limit depends on S3 configuration."
                   }
                 }
               }
@@ -209,103 +328,178 @@
         },
         "responses": {
           "201": {
-            "description": "File uploaded successfully",
+            "description": "File uploaded successfully and processing started",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {"type": "string"},
-                    "errors": {"type": "array", "items": {"type": "string"}},
+                    "message": {
+                      "type": "string",
+                      "example": "File uploaded successfully"
+                    },
+                    "errors": {
+                      "type": "null",
+                      "nullable": true
+                    },
                     "data": {
                       "type": "array",
-                      "items": {"$ref": "#/components/schemas/InstructionDetail"}
+                      "description": "Array containing input and output file details",
+                      "items": {
+                        "$ref": "#/components/schemas/InstructionDetail"
+                      }
                     }
-                  }
+                  },
+                  "required": ["message", "errors", "data"]
                 }
               }
             }
           },
-          "400": {"$ref": "#/components/responses/BadRequest"},
-          "401": {"$ref": "#/components/responses/Unauthorized"},
-          "403": {"$ref": "#/components/responses/Forbidden"},
-          "404": {"$ref": "#/components/responses/NotFound"},
-          "413": {"$ref": "#/components/responses/RequestEntityTooLarge"},
-          "500": {"$ref": "#/components/responses/InternalServerError"}
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "413": {
+            "$ref": "#/components/responses/RequestEntityTooLarge"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
-    "/api/v1/instructions/{id}/details/{detailId}": {
+    "/instructions/{id}/details/{detailId}": {
       "get": {
         "tags": ["Instructions"],
         "summary": "Get instruction detail metadata",
-        "description": "Retrieve metadata for a specific file within an instruction",
-        "security": [{"bearerAuth": []}],
+        "description": "Retrieve metadata for a specific file (input or output) within an instruction, including processing status, file size, and timestamps.",
+        "operationId": "getInstructionDetail",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "Instruction ID",
-            "schema": {"type": "string"}
+            "description": "Instruction ID (MongoDB ObjectID format)",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{24}$"
+            },
+            "example": "507f1f77bcf86cd799439011"
           },
           {
             "name": "detailId",
             "in": "path",
             "required": true,
-            "description": "Detail ID",
-            "schema": {"type": "string"}
+            "description": "Detail ID (MongoDB ObjectID format) - identifier for the specific file",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{24}$"
+            },
+            "example": "507f1f77bcf86cd799439012"
           }
         ],
         "responses": {
           "200": {
-            "description": "Instruction detail metadata",
+            "description": "Successfully retrieved instruction detail metadata",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {"type": "string"},
-                    "errors": {"type": "array", "items": {"type": "string"}},
-                    "data": {"$ref": "#/components/schemas/InstructionDetail"}
-                  }
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "errors": {
+                      "type": "null",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/InstructionDetail"
+                    }
+                  },
+                  "required": ["message", "errors", "data"]
                 }
               }
             }
           },
-          "400": {"$ref": "#/components/responses/BadRequest"},
-          "404": {"$ref": "#/components/responses/NotFound"},
-          "500": {"$ref": "#/components/responses/InternalServerError"}
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
-    "/api/v1/instructions/{id}/details/{detailId}/file": {
+    "/instructions/{id}/details/{detailId}/file": {
       "get": {
         "tags": ["Instructions"],
         "summary": "Download processed PDF file",
-        "description": "Download the processed PDF file (input or compressed output)",
-        "security": [{"bearerAuth": []}],
+        "description": "Download the actual PDF file content - either the original input file or the compressed output file. Returns binary PDF data with appropriate content-disposition header for download.",
+        "operationId": "getInstructionDetailFile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "Instruction ID",
-            "schema": {"type": "string"}
+            "description": "Instruction ID (MongoDB ObjectID format)",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{24}$"
+            },
+            "example": "507f1f77bcf86cd799439011"
           },
           {
             "name": "detailId",
             "in": "path",
             "required": true,
-            "description": "Detail ID",
-            "schema": {"type": "string"}
+            "description": "Detail ID (MongoDB ObjectID format) - identifier for the file to download",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{24}$"
+            },
+            "example": "507f1f77bcf86cd799439012"
           }
         ],
         "responses": {
           "200": {
-            "description": "PDF file download",
+            "description": "PDF file download successful",
             "content": {
               "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/octet-stream": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
@@ -314,94 +508,163 @@
             },
             "headers": {
               "Content-Disposition": {
-                "description": "File attachment information",
-                "schema": {"type": "string"}
+                "description": "File attachment information with original filename",
+                "schema": {
+                  "type": "string",
+                  "example": "attachment; filename=document.pdf"
+                }
+              },
+              "Content-Type": {
+                "description": "MIME type of the file",
+                "schema": {
+                  "type": "string",
+                  "example": "application/octet-stream"
+                }
               }
             }
           },
-          "400": {"$ref": "#/components/responses/BadRequest"},
-          "401": {"$ref": "#/components/responses/Unauthorized"},
-          "403": {"$ref": "#/components/responses/Forbidden"},
-          "404": {"$ref": "#/components/responses/NotFound"},
-          "500": {"$ref": "#/components/responses/InternalServerError"}
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
-    "/api/v1/products": {
+    "/products": {
       "get": {
         "tags": ["Products"],
         "summary": "List available PDF processing products",
-        "description": "Retrieve list of available PDF compression products",
-        "security": [{"bearerAuth": []}],
+        "description": "Retrieve list of available PDF compression products that can be used for processing instructions. Only active products with type 'pdf' are returned.",
+        "operationId": "listProducts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "List of PDF processing products",
+            "description": "Successfully retrieved list of PDF processing products",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {"type": "string"},
-                    "errors": {"type": "array", "items": {"type": "string"}},
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "errors": {
+                      "type": "null",
+                      "nullable": true
+                    },
                     "data": {
                       "type": "array",
-                      "items": {"$ref": "#/components/schemas/Product"}
+                      "items": {
+                        "$ref": "#/components/schemas/Product"
+                      }
                     }
-                  }
+                  },
+                  "required": ["message", "errors", "data"]
                 }
               }
             }
           },
-          "401": {"$ref": "#/components/responses/Unauthorized"},
-          "500": {"$ref": "#/components/responses/InternalServerError"}
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
-    "/api/v1/files": {
+    "/files": {
       "get": {
         "tags": ["Admin"],
         "summary": "List uncleaned files",
-        "description": "Administrative endpoint to list files that haven't been cleaned up",
+        "description": "Administrative endpoint to list files that haven't been cleaned up yet. Returns instruction details for files pending cleanup, used for maintenance and monitoring.",
+        "operationId": "listUncleanedFiles",
         "responses": {
           "200": {
-            "description": "List of uncleaned files",
+            "description": "Successfully retrieved list of uncleaned files",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {"type": "string"},
-                    "errors": {"type": "array", "items": {"type": "string"}},
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "errors": {
+                      "type": "null",
+                      "nullable": true
+                    },
                     "data": {
                       "type": "array",
-                      "items": {"$ref": "#/components/schemas/InstructionDetail"}
+                      "items": {
+                        "$ref": "#/components/schemas/InstructionDetail"
+                      }
                     }
-                  }
+                  },
+                  "required": ["message", "errors", "data"]
                 }
               }
             }
           },
-          "500": {"$ref": "#/components/responses/InternalServerError"}
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
         }
       }
     },
     "/health": {
       "get": {
         "tags": ["Health"],
-        "summary": "Health check",
-        "description": "Check service health status",
+        "summary": "Service health check",
+        "description": "Check the health status of the PDF service. Returns service status, timestamp, and version information.",
+        "operationId": "healthCheck",
         "responses": {
           "200": {
-            "description": "Service is healthy",
+            "description": "Service is healthy and responding",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "status": {"type": "string", "example": "ok"},
-                    "timestamp": {"type": "string", "format": "date-time"},
-                    "service": {"type": "string", "example": "pdf-service"}
-                  }
+                    "status": {
+                      "type": "string",
+                      "enum": ["ok"],
+                      "example": "ok"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "UTC timestamp of health check",
+                      "example": "2024-01-15T10:30:00Z"
+                    },
+                    "service": {
+                      "type": "string",
+                      "example": "pdf-service"
+                    },
+                    "version": {
+                      "type": "string",
+                      "description": "Service version",
+                      "example": "1.0.0"
+                    }
+                  },
+                  "required": ["status", "timestamp", "service"]
                 }
               }
             }
@@ -414,123 +677,155 @@
     "schemas": {
       "Instruction": {
         "type": "object",
+        "description": "PDF processing instruction representing a user's request to process PDFs",
         "properties": {
           "id": {
             "type": "string",
-            "description": "Unique instruction identifier",
+            "description": "Unique instruction identifier (MongoDB ObjectID)",
+            "pattern": "^[a-f0-9]{24}$",
             "example": "507f1f77bcf86cd799439011"
           },
           "userId": {
             "type": "string",
-            "description": "User who created the instruction",
+            "description": "ID of the user who created the instruction",
             "example": "user123"
           },
           "productId": {
             "type": "string",
-            "description": "Product ID for processing",
+            "description": "MongoDB ObjectID of the product used for processing",
+            "pattern": "^[a-f0-9]{24}$",
             "example": "507f1f77bcf86cd799439011"
           },
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When the instruction was created"
+            "description": "Timestamp when the instruction was created (UTC)",
+            "example": "2024-01-15T10:30:00Z"
           },
           "updatedAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When the instruction was last updated"
+            "description": "Timestamp when the instruction was last updated (UTC)",
+            "example": "2024-01-15T10:35:00Z"
           }
-        }
+        },
+        "required": ["id", "userId", "productId", "createdAt", "updatedAt"]
       },
       "InstructionDetail": {
         "type": "object",
+        "description": "File detail associated with an instruction, representing either input or compressed output PDF",
         "properties": {
           "id": {
             "type": "string",
-            "description": "Unique detail identifier",
+            "description": "Unique detail identifier (MongoDB ObjectID)",
+            "pattern": "^[a-f0-9]{24}$",
             "example": "507f1f77bcf86cd799439012"
           },
           "fileName": {
             "type": "string",
-            "description": "Original filename",
+            "description": "Original filename of the PDF",
             "example": "document.pdf"
           },
           "fileSize": {
             "type": "integer",
             "format": "int64",
-            "description": "File size in bytes",
+            "description": "File size in bytes (0 for pending output files)",
             "example": 1048576
           },
           "status": {
             "type": "string",
             "enum": ["PENDING", "PROCESSING", "DONE", "FAILED", "CLEANED"],
-            "description": "Processing status"
+            "description": "Current processing status of the file. PENDING: waiting to be processed, PROCESSING: actively being compressed, DONE: compression complete, FAILED: processing error, CLEANED: deleted from storage"
           },
           "type": {
             "type": "string",
             "enum": ["input", "output"],
-            "description": "File type"
+            "description": "File type - 'input' is the original uploaded file, 'output' is the compressed result"
           },
           "filePath": {
             "type": "string",
-            "description": "S3 file path",
+            "description": "S3 storage path for the file",
             "example": "pdfs/507f1f77bcf86cd799439011_output.pdf"
           },
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When the detail was created"
+            "description": "Timestamp when the file detail was created (UTC)",
+            "example": "2024-01-15T10:30:00Z"
           },
           "updatedAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When the detail was last updated"
+            "description": "Timestamp when the file detail was last updated, including status changes (UTC)",
+            "example": "2024-01-15T10:35:00Z"
           }
-        }
+        },
+        "required": ["id", "fileName", "fileSize", "status", "type", "filePath", "createdAt", "updatedAt"]
       },
       "Product": {
         "type": "object",
+        "description": "PDF processing product with pricing and configuration",
         "properties": {
           "id": {
             "type": "string",
-            "description": "Unique product identifier",
+            "description": "Unique product identifier (MongoDB ObjectID)",
+            "pattern": "^[a-f0-9]{24}$",
             "example": "507f1f77bcf86cd799439013"
           },
           "key": {
             "type": "string",
-            "description": "Product key for processing",
-            "example": "compress"
+            "description": "Unique key identifier for the product, used in processing configuration",
+            "example": "pdf_compression"
           },
           "name": {
             "type": "string",
-            "description": "Display name of the product",
+            "description": "Display name of the product for user interface",
             "example": "PDF Compression"
           },
           "type": {
             "type": "string",
             "description": "Product type category",
+            "enum": ["pdf"],
             "example": "pdf"
           },
           "price": {
             "type": "number",
             "format": "double",
-            "description": "Product price",
+            "description": "Product price in USD per compression operation",
+            "minimum": 0,
             "example": 0.99
           },
           "active": {
             "type": "boolean",
-            "description": "Whether the product is active",
+            "description": "Whether the product is currently available for use",
             "example": true
           },
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When the product was created"
+            "description": "Timestamp when the product was created (UTC)",
+            "example": "2024-01-15T10:30:00Z"
           },
           "updatedAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When the product was last updated"
+            "description": "Timestamp when the product was last updated (UTC)",
+            "example": "2024-01-15T10:30:00Z"
+          }
+        },
+        "required": ["id", "key", "name", "type", "price", "active", "createdAt", "updatedAt"]
+      },
+      "ErrorDetail": {
+        "type": "object",
+        "description": "Detailed error information",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Error code identifier"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message"
           }
         }
       }
@@ -539,96 +834,179 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "JWT"
+        "bearerFormat": "JWT",
+        "description": "JWT bearer token authentication. Tokens are obtained from the auth-service and must be included in the Authorization header as 'Bearer <token>'"
       }
     },
     "responses": {
       "BadRequest": {
-        "description": "Bad request",
+        "description": "Invalid request parameters or body",
         "content": {
           "application/json": {
             "schema": {
               "type": "object",
               "properties": {
-                "message": {"type": "string"},
-                "errors": {"type": "array", "items": {"type": "string"}},
-                "data": {"type": "null"}
-              }
+                "message": {
+                  "type": "string",
+                  "example": "Invalid request body"
+                },
+                "errors": {
+                  "oneOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object"
+                    }
+                  ],
+                  "nullable": true,
+                  "description": "Error details (null or error message/object)"
+                },
+                "data": {
+                  "type": "null",
+                  "nullable": true
+                }
+              },
+              "required": ["message", "errors", "data"]
             }
           }
         }
       },
       "Unauthorized": {
-        "description": "Unauthorized access",
+        "description": "Missing or invalid authentication credentials",
         "content": {
           "application/json": {
             "schema": {
               "type": "object",
               "properties": {
-                "message": {"type": "string"},
-                "errors": {"type": "array", "items": {"type": "string"}},
-                "data": {"type": "null"}
-              }
+                "message": {
+                  "type": "string",
+                  "example": "Unauthorized"
+                },
+                "errors": {
+                  "type": "null",
+                  "nullable": true
+                },
+                "data": {
+                  "type": "null",
+                  "nullable": true
+                }
+              },
+              "required": ["message", "errors", "data"]
             }
           }
         }
       },
       "Forbidden": {
-        "description": "Access forbidden",
+        "description": "User does not have permission to access this resource",
         "content": {
           "application/json": {
             "schema": {
               "type": "object",
               "properties": {
-                "message": {"type": "string"},
-                "errors": {"type": "array", "items": {"type": "string"}},
-                "data": {"type": "null"}
-              }
+                "message": {
+                  "type": "string",
+                  "example": "Access denied"
+                },
+                "errors": {
+                  "type": "null",
+                  "nullable": true
+                },
+                "data": {
+                  "type": "null",
+                  "nullable": true
+                }
+              },
+              "required": ["message", "errors", "data"]
             }
           }
         }
       },
       "NotFound": {
-        "description": "Resource not found",
+        "description": "Requested resource not found",
         "content": {
           "application/json": {
             "schema": {
               "type": "object",
               "properties": {
-                "message": {"type": "string"},
-                "errors": {"type": "array", "items": {"type": "string"}},
-                "data": {"type": "null"}
-              }
+                "message": {
+                  "type": "string",
+                  "example": "Resource not found"
+                },
+                "errors": {
+                  "type": "null",
+                  "nullable": true
+                },
+                "data": {
+                  "type": "null",
+                  "nullable": true
+                }
+              },
+              "required": ["message", "errors", "data"]
             }
           }
         }
       },
       "RequestEntityTooLarge": {
-        "description": "File too large",
+        "description": "Request entity (file) is too large to process",
         "content": {
           "application/json": {
             "schema": {
               "type": "object",
               "properties": {
-                "message": {"type": "string"},
-                "errors": {"type": "array", "items": {"type": "string"}},
-                "data": {"type": "null"}
-              }
+                "message": {
+                  "type": "string",
+                  "example": "File size exceeds maximum allowed size"
+                },
+                "errors": {
+                  "type": "null",
+                  "nullable": true
+                },
+                "data": {
+                  "type": "null",
+                  "nullable": true
+                }
+              },
+              "required": ["message", "errors", "data"]
             }
           }
         }
       },
       "InternalServerError": {
-        "description": "Internal server error",
+        "description": "Internal server error occurred during processing",
         "content": {
           "application/json": {
             "schema": {
               "type": "object",
               "properties": {
-                "message": {"type": "string"},
-                "errors": {"type": "array", "items": {"type": "string"}},
-                "data": {"type": "null"}
-              }
+                "message": {
+                  "type": "string",
+                  "example": "Internal server error"
+                },
+                "errors": {
+                  "oneOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object"
+                    }
+                  ],
+                  "nullable": true,
+                  "description": "Error details (null or error message/object)"
+                },
+                "data": {
+                  "type": "null",
+                  "nullable": true
+                }
+              },
+              "required": ["message", "errors", "data"]
             }
           }
         }
@@ -638,19 +1016,19 @@
   "tags": [
     {
       "name": "Instructions",
-      "description": "PDF processing instruction management"
+      "description": "PDF processing instruction management - create, list, and retrieve instructions with their file details"
     },
     {
       "name": "Products",
-      "description": "PDF processing products"
+      "description": "PDF processing products - retrieve available compression products"
     },
     {
       "name": "Admin",
-      "description": "Administrative endpoints"
+      "description": "Administrative endpoints for system maintenance and monitoring"
     },
     {
       "name": "Health",
-      "description": "Health check endpoints"
+      "description": "Health check and service status endpoints"
     }
   ]
 }

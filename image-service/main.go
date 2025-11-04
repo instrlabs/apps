@@ -68,7 +68,7 @@ func main() {
 	app.Post("/instructions/:id/details", instrHandler.CreateInstructionDetails)
 
 	app.Get("/instructions/:id/details/:detailId", instrHandler.GetInstructionDetail)
-	app.Get("/instructions/:id/details/:detailId/file", instrHandler.GetInstructionDetilFile)
+	app.Get("/instructions/:id/details/:detailId/file", instrHandler.GetInstructionDetailFile)
 	app.Get("/instructions", instrHandler.ListInstructions)
 	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
 	app.Get("/instructions/:id/details", instrHandler.GetInstructionDetails)

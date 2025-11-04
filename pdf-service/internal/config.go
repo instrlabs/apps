@@ -23,8 +23,9 @@ type Config struct {
 	S3UseSSL    bool
 
 	// NATS
-	NatsURI                string
-	NatsSubjectPdfRequests string
+	NatsURI                     string
+	NatsSubjectPdfRequests      string
+	NatsSubjectNotificationsSSE string
 
 	// API
 	ApiUrl string
@@ -47,8 +48,9 @@ func LoadConfig() *Config {
 		S3Bucket:    initx.GetEnv("S3_BUCKET", "instrlabs"),
 		S3UseSSL:    initx.GetEnvBool("S3_USE_SSL", false),
 
-		NatsURI:                initx.GetEnv("NATS_URI", "nats://localhost:4222"),
-		NatsSubjectPdfRequests: initx.GetEnv("NATS_SUBJECT_PDF_REQUESTS", "pdf.requests"),
+		NatsURI:                     initx.GetEnv("NATS_URI", "nats://localhost:4222"),
+		NatsSubjectPdfRequests:      initx.GetEnv("NATS_SUBJECT_PDF_REQUESTS", "pdf.requests"),
+		NatsSubjectNotificationsSSE: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS_SSE", "notifications.sse"),
 
 		ApiUrl: initx.GetEnv("API_URL", "http://localhost:3000"),
 	}

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -52,7 +53,7 @@ func (r *ProductRepository) FindByID(id primitive.ObjectID, productType string) 
 	var product Product
 	err := r.collection.FindOne(ctx, filter).Decode(&product)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
 		log.Printf("Failed to find product by ID %s: %v", id.Hex(), err)

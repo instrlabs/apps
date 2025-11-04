@@ -409,7 +409,7 @@ func (h *InstructionHandler) CleanInstruction() error {
 	return nil
 }
 
-func (h *InstructionHandler) GetInstructionDetilFile(c *fiber.Ctx) error {
+func (h *InstructionHandler) GetInstructionDetailFile(c *fiber.Ctx) error {
 	instrIDHex := c.Params("id", "")
 	detailIDHex := c.Params("detailId", "")
 	if instrIDHex == "" || detailIDHex == "" {
