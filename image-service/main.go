@@ -36,18 +36,15 @@ func main() {
 	initx.SetupLogger(app)
 	initx.SetupServiceSwagger(app, cfg.ApiUrl, "/images")
 	initx.SetupServiceHealth(app)
-	initx.SetupAuthenticated(app, []string{
-		"/products",
-	})
+	initx.SetupAuthenticated(app, []string{})
 
-	productRepo := internal.NewProductRepository(mongo)
 	instrRepo := internal.NewInstructionRepository(mongo)
 	detailRepo := internal.NewInstructionDetailRepository(mongo)
 
 	imageSvc := internal.NewImageService()
+	productClient := internal.NewProductClient(cfg.ProductServiceURL)
 
-	productHandler := internal.NewProductHandler(productRepo)
-	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, detailRepo, productRepo, imageSvc)
+	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, detailRepo, productClient, imageSvc)
 
 	_, _ = nats.Conn.Subscribe(cfg.NatsSubjectImageRequests, func(m *natsgo.Msg) {
 		instrHandler.RunInstructionMessage(m.Data)
@@ -74,8 +71,6 @@ func main() {
 	app.Get("/instructions/:id/details", instrHandler.GetInstructionDetails)
 
 	app.Get("/files", instrHandler.ListUncleanedFiles)
-
-	app.Get("/products", productHandler.ListProducts)
 
 	log.Fatal(app.Listen(cfg.Port))
 }

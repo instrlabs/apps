@@ -56,17 +56,17 @@ func (r *InstructionRepository) GetByID(id primitive.ObjectID) (*Instruction, er
 	return &instruction, nil
 }
 
-func (r *InstructionRepository) ListLatest(userID string, limit int64) ([]Instruction, error) {
+func (r *InstructionRepository) ListLatest(userID primitive.ObjectID, limit int64) ([]Instruction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	findOptions := options.Find()
-	findOptions.SetSort(bson.D{{Key: "createdAt", Value: -1}})
+	findOptions.SetSort(bson.D{{Key: "created_at", Value: -1}})
 	findOptions.SetLimit(limit)
 
-	cursor, err := r.collection.Find(ctx, bson.M{"userId": userID}, findOptions)
+	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID}, findOptions)
 	if err != nil {
-		log.Printf("Failed to list instructions for user %s: %v", userID, err)
+		log.Printf("Failed to list instructions for user %s: %v", userID.Hex(), err)
 		return nil, err
 	}
 	defer cursor.Close(ctx)

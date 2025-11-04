@@ -33,13 +33,16 @@ type InstructionDetail struct {
 	MimeType      string              `json:"mime_type" bson:"mime_type"`
 	Status        FileStatus          `json:"status" bson:"status"`
 	OutputID      *primitive.ObjectID `json:"output_id,omitempty" bson:"output_id,omitempty"`
+	FilePath      string              `json:"file_path" bson:"file_path"`
+	IsCleaned     bool                `json:"is_cleaned" bson:"is_cleaned"`
 	CreatedAt     time.Time           `json:"created_at" bson:"created_at"`
 	UpdatedAt     time.Time           `json:"updated_at" bson:"updated_at"`
-	IsCleaned     bool                `json:"is_cleaned" bson:"is_cleaned"`
 }
 
 type InstructionNotification struct {
-	UserID              string `json:"user_id"`
-	InstructionID       string `json:"instruction_id"`
-	InstructionDetailID string `json:"instruction_detail_id"`
+	UserID              primitive.ObjectID `json:"user_id"`
+	InstructionID       primitive.ObjectID `json:"instruction_id"`
+	InstructionDetailID primitive.ObjectID `json:"instruction_detail_id"`
+	Status              FileStatus         `json:"status"`
+	CreatedAt           time.Time          `json:"created_at"`
 }

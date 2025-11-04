@@ -28,7 +28,8 @@ type Config struct {
 	NatsSubjectNotificationsSSE string
 
 	// API
-	ApiUrl string
+	ApiUrl            string
+	ProductServiceURL string
 }
 
 func LoadConfig() *Config {
@@ -52,6 +53,7 @@ func LoadConfig() *Config {
 		NatsSubjectPdfRequests:      initx.GetEnv("NATS_SUBJECT_PDF_REQUESTS", "pdf.requests"),
 		NatsSubjectNotificationsSSE: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS_SSE", "notifications.sse"),
 
-		ApiUrl: initx.GetEnv("API_URL", "http://localhost:3000"),
+		ApiUrl:            initx.GetEnv("API_URL", "http://localhost:3000"),
+		ProductServiceURL: initx.GetEnv("PRODUCT_SERVICE_URL", "http://product-service:3005"),
 	}
 }

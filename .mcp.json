@@ -1,17 +1,5 @@
 {
   "mcpServers": {
-    "figma": {
-      "type": "http",
-      "url": "https://mcp.figma.com/mcp"
-    },
-    "next-devtools": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "next-devtools-mcp@latest"
-      ],
-      "env": {}
-    },
     "mongodb": {
       "type": "stdio",
       "command": "npx",
@@ -22,6 +10,10 @@
         "MCP_MONGODB_URI": "${MONGO_URI}",
         "MCP_MONGODB_READONLY": "true"
       }
+    },
+    "jetbrains": {
+      "type": "sse",
+      "url": "http://localhost:64343/sse"
     }
   }
 }

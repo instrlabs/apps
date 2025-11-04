@@ -15,7 +15,9 @@ func NewProductHandler(productRepo *ProductRepository) *ProductHandler {
 }
 
 func (h *ProductHandler) ListProducts(c *fiber.Ctx) error {
-	products, err := h.productRepo.List("pdf")
+	productType := c.Query("type", "")
+
+	products, err := h.productRepo.List(productType)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to fetch products",

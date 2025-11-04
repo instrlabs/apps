@@ -14,13 +14,13 @@ import (
 )
 
 type InstructionHandler struct {
-	cfg         *Config
-	s3          *initx.S3
-	nats        *initx.Nats
-	instrRepo   *InstructionRepository
-	detailRepo  *InstructionDetailRepository
-	productRepo *ProductRepository
-	imageSvc    *ImageService
+	cfg           *Config
+	s3            *initx.S3
+	nats          *initx.Nats
+	instrRepo     *InstructionRepository
+	detailRepo    *InstructionDetailRepository
+	productClient *ProductClient
+	imageSvc      *ImageService
 }
 
 func NewInstructionHandler(
@@ -29,9 +29,9 @@ func NewInstructionHandler(
 	nats *initx.Nats,
 	instrRepo *InstructionRepository,
 	detailRepo *InstructionDetailRepository,
-	productRepo *ProductRepository,
+	productClient *ProductClient,
 	imageSvc *ImageService) *InstructionHandler {
-	return &InstructionHandler{cfg: cfg, s3: s3, nats: nats, instrRepo: instrRepo, detailRepo: detailRepo, productRepo: productRepo, imageSvc: imageSvc}
+	return &InstructionHandler{cfg: cfg, s3: s3, nats: nats, instrRepo: instrRepo, detailRepo: detailRepo, productClient: productClient, imageSvc: imageSvc}
 }
 
 func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
@@ -56,7 +56,7 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 
 	userID, _ := c.Locals("userId").(string)
 	productID, _ := primitive.ObjectIDFromHex(body.ProductID)
-	product, _ := h.productRepo.FindByID(productID)
+	product, _ := h.productClient.FindByID(productID, "image")
 	if product == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "product not found",
@@ -282,7 +282,7 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 	}
 
 	// 3. Find product by instruction's product ID
-	product, _ := h.productRepo.FindByID(instr.ProductID)
+	product, _ := h.productClient.FindByID(instr.ProductID, "image")
 	if product == nil {
 		log.Infof("RunInstructionMessage: product not found: %s", instr.ProductID.Hex())
 		_ = h.detailRepo.UpdateStatus(input.ID, FileStatusFailed)

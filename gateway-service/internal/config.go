@@ -45,6 +45,11 @@ func LoadConfig() *Config {
 				URL:    initx.GetEnv("PDF_SERVICE", "http://pdf-service:3000"),
 				Prefix: "/pdfs",
 			},
+			{
+				Name:   "product-service",
+				URL:    initx.GetEnv("PRODUCT_SERVICE", "http://product-service:3005"),
+				Prefix: "/products",
+			},
 		},
 	}
 }

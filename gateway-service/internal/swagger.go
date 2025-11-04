@@ -24,7 +24,8 @@ func SetupGatewaySwaggerUI(app *fiber.App) {
       urls: [
         { url: "/auth/swagger", name: "Auth API v1" },
 		{ url: "/images/swagger", name: "Image API v1" },
-		{ url: "/pdfs/swagger", name: "PDF API v1" }
+		{ url: "/pdfs/swagger", name: "PDF API v1" },
+		{ url: "/products/swagger", name: "Products API v1" }
       ],
       dom_id: '#swagger-ui',
       deepLinking: true,

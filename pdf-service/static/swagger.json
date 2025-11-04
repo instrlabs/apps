@@ -16,7 +16,6 @@
   "paths": {
     "/instructions": {
       "get": {
-        "tags": ["Instructions"],
         "summary": "List user's PDF processing instructions",
         "description": "Retrieve a paginated list of PDF processing instructions for the authenticated user. Returns instructions ordered by most recent first.",
         "operationId": "listInstructions",
@@ -77,7 +76,6 @@
         }
       },
       "post": {
-        "tags": ["Instructions"],
         "summary": "Create a new PDF processing instruction",
         "description": "Create a new instruction for PDF processing with the specified product. This creates an empty instruction record that can then receive file uploads.",
         "operationId": "createInstruction",
@@ -150,7 +148,6 @@
     },
     "/instructions/{id}": {
       "get": {
-        "tags": ["Instructions"],
         "summary": "Get PDF instruction by ID",
         "description": "Retrieve a specific PDF processing instruction by ID. User must own the instruction to access it.",
         "operationId": "getInstruction",
@@ -217,7 +214,6 @@
     },
     "/instructions/{id}/details": {
       "get": {
-        "tags": ["Instructions"],
         "summary": "Get all instruction file details",
         "description": "Retrieve metadata for all files (input and compressed output) associated with a specific instruction. Includes file status, size, and processing information.",
         "operationId": "getInstructionDetails",
@@ -285,7 +281,6 @@
         }
       },
       "post": {
-        "tags": ["Instructions"],
         "summary": "Upload PDF file for processing",
         "description": "Upload a PDF file to be processed (compressed) according to the instruction. Creates both input and output file records, with compression processing triggered via NATS message queue. File is validated before upload.",
         "operationId": "createInstructionDetails",
@@ -378,7 +373,6 @@
     },
     "/instructions/{id}/details/{detailId}": {
       "get": {
-        "tags": ["Instructions"],
         "summary": "Get instruction detail metadata",
         "description": "Retrieve metadata for a specific file (input or output) within an instruction, including processing status, file size, and timestamps.",
         "operationId": "getInstructionDetail",
@@ -456,7 +450,6 @@
     },
     "/instructions/{id}/details/{detailId}/file": {
       "get": {
-        "tags": ["Instructions"],
         "summary": "Download processed PDF file",
         "description": "Download the actual PDF file content - either the original input file or the compressed output file. Returns binary PDF data with appropriate content-disposition header for download.",
         "operationId": "getInstructionDetailFile",
@@ -543,7 +536,6 @@
     },
     "/products": {
       "get": {
-        "tags": ["Products"],
         "summary": "List available PDF processing products",
         "description": "Retrieve list of available PDF compression products that can be used for processing instructions. Only active products with type 'pdf' are returned.",
         "operationId": "listProducts",
@@ -591,7 +583,6 @@
     },
     "/files": {
       "get": {
-        "tags": ["Admin"],
         "summary": "List uncleaned files",
         "description": "Administrative endpoint to list files that haven't been cleaned up yet. Returns instruction details for files pending cleanup, used for maintenance and monitoring.",
         "operationId": "listUncleanedFiles",
@@ -631,7 +622,6 @@
     },
     "/health": {
       "get": {
-        "tags": ["Health"],
         "summary": "Service health check",
         "description": "Check the health status of the PDF service. Returns service status, timestamp, and version information.",
         "operationId": "healthCheck",
@@ -1012,23 +1002,5 @@
         }
       }
     }
-  },
-  "tags": [
-    {
-      "name": "Instructions",
-      "description": "PDF processing instruction management - create, list, and retrieve instructions with their file details"
-    },
-    {
-      "name": "Products",
-      "description": "PDF processing products - retrieve available compression products"
-    },
-    {
-      "name": "Admin",
-      "description": "Administrative endpoints for system maintenance and monitoring"
-    },
-    {
-      "name": "Health",
-      "description": "Health check and service status endpoints"
-    }
-  ]
+  }
 }

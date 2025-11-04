@@ -63,7 +63,7 @@ func (r *InstructionDetailRepository) ListByInstruction(instructionID primitive.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	cursor, err := r.collection.Find(ctx, bson.M{"instructionId": instructionID})
+	cursor, err := r.collection.Find(ctx, bson.M{"instruction_id": instructionID})
 	if err != nil {
 		log.Printf("Failed to list instruction details for instruction %s: %v", instructionID.Hex(), err)
 		return nil, err
@@ -85,8 +85,8 @@ func (r *InstructionDetailRepository) UpdateStatus(id primitive.ObjectID, status
 
 	update := bson.M{
 		"$set": bson.M{
-			"status":    status,
-			"updatedAt": time.Now(),
+			"status":     status,
+			"updated_at": time.Now(),
 		},
 	}
 
@@ -105,9 +105,9 @@ func (r *InstructionDetailRepository) UpdateStatusAndSize(id primitive.ObjectID,
 
 	update := bson.M{
 		"$set": bson.M{
-			"status":    status,
-			"fileSize":  fileSize,
-			"updatedAt": time.Now(),
+			"status":     status,
+			"file_size":  fileSize,
+			"updated_at": time.Now(),
 		},
 	}
 
@@ -126,7 +126,7 @@ func (r *InstructionDetailRepository) ListOlderThan(olderThan time.Time) ([]Inst
 
 	filter := bson.M{
 		"status": FileStatusDone,
-		"updatedAt": bson.M{
+		"updated_at": bson.M{
 			"$lt": olderThan,
 		},
 	}
@@ -153,7 +153,7 @@ func (r *InstructionDetailRepository) ListPendingUpdatedBefore(before time.Time)
 
 	filter := bson.M{
 		"status": FileStatusProcessing,
-		"updatedAt": bson.M{
+		"updated_at": bson.M{
 			"$lt": before,
 		},
 	}
@@ -190,8 +190,8 @@ func (r *InstructionDetailRepository) MarkCleaned(ids []primitive.ObjectID) erro
 	filter := bson.M{"_id": bson.M{"$in": objectIDs}}
 	update := bson.M{
 		"$set": bson.M{
-			"status":    "CLEANED",
-			"updatedAt": time.Now(),
+			"status":     "CLEANED",
+			"updated_at": time.Now(),
 		},
 	}
 

@@ -12,7 +12,6 @@ env:
     gateway-service
     image-service
     notification-service
-    web
 
 jobs:
   build-all:
@@ -25,7 +24,7 @@ jobs:
 
     strategy:
       matrix:
-        service: [auth-service, gateway-service, image-service, notification-service, web]
+        service: [auth-service, gateway-service, image-service, notification-service]
       max-parallel: 5
 
     steps:
@@ -100,4 +99,3 @@ jobs:
           echo "- gateway-service" >> $GITHUB_STEP_SUMMARY
           echo "- image-service" >> $GITHUB_STEP_SUMMARY
           echo "- notification-service" >> $GITHUB_STEP_SUMMARY
-          echo "- web" >> $GITHUB_STEP_SUMMARY

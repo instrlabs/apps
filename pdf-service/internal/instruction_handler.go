@@ -15,13 +15,13 @@ import (
 )
 
 type InstructionHandler struct {
-	cfg         *Config
-	s3          *initx.S3
-	nats        *initx.Nats
-	instrRepo   *InstructionRepository
-	detailRepo  *InstructionDetailRepository
-	productRepo *ProductRepository
-	pdfSvc      *PDFService
+	cfg           *Config
+	s3            *initx.S3
+	nats          *initx.Nats
+	instrRepo     *InstructionRepository
+	detailRepo    *InstructionDetailRepository
+	productClient *ProductClient
+	pdfSvc        *PDFService
 }
 
 func NewInstructionHandler(
@@ -30,23 +30,23 @@ func NewInstructionHandler(
 	nats *initx.Nats,
 	instrRepo *InstructionRepository,
 	detailRepo *InstructionDetailRepository,
-	productRepo *ProductRepository,
+	productClient *ProductClient,
 	pdfSvc *PDFService,
 ) *InstructionHandler {
 	return &InstructionHandler{
-		cfg:         cfg,
-		s3:          s3,
-		nats:        nats,
-		instrRepo:   instrRepo,
-		detailRepo:  detailRepo,
-		productRepo: productRepo,
-		pdfSvc:      pdfSvc,
+		cfg:           cfg,
+		s3:            s3,
+		nats:          nats,
+		instrRepo:     instrRepo,
+		detailRepo:    detailRepo,
+		productClient: productClient,
+		pdfSvc:        pdfSvc,
 	}
 }
 
 func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 	var req struct {
-		ProductID string `json:"productId"`
+		ProductID string `json:"product_id"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
@@ -67,7 +67,7 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 	}
 
 	// Verify product exists
-	product, err := h.productRepo.FindByID(productID, "pdf")
+	product, err := h.productClient.FindByID(productID, "pdf")
 	if err != nil || product == nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "Product not found",
@@ -76,7 +76,16 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 		})
 	}
 
-	userID := c.Locals("userId").(string)
+	userIDStr := c.Locals("userId").(string)
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid user ID",
+			"errors":  err.Error(),
+			"data":    nil,
+		})
+	}
+
 	instruction := &Instruction{
 		UserID:    userID,
 		ProductID: productID,
@@ -119,7 +128,15 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 		})
 	}
 
-	localUserID := c.Locals("userId").(string)
+	localUserIDStr := c.Locals("userId").(string)
+	localUserID, err := primitive.ObjectIDFromHex(localUserIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid user ID",
+			"errors":  err.Error(),
+			"data":    nil,
+		})
+	}
 	if instruction.UserID != localUserID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Access denied",
@@ -165,9 +182,7 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 		FileName:      fh.Filename,
 		FileSize:      int64(len(b)),
 		Status:        FileStatusDone,
-		Type:          "input",
 		FilePath:      inName,
-		InputID:       nil,
 		OutputID:      &outputID,
 		CreatedAt:     now,
 		UpdatedAt:     now,
@@ -179,10 +194,7 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 		FileName:      "compressed_" + fh.Filename,
 		FileSize:      0,
 		Status:        FileStatusPending,
-		Type:          "output",
 		FilePath:      outName,
-		InputID:       &inputID,
-		OutputID:      nil,
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}
@@ -221,7 +233,16 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 }
 
 func (h *InstructionHandler) ListInstructions(c *fiber.Ctx) error {
-	userID := c.Locals("userId").(string)
+	userIDStr := c.Locals("userId").(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid user ID",
+			"errors":  err.Error(),
+			"data":    nil,
+		})
+	}
 
 	limitStr := c.Query("limit", "10")
 	limit, err := strconv.ParseInt(limitStr, 10, 64)
@@ -265,7 +286,15 @@ func (h *InstructionHandler) GetInstructionByID(c *fiber.Ctx) error {
 		})
 	}
 
-	localUserID := c.Locals("userId").(string)
+	localUserIDStr := c.Locals("userId").(string)
+	localUserID, err := primitive.ObjectIDFromHex(localUserIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid user ID",
+			"errors":  err.Error(),
+			"data":    nil,
+		})
+	}
 	if instruction.UserID != localUserID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Access denied",
@@ -473,7 +502,15 @@ func (h *InstructionHandler) GetInstructionDetails(c *fiber.Ctx) error {
 		})
 	}
 
-	localUserID := c.Locals("userId").(string)
+	localUserIDStr := c.Locals("userId").(string)
+	localUserID, err := primitive.ObjectIDFromHex(localUserIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid user ID",
+			"errors":  err.Error(),
+			"data":    nil,
+		})
+	}
 	if instruction.UserID != localUserID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Access denied",
@@ -539,7 +576,15 @@ func (h *InstructionHandler) GetInstructionDetail(c *fiber.Ctx) error {
 		})
 	}
 
-	localUserID := c.Locals("userId").(string)
+	localUserIDStr := c.Locals("userId").(string)
+	localUserID, err := primitive.ObjectIDFromHex(localUserIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid user ID",
+			"errors":  err.Error(),
+			"data":    nil,
+		})
+	}
 	if instruction.UserID != localUserID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Access denied",
@@ -605,7 +650,15 @@ func (h *InstructionHandler) GetInstructionDetailFile(c *fiber.Ctx) error {
 		})
 	}
 
-	localUserID := c.Locals("userId").(string)
+	localUserIDStr := c.Locals("userId").(string)
+	localUserID, err := primitive.ObjectIDFromHex(localUserIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid user ID",
+			"errors":  err.Error(),
+			"data":    nil,
+		})
+	}
 	if instruction.UserID != localUserID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "Access denied",
@@ -650,7 +703,6 @@ func (h *InstructionHandler) publishFileNotification(instruction *Instruction, d
 		InstructionID:       instruction.ID,
 		InstructionDetailID: detail.ID,
 		Status:              detail.Status,
-		Type:                detail.Type,
 		CreatedAt:           time.Now().UTC(),
 	}
 

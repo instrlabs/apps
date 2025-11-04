@@ -58,3 +58,15 @@ services:
     command: [ "./app" ]
     ports:
       - "3004:3000"
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    container_name: instrlabs-product-service
+    restart: unless-stopped
+    env_file:
+      - ./product-service/.env
+    command: [ "./app" ]
+    ports:
+      - "3005:3005"

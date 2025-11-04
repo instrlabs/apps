@@ -3,35 +3,13 @@
   "info": {
     "title": "Auth Service API",
     "version": "1.0.0",
-    "description": "Authentication and authorization service providing PIN-based and OAuth login, session management with device binding, and JWT token handling",
+    "description": "Authentication and authorization service providing PIN-based and OAuth 2.0 authentication flows, session management with device binding using IP/User-Agent hashing, JWT token handling, and multi-device logout capabilities",
     "contact": {
       "name": "InstructionLabs",
       "url": "https://instructionlabs.com"
     }
   },
   "servers": [],
-  "tags": [
-    {
-      "name": "authentication",
-      "description": "User login, logout, and token management endpoints"
-    },
-    {
-      "name": "oauth",
-      "description": "OAuth 2.0 authentication with Google"
-    },
-    {
-      "name": "user",
-      "description": "User profile and account management"
-    },
-    {
-      "name": "sessions",
-      "description": "Device session management and multi-device logout"
-    },
-    {
-      "name": "health",
-      "description": "Service health checks"
-    }
-  ],
   "paths": {
     "/health": {
       "get": {
@@ -60,7 +38,6 @@
     },
     "/login": {
       "post": {
-        "tags": ["authentication"],
         "summary": "Authenticate user with PIN",
         "description": "Authenticates a user with email and 6-digit PIN. Creates a new session with device binding (IP + User-Agent hash). Returns JWT access token and refresh token in response body. Device hash is used to detect token theft or hijacking.",
         "requestBody": {
@@ -135,7 +112,6 @@
     },
     "/logout": {
       "post": {
-        "tags": ["authentication"],
         "summary": "Logout user",
         "description": "Deactivates the current user session. User must be authenticated. Client should discard stored tokens after receiving this response.",
         "security": [{"bearerAuth": []}],
@@ -175,7 +151,6 @@
     },
     "/refresh": {
       "post": {
-        "tags": ["authentication"],
         "summary": "Refresh access token",
         "description": "Issues a new access token using the refresh token. Validates device binding - if device hash doesn't match (IP or User-Agent changed), tokens are invalidated and error is returned. This detects token theft. New access and refresh tokens are returned in response body.",
         "requestBody": {
@@ -242,7 +217,6 @@
     },
     "/send-pin": {
       "post": {
-        "tags": ["authentication"],
         "summary": "Send one-time PIN",
         "description": "Sends a 6-digit PIN to the user's email address. If the email is not registered, a new user account is created automatically. PIN expires after 10 minutes. If PIN_ENABLED environment variable is false, returns success but uses fixed PIN '000000' for testing.",
         "requestBody": {
@@ -300,7 +274,6 @@
     },
     "/google": {
       "get": {
-        "tags": ["oauth"],
         "summary": "Initiate Google OAuth login",
         "description": "Redirects user to Google's OAuth 2.0 consent screen. After user authorizes, Google redirects back to /google/callback endpoint.",
         "responses": {
@@ -322,7 +295,6 @@
     },
     "/google/callback": {
       "get": {
-        "tags": ["oauth"],
         "summary": "Handle Google OAuth callback",
         "description": "Processes the OAuth authorization code from Google. Exchanges code for user info, creates or updates user account, creates a new session with device binding, and redirects to frontend with tokens as URL parameters.",
         "parameters": [
@@ -384,7 +356,6 @@
     },
     "/profile": {
       "get": {
-        "tags": ["user"],
         "summary": "Get user profile",
         "description": "Returns the authenticated user's profile information including email, username, and registration timestamp.",
         "security": [{"bearerAuth": []}],
@@ -429,7 +400,6 @@
     },
     "/devices": {
       "get": {
-        "tags": ["sessions"],
         "summary": "List active device sessions",
         "description": "Returns all active device sessions for the authenticated user. Each session represents a login from a different device/browser. Includes IP address, last activity timestamp, and creation time.",
         "security": [{"bearerAuth": []}],
@@ -488,7 +458,6 @@
     },
     "/devices/{sessionId}/revoke": {
       "post": {
-        "tags": ["sessions"],
         "summary": "Revoke a specific device session",
         "description": "Deactivates and revokes a specific device session. The user who owns the session can revoke any of their sessions. After revocation, the device cannot use the revoked session ID anymore.",
         "security": [{"bearerAuth": []}],
@@ -550,7 +519,6 @@
     },
     "/devices/revoke-all": {
       "post": {
-        "tags": ["sessions"],
         "summary": "Logout from all devices",
         "description": "Deactivates all active device sessions for the authenticated user. User is logged out from all devices simultaneously. Client should discard all stored tokens after receiving this response.",
         "security": [{"bearerAuth": []}],

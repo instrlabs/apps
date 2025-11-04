@@ -8,24 +8,24 @@ import (
 
 type Instruction struct {
 	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	UserID    string             `json:"userId" bson:"userId"`
-	ProductID primitive.ObjectID `json:"productId" bson:"productId"`
-	CreatedAt time.Time          `json:"createdAt" bson:"createdAt"`
-	UpdatedAt time.Time          `json:"updatedAt" bson:"updatedAt"`
+	UserID    primitive.ObjectID `json:"user_id" bson:"user_id"`
+	ProductID primitive.ObjectID `json:"product_id" bson:"product_id"`
+	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
+	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
 type InstructionDetail struct {
 	ID            primitive.ObjectID  `json:"id" bson:"_id,omitempty"`
-	InstructionID primitive.ObjectID  `json:"-" bson:"instructionId"`
-	FileName      string              `json:"fileName" bson:"fileName"`
-	FileSize      int64               `json:"fileSize" bson:"fileSize"`
+	InstructionID primitive.ObjectID  `json:"instruction_id" bson:"instruction_id"`
+	FileName      string              `json:"file_name" bson:"file_name"`
+	FileSize      int64               `json:"file_size" bson:"file_size"`
+	MimeType      string              `json:"mime_type" bson:"mime_type"`
 	Status        FileStatus          `json:"status" bson:"status"`
-	Type          string              `json:"type" bson:"type"`            // "input" or "output"
-	InputID       *primitive.ObjectID `json:"-" bson:"inputId,omitempty"`  // Links output to input
-	OutputID      *primitive.ObjectID `json:"-" bson:"outputId,omitempty"` // Links input to output
-	FilePath      string              `json:"filePath" bson:"filePath"`    // S3 file path
-	CreatedAt     time.Time           `json:"createdAt" bson:"createdAt"`
-	UpdatedAt     time.Time           `json:"updatedAt" bson:"updatedAt"`
+	OutputID      *primitive.ObjectID `json:"output_id,omitempty" bson:"output_id,omitempty"`
+	FilePath      string              `json:"file_path" bson:"file_path"`
+	IsCleaned     bool                `json:"is_cleaned" bson:"is_cleaned"`
+	CreatedAt     time.Time           `json:"created_at" bson:"created_at"`
+	UpdatedAt     time.Time           `json:"updated_at" bson:"updated_at"`
 }
 
 type FileStatus string
@@ -38,10 +38,9 @@ const (
 )
 
 type InstructionNotification struct {
-	UserID              string             `json:"userId"`
-	InstructionID       primitive.ObjectID `json:"instructionId"`
-	InstructionDetailID primitive.ObjectID `json:"instructionDetailId"`
+	UserID              primitive.ObjectID `json:"user_id"`
+	InstructionID       primitive.ObjectID `json:"instruction_id"`
+	InstructionDetailID primitive.ObjectID `json:"instruction_detail_id"`
 	Status              FileStatus         `json:"status"`
-	Type                string             `json:"type"`
-	CreatedAt           time.Time          `json:"createdAt"`
+	CreatedAt           time.Time          `json:"created_at"`
 }

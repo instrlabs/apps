@@ -1,0 +1,235 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Product Service API",
+    "description": "Product Service provides unified product management across InstrLabs. It manages all products with support for multiple product types (pdf, image, etc.).",
+    "version": "1.0.0",
+    "contact": {
+      "name": "InstrLabs Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3005",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Service health check",
+        "description": "Check if the service is running and healthy",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "service": {
+                      "type": "string",
+                      "example": "product-service"
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "List products",
+        "description": "Retrieve list of available products. Optionally filter by product type. Only active products are returned.",
+        "operationId": "listProducts",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filter products by type (e.g., 'pdf', 'image'). If not provided, returns all product types.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "pdf"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved list of products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "errors": {
+                      "type": "null",
+                      "nullable": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Product"
+                      }
+                    }
+                  },
+                  "required": ["message", "errors", "data"]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Product": {
+        "type": "object",
+        "description": "Product information",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Product ID (MongoDB ObjectID)",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "key": {
+            "type": "string",
+            "description": "Unique product key identifier",
+            "example": "pdf-basic"
+          },
+          "name": {
+            "type": "string",
+            "description": "Product display name",
+            "example": "PDF Basic Compression"
+          },
+          "type": {
+            "type": "string",
+            "description": "Product type",
+            "enum": ["pdf", "image"],
+            "example": "pdf"
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "description": "Product price",
+            "example": 9.99
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Whether the product is currently active",
+            "example": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Product creation timestamp",
+            "example": "2024-01-01T12:00:00Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Product last update timestamp",
+            "example": "2024-01-15T14:30:00Z"
+          }
+        },
+        "required": ["id", "key", "name", "type", "price", "active", "createdAt", "updatedAt"]
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Authentication required",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Unauthorized"
+                },
+                "errors": {
+                  "type": "null"
+                },
+                "data": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Failed to fetch products"
+                },
+                "errors": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token for authentication"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Service health and status"
+    },
+    {
+      "name": "Products",
+      "description": "Product management endpoints"
+    }
+  ]
+}

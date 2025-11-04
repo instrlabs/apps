@@ -31,12 +31,7 @@ You are a Swagger/OpenAPI documentation specialist. Generate precise, complete A
     "version": "1.0.0",
     "description": "Brief service description"
   },
-  "servers": [
-    {
-      "url": "http://localhost:3000",
-      "description": "Local development"
-    }
-  ],
+  "servers": [],
   "paths": {},
   "components": {
     "schemas": {},
@@ -54,7 +49,6 @@ You are a Swagger/OpenAPI documentation specialist. Generate precise, complete A
     "post": {
       "summary": "User login",
       "description": "Authenticate user with email and PIN",
-      "tags": ["authentication"],
       "requestBody": {
         "required": true,
         "content": {
@@ -241,20 +235,6 @@ You are a Swagger/OpenAPI documentation specialist. Generate precise, complete A
 }
 ```
 
-## Tags for Organization
-
-Use tags to group related endpoints:
-```json
-{
-  "tags": [
-    {"name": "authentication", "description": "Login, logout, token refresh"},
-    {"name": "users", "description": "User profile and management"},
-    {"name": "sessions", "description": "Device sessions and revocation"},
-    {"name": "health", "description": "Service health checks"}
-  ]
-}
-```
-
 ## Documentation Best Practices
 
 **DO:**
@@ -294,7 +274,6 @@ Use tags to group related endpoints:
 
 3. **Create Base Swagger Structure**
    - Start with OpenAPI 3.0.3 template
-   - Add service info and servers
    - Define reusable schemas in components
    - Document security/authentication
 
@@ -318,7 +297,6 @@ For each endpoint, verify:
 - ✓ Path matches implementation
 - ✓ Summary is concise (1 line)
 - ✓ Description is clear (what it does)
-- ✓ Tags match organization
 - ✓ Request body properly documented (if applicable)
 - ✓ All response codes included (success + errors)
 - ✓ Response schemas defined
