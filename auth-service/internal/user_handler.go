@@ -7,10 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/big"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/gofiber/fiber/v2/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -19,53 +17,21 @@ import (
 	"golang.org/x/oauth2/google"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/instrlabs/shared/functionx"
 )
 
 type UserHandler struct {
 	cfg         *Config
-	userRepo    *UserRepository
-	sessionRepo *UserSessionRepository
+	userRepo    UserRepositoryInterface
+	sessionRepo UserSessionRepositoryInterface
 }
 
-func NewUserHandler(cfg *Config, userRepo *UserRepository, sessionRepo *UserSessionRepository) *UserHandler {
+func NewUserHandler(cfg *Config, userRepo UserRepositoryInterface, sessionRepo UserSessionRepositoryInterface) *UserHandler {
 	return &UserHandler{
 		cfg:         cfg,
 		userRepo:    userRepo,
 		sessionRepo: sessionRepo,
 	}
-}
-
-func generateSixDigitPIN() string {
-	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
-	if err != nil {
-		log.Errorf("generateSixDigitPIN: Failed to generate six digit PIN: %v", err)
-		return ""
-	}
-	return fmt.Sprintf("%06d", n.Int64())
-}
-
-func (h *UserHandler) generateAccessToken(userID, sessionID string) (string, error) {
-	now := time.Now().UTC()
-	expirationTime := now.Add(time.Duration(h.cfg.TokenExpiryHours) * time.Hour)
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":    userID,
-		"session_id": sessionID,
-		"iat":        now.Unix(),
-		"exp":        expirationTime.Unix(),
-	})
-
-	return token.SignedString([]byte(h.cfg.JWTSecret))
-}
-
-func (h *UserHandler) generateRefreshToken() (string, error) {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
 func (h *UserHandler) Login(c *fiber.Ctx) error {
@@ -142,22 +108,9 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	accessToken, err := h.generateAccessToken(user.ID.Hex(), session.ID.Hex())
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrGenerateAccessToken,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-	refreshToken, err := h.generateRefreshToken()
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrGenerateRefreshToken,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
+	accessToken := GenerateAccessToken(user.ID.Hex(), session.ID.Hex())
+	refreshToken := GenerateRefreshToken()
+
 	if err := h.sessionRepo.UpdateUserSessionRefreshToken(session.ID, refreshToken); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrUpdateSession,
@@ -240,23 +193,8 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
-	newAccessToken, err := h.generateAccessToken(user.ID.Hex(), session.ID.Hex())
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrGenerateAccessToken,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	newRefreshToken, err := h.generateRefreshToken()
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrGenerateRefreshToken,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
+	newAccessToken := GenerateAccessToken(user.ID.Hex(), session.ID.Hex())
+	newRefreshToken := GenerateRefreshToken()
 
 	if err := h.sessionRepo.UpdateUserSessionRefreshToken(session.ID, newRefreshToken); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -408,24 +346,9 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		})
 	}
 
-	accessToken, err := h.generateAccessToken(user.ID.Hex(), session.ID.Hex())
-	if err != nil {
-		log.Errorf("GoogleCallback: Failed to generate access token: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrGenerateAccessToken,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-	refreshToken, err := h.generateRefreshToken()
-	if err != nil {
-		log.Errorf("GoogleCallback: Failed to generate refresh token: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrGenerateRefreshToken,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
+	accessToken := GenerateAccessToken(user.ID.Hex(), session.ID.Hex())
+	refreshToken := GenerateRefreshToken()
+
 	if err := h.sessionRepo.UpdateUserSessionRefreshToken(session.ID, refreshToken); err != nil {
 		log.Errorf("GoogleCallback: Failed to update refresh token: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -639,7 +562,7 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 
 	pin := "000000"
 	if h.cfg.PinEnabled {
-		pin = generateSixDigitPIN()
+		pin = GenerateSixDigitPIN()
 	}
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte(pin), bcrypt.DefaultCost)

@@ -28,6 +28,7 @@ func (r *UserSessionRepository) CreateUserSession(userID, ipAddress, userAgent s
 	defer cancel()
 
 	session := &UserSession{
+		ID:             primitive.NewObjectID(),
 		UserID:         userID,
 		DeviceHash:     GenerateDeviceHash(ipAddress, userAgent),
 		IPAddress:      ipAddress,
