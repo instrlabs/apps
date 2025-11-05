@@ -1,4 +1,4 @@
-.PHONY: help build-all build-gateway build-auth build-image build-notification push-all push-gateway push-auth push-image push-notification clean
+.PHONY: help build-all build-gateway build-auth build-image build-notification build-pdf build-product up up-gateway up-auth up-image up-notification up-pdf up-product down push-all push-gateway push-auth push-image push-notification push-pdf push-product clean
 
 # Get the short commit hash
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
@@ -9,6 +9,8 @@ GATEWAY_IMAGE = $(REGISTRY)/instrlabs-gateway-service
 AUTH_IMAGE = $(REGISTRY)/instrlabs-auth-service
 IMAGE_SERVICE_IMAGE = $(REGISTRY)/instrlabs-image-service
 NOTIFICATION_IMAGE = $(REGISTRY)/instrlabs-notification-service
+PDF_SERVICE_IMAGE = $(REGISTRY)/instrlabs-pdf-service
+PRODUCT_SERVICE_IMAGE = $(REGISTRY)/instrlabs-product-service
 
 # Default target
 help:
@@ -18,12 +20,25 @@ help:
 	@echo "  build-auth          - Build auth service image"
 	@echo "  build-image         - Build image service image"
 	@echo "  build-notification  - Build notification service image"
+	@echo "  build-pdf           - Build PDF service image"
+	@echo "  build-product       - Build product service image"
+	@echo ""
+	@echo "  up                  - Start all services with Docker Compose"
+	@echo "  up-gateway          - Start gateway service"
+	@echo "  up-auth             - Start auth service"
+	@echo "  up-image            - Start image service"
+	@echo "  up-notification     - Start notification service"
+	@echo "  up-pdf              - Start PDF service"
+	@echo "  up-product          - Start product service"
+	@echo "  down                - Stop all services"
 	@echo ""
 	@echo "  push-all            - Push all service images"
 	@echo "  push-gateway        - Push gateway service image"
 	@echo "  push-auth           - Push auth service image"
 	@echo "  push-image          - Push image service image"
 	@echo "  push-notification   - Push notification service image"
+	@echo "  push-pdf            - Push PDF service image"
+	@echo "  push-product        - Push product service image"
 	@echo ""
 	@echo "  clean               - Remove all built images"
 	@echo ""
@@ -31,7 +46,7 @@ help:
 	@echo "Registry: $(REGISTRY)"
 
 # Build all services
-build-all: build-gateway build-auth build-image build-notification
+build-all: build-gateway build-auth build-image build-notification build-pdf build-product
 
 # Build individual services
 build-gateway:
@@ -54,8 +69,18 @@ build-notification:
 	docker build -t $(NOTIFICATION_IMAGE):$(COMMIT_HASH) -t $(NOTIFICATION_IMAGE):latest ./notification-service
 	@echo "Built: $(NOTIFICATION_IMAGE):$(COMMIT_HASH)"
 
+build-pdf:
+	@echo "Building PDF service with commit hash $(COMMIT_HASH)..."
+	docker build -t $(PDF_SERVICE_IMAGE):$(COMMIT_HASH) -t $(PDF_SERVICE_IMAGE):latest ./pdf-service
+	@echo "Built: $(PDF_SERVICE_IMAGE):$(COMMIT_HASH)"
+
+build-product:
+	@echo "Building product service with commit hash $(COMMIT_HASH)..."
+	docker build -t $(PRODUCT_SERVICE_IMAGE):$(COMMIT_HASH) -t $(PRODUCT_SERVICE_IMAGE):latest ./product-service
+	@echo "Built: $(PRODUCT_SERVICE_IMAGE):$(COMMIT_HASH)"
+
 # Push all services
-push-all: push-gateway push-auth push-image push-notification
+push-all: push-gateway push-auth push-image push-notification push-pdf push-product
 
 # Push individual services
 push-gateway:
@@ -77,6 +102,49 @@ push-notification:
 	@echo "Pushing notification service..."
 	docker push $(NOTIFICATION_IMAGE):$(COMMIT_HASH)
 	docker push $(NOTIFICATION_IMAGE):latest
+
+push-pdf:
+	@echo "Pushing PDF service..."
+	docker push $(PDF_SERVICE_IMAGE):$(COMMIT_HASH)
+	docker push $(PDF_SERVICE_IMAGE):latest
+
+push-product:
+	@echo "Pushing product service..."
+	docker push $(PRODUCT_SERVICE_IMAGE):$(COMMIT_HASH)
+	docker push $(PRODUCT_SERVICE_IMAGE):latest
+
+# Docker Compose commands
+up:
+	@echo "Starting all services..."
+	docker compose -p instrlabs up -d --build
+
+up-gateway:
+	@echo "Starting gateway service..."
+	docker compose -p instrlabs up -d --build gateway-service
+
+up-auth:
+	@echo "Starting auth service..."
+	docker compose -p instrlabs up -d --build auth-service
+
+up-image:
+	@echo "Starting image service..."
+	docker compose -p instrlabs up -d --build image-service
+
+up-notification:
+	@echo "Starting notification service..."
+	docker compose -p instrlabs up -d --build notification-service
+
+up-pdf:
+	@echo "Starting PDF service..."
+	docker compose -p instrlabs up -d --build pdf-service
+
+up-product:
+	@echo "Starting product service..."
+	docker compose -p instrlabs up -d --build product-service
+
+down:
+	@echo "Stopping all services..."
+	docker compose -p instrlabs down
 
 # Clean up images
 clean:

@@ -1,7 +1,7 @@
 package internal
 
 import (
-	initx "github.com/instrlabs/shared/init"
+	"github.com/instrlabs/shared/functionx"
 	"github.com/joho/godotenv"
 )
 
@@ -30,29 +30,29 @@ func LoadConfig() *Config {
 	_ = godotenv.Load()
 
 	return &Config{
-		Environment: initx.GetEnv("ENVIRONMENT", ""),
-		Port:        initx.GetEnv("PORT", ""),
+		Environment: functionx.GetEnvString("ENVIRONMENT", ""),
+		Port:        functionx.GetEnvString("PORT", ""),
 
-		MongoURI: initx.GetEnv("MONGO_URI", ""),
-		MongoDB:  initx.GetEnv("MONGO_DB", ""),
+		MongoURI: functionx.GetEnvString("MONGO_URI", ""),
+		MongoDB:  functionx.GetEnvString("MONGO_DB", ""),
 
-		JWTSecret:          initx.GetEnv("JWT_SECRET", ""),
-		TokenExpiryHours:   initx.GetEnvInt("TOKEN_EXPIRY_HOURS", 1),
-		RefreshExpiryHours: initx.GetEnvInt("REFRESH_EXPIRY_HOURS", 720),
+		JWTSecret:          functionx.GetEnvString("JWT_SECRET", ""),
+		TokenExpiryHours:   functionx.GetEnvInt("TOKEN_EXPIRY_HOURS", 1),
+		RefreshExpiryHours: functionx.GetEnvInt("REFRESH_EXPIRY_HOURS", 720),
 
-		SMTPHost:     initx.GetEnv("SMTP_HOST", ""),
-		SMTPPort:     initx.GetEnv("SMTP_PORT", ""),
-		SMTPUsername: initx.GetEnv("SMTP_USERNAME", ""),
-		SMTPPassword: initx.GetEnv("SMTP_PASSWORD", ""),
-		EmailFrom:    initx.GetEnv("EMAIL_FROM", ""),
+		SMTPHost:     functionx.GetEnvString("SMTP_HOST", ""),
+		SMTPPort:     functionx.GetEnvString("SMTP_PORT", ""),
+		SMTPUsername: functionx.GetEnvString("SMTP_USERNAME", ""),
+		SMTPPassword: functionx.GetEnvString("SMTP_PASSWORD", ""),
+		EmailFrom:    functionx.GetEnvString("EMAIL_FROM", ""),
 
-		GoogleClientID:     initx.GetEnv("GOOGLE_CLIENT_ID", ""),
-		GoogleClientSecret: initx.GetEnv("GOOGLE_CLIENT_SECRET", ""),
-		GoogleRedirectUrl:  initx.GetEnv("GOOGLE_REDIRECT_URL", ""),
+		GoogleClientID:     functionx.GetEnvString("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret: functionx.GetEnvString("GOOGLE_CLIENT_SECRET", ""),
+		GoogleRedirectUrl:  functionx.GetEnvString("GOOGLE_REDIRECT_URL", ""),
 
-		ApiUrl: initx.GetEnv("API_URL", ""),
-		WebUrl: initx.GetEnv("WEB_URL", ""),
+		ApiUrl: functionx.GetEnvString("API_URL", ""),
+		WebUrl: functionx.GetEnvString("WEB_URL", ""),
 
-		PinEnabled: initx.GetEnvBool("PIN_ENABLED", false),
+		PinEnabled: functionx.GetEnvBool("PIN_ENABLED", false),
 	}
 }

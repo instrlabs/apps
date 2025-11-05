@@ -4,26 +4,27 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/instrlabs/auth-service/internal"
-	initx "github.com/instrlabs/shared/init"
+	"github.com/instrlabs/shared/initx"
+	"github.com/instrlabs/shared/middlewarex"
 )
 
 func main() {
 	cfg := internal.LoadConfig()
 
-	mongo := initx.NewMongo(&initx.MongoConfig{MongoURI: cfg.MongoURI, MongoDB: cfg.MongoDB})
-	defer mongo.Close()
+	client, db := initx.NewMongo()
+	defer initx.CloseMongo(client)
 
-	userRepo := internal.NewUserRepository(mongo)
-	sessionRepo := internal.NewSessionRepository(mongo)
+	userRepo := internal.NewUserRepository(db)
+	sessionRepo := internal.NewUserSessionRepository(db)
 	userHandler := internal.NewUserHandler(cfg, userRepo, sessionRepo)
 
 	app := fiber.New(fiber.Config{})
 
-	initx.SetupPrometheus(app)
-	initx.SetupLogger(app)
-	initx.SetupServiceSwagger(app, cfg.ApiUrl, "/auth")
-	initx.SetupServiceHealth(app)
-	initx.SetupAuthenticated(app, []string{
+	middlewarex.SetupPrometheus(app)
+	middlewarex.SetupLogger(app)
+	middlewarex.SetupServiceSwagger(app, "/auth")
+	middlewarex.SetupServiceHealth(app)
+	middlewarex.SetupAuthentication(app, []string{
 		"/login",
 		"/refresh",
 		"/send-pin",

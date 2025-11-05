@@ -13,7 +13,7 @@
     },
     "jetbrains": {
       "type": "sse",
-      "url": "http://localhost:64343/sse"
+      "url": "http://localhost:64342/sse"
     }
   }
 }

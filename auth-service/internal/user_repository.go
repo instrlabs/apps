@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2/log"
-	initx "github.com/instrlabs/shared/init"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,14 +17,14 @@ import (
 )
 
 type UserRepository struct {
-	db         *initx.Mongo
+	db         *mongo.Database
 	collection *mongo.Collection
 }
 
-func NewUserRepository(db *initx.Mongo) *UserRepository {
+func NewUserRepository(db *mongo.Database) *UserRepository {
 	return &UserRepository{
 		db:         db,
-		collection: db.DB.Collection("users"),
+		collection: db.Collection("users"),
 	}
 }
 
@@ -40,7 +39,6 @@ func (r *UserRepository) Create(user *User) *User {
 		return nil
 	}
 
-	// Ensure username is set and unique
 	if strings.TrimSpace(user.Username) == "" {
 		uname, genErr := r.generateUniqueUsername(ctx, user.Email)
 		if genErr != nil {
@@ -94,91 +92,6 @@ func (r *UserRepository) FindByID(id string) *User {
 	}
 
 	return &user
-}
-
-func (r *UserRepository) FindByRefreshToken(refreshToken string) *User {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var user User
-	err := r.collection.FindOne(ctx, bson.M{
-		"refresh_token": refreshToken,
-	}).Decode(&user)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			log.Warn("Refresh token not found")
-			return nil
-		}
-		log.Errorf("Failed to find user by userId and refresh token: %v", err)
-		return nil
-	}
-
-	// Check if refresh token has expired
-	if user.RefreshTokenExpires != nil && !user.RefreshTokenExpires.IsZero() {
-		if time.Now().UTC().After(*user.RefreshTokenExpires) {
-			log.Warn("Refresh token has expired")
-			return nil
-		}
-	}
-
-	return &user
-}
-
-func (r *UserRepository) UpdateRefreshToken(userID string, refreshToken string) error {
-	return r.UpdateRefreshTokenWithExpiry(userID, refreshToken, 7*24*time.Hour) // 7 days default
-}
-
-func (r *UserRepository) UpdateRefreshTokenWithExpiry(userID string, refreshToken string, expiry time.Duration) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	objectID, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		log.Errorf("Invalid user ID %s: %v", userID, err)
-		return err
-	}
-
-	expiresAt := time.Now().UTC().Add(expiry)
-	update := bson.M{
-		"$set": bson.M{
-			"refresh_token":         refreshToken,
-			"refresh_token_expires": expiresAt,
-			"updated_at":            time.Now().UTC(),
-		},
-	}
-
-	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	if err != nil {
-		log.Errorf("Failed to update refresh token for user %s: %v", userID, err)
-		return err
-	}
-	return nil
-}
-
-func (r *UserRepository) ClearRefreshToken(userID string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	objectID, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		log.Errorf("Invalid user ID %s: %v", userID, err)
-		return err
-	}
-
-	update := bson.M{
-		"$set": bson.M{
-			"refresh_token":         nil,
-			"refresh_token_expires": nil,
-			"updated_at":            time.Now().UTC(),
-		},
-	}
-
-	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	if err != nil {
-		log.Errorf("Failed to clear refresh token for user %s: %v", userID, err)
-		return err
-	}
-	return nil
 }
 
 func (r *UserRepository) FindByGoogleID(googleID string) *User {
@@ -292,7 +205,7 @@ func (r *UserRepository) generateUniqueUsername(ctx context.Context, email strin
 		base = "user"
 	}
 
-	for i := 0; i < 20; i++ { // up to 20 attempts
+	for i := 0; i < 20; i++ {
 		nBig, err := rand.Int(rand.Reader, big.NewInt(10000))
 		if err != nil {
 			return "", err
@@ -308,7 +221,6 @@ func (r *UserRepository) generateUniqueUsername(ctx context.Context, email strin
 			}
 			return "", err
 		}
-		// username exists, try again
 	}
 	return "", fmt.Errorf("unable to generate unique username")
 }

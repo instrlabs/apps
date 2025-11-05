@@ -2,107 +2,153 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Auth Service API",
-    "version": "1.0.0",
-    "description": "Authentication and authorization service providing PIN-based and OAuth 2.0 authentication flows, session management with device binding using IP/User-Agent hashing, JWT token handling, and multi-device logout capabilities",
-    "contact": {
-      "name": "InstructionLabs",
-      "url": "https://instructionlabs.com"
-    }
+    "version": "1.0.0"
   },
-  "servers": [],
   "paths": {
-    "/health": {
-      "get": {
-        "tags": ["health"],
-        "summary": "Service health check",
-        "description": "Returns the health status of the auth service",
-        "responses": {
-          "200": {
-            "description": "Service is healthy",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "example": "ok"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/login": {
       "post": {
-        "summary": "Authenticate user with PIN",
-        "description": "Authenticates a user with email and 6-digit PIN. Creates a new session with device binding (IP + User-Agent hash). Returns JWT access token and refresh token in response body. Device hash is used to detect token theft or hijacking.",
+        "tags": ["UserHandler"],
+        "summary": "User login with email and PIN",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": ["email", "pin"],
-                "properties": {
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "description": "User email address",
-                    "example": "user@example.com"
-                  },
-                  "pin": {
-                    "type": "string",
-                    "minLength": 6,
-                    "maxLength": 6,
-                    "description": "6-digit one-time PIN (received via email)",
-                    "example": "000000"
-                  }
-                }
+                "$ref": "#/components/schemas/LoginRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Login successful. Access and refresh tokens returned in response body.",
+            "description": "Login successful",
             "content": {
               "application/json": {
                 "schema": {
                   "allOf": [
-                    {"$ref": "#/components/schemas/SuccessResponse"},
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
                     {
                       "type": "object",
                       "properties": {
                         "data": {
-                          "$ref": "#/components/schemas/TokenData"
+                          "$ref": "#/components/schemas/LoginResponse"
                         }
                       }
                     }
                   ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Login successful",
+                    "value": {
+                      "message": "Login successful",
+                      "errors": null,
+                      "data": {
+                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "refresh_token": "dGhpcy1pcy1hLXJlZnJlc2gtdG9rZW4...",
+                        "token_type": "Bearer",
+                        "expires_in": 3600
+                      }
+                    }
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request - invalid email, PIN, or credentials",
+            "description": "Bad request - invalid credentials or missing fields",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "invalid_credentials": {
+                    "summary": "Invalid email or pin",
+                    "value": {
+                      "message": "Invalid email or pin",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "email_required": {
+                    "summary": "Email is required",
+                    "value": {
+                      "message": "Email is required",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "pin_required": {
+                    "summary": "Pin is required",
+                    "value": {
+                      "message": "Pin is required",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "invalid_body": {
+                    "summary": "Invalid request body",
+                    "value": {
+                      "message": "Invalid request body",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
           },
           "500": {
-            "description": "Internal server error - session creation or token generation failed",
+            "description": "Error creating session or generating tokens",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "create_session_error": {
+                    "summary": "Error create user session",
+                    "value": {
+                      "message": "Error create user session",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "generate_access_token_error": {
+                    "summary": "Error generate access token",
+                    "value": {
+                      "message": "Error generate access token",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "generate_refresh_token_error": {
+                    "summary": "Error generate refresh token",
+                    "value": {
+                      "message": "Error generate refresh token",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "update_session_error": {
+                    "summary": "Error update user session",
+                    "value": {
+                      "message": "Error update user session",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "internal_error": {
+                    "summary": "Internal server error",
+                    "value": {
+                      "message": "Internal server error",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
@@ -112,36 +158,78 @@
     },
     "/logout": {
       "post": {
-        "summary": "Logout user",
-        "description": "Deactivates the current user session. User must be authenticated. Client should discard stored tokens after receiving this response.",
-        "security": [{"bearerAuth": []}],
+        "tags": ["UserHandler"],
+        "summary": "Logout user from current session",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Logout successful. Client should clear stored tokens.",
+            "description": "Logout successful",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Logout successful",
+                    "value": {
+                      "message": "Logout successful",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
           },
-          "401": {
-            "description": "Unauthorized - user not authenticated",
+          "400": {
+            "description": "Invalid session ID",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "invalid_session": {
+                    "summary": "Invalid session ID",
+                    "value": {
+                      "message": "Invalid session ID",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
           },
           "500": {
-            "description": "Internal server error - session deactivation failed",
+            "description": "Internal server error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "logout_failed": {
+                    "summary": "Failed to logout user",
+                    "value": {
+                      "message": "Failed to logout user",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "internal_error": {
+                    "summary": "Internal server error",
+                    "value": {
+                      "message": "Internal server error",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
@@ -151,63 +239,152 @@
     },
     "/refresh": {
       "post": {
+        "tags": ["UserHandler"],
         "summary": "Refresh access token",
-        "description": "Issues a new access token using the refresh token. Validates device binding - if device hash doesn't match (IP or User-Agent changed), tokens are invalidated and error is returned. This detects token theft. New access and refresh tokens are returned in response body.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": ["refresh_token"],
-                "properties": {
-                  "refresh_token": {
-                    "type": "string",
-                    "description": "Refresh token from previous login or refresh response",
-                    "example": "dGhpc2lzYXJlZnJlc2h0b2tlbg"
-                  }
-                }
+                "$ref": "#/components/schemas/RefreshTokenRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Token refreshed successfully. New access and refresh tokens returned in response body.",
+            "description": "Token refreshed successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "allOf": [
-                    {"$ref": "#/components/schemas/SuccessResponse"},
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
                     {
                       "type": "object",
                       "properties": {
                         "data": {
-                          "$ref": "#/components/schemas/TokenData"
+                          "$ref": "#/components/schemas/LoginResponse"
                         }
                       }
                     }
                   ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Token refreshed successfully",
+                    "value": {
+                      "message": "Token refreshed successfully",
+                      "errors": null,
+                      "data": {
+                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "refresh_token": "dGhpcy1pcy1hLXJlZnJlc2gtdG9rZW4...",
+                        "token_type": "Bearer",
+                        "expires_in": 3600
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or missing refresh token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "missing_token": {
+                    "summary": "Refresh token is required",
+                    "value": {
+                      "message": "Refresh token is required",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "invalid_body": {
+                    "summary": "Invalid request body",
+                    "value": {
+                      "message": "Invalid request body",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
           },
           "401": {
-            "description": "Unauthorized - invalid refresh token or device hash mismatch (token theft detected)",
+            "description": "Invalid refresh token or device mismatch",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "invalid_token": {
+                    "summary": "Invalid token",
+                    "value": {
+                      "message": "Invalid token",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "user_not_found": {
+                    "summary": "User not found",
+                    "value": {
+                      "message": "User not found",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
           },
           "500": {
-            "description": "Internal server error - token generation failed",
+            "description": "Error generating tokens or updating session",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "generate_access_token_error": {
+                    "summary": "Error generate access token",
+                    "value": {
+                      "message": "Error generate access token",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "generate_refresh_token_error": {
+                    "summary": "Error generate refresh token",
+                    "value": {
+                      "message": "Error generate refresh token",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "update_session_error": {
+                    "summary": "Error update user session",
+                    "value": {
+                      "message": "Error update user session",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "internal_error": {
+                    "summary": "Internal server error",
+                    "value": {
+                      "message": "Internal server error",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
@@ -217,136 +394,99 @@
     },
     "/send-pin": {
       "post": {
-        "summary": "Send one-time PIN",
-        "description": "Sends a 6-digit PIN to the user's email address. If the email is not registered, a new user account is created automatically. PIN expires after 10 minutes. If PIN_ENABLED environment variable is false, returns success but uses fixed PIN '000000' for testing.",
+        "tags": ["UserHandler"],
+        "summary": "Send PIN to user email",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": ["email"],
-                "properties": {
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "description": "Email address to send PIN to",
-                    "example": "user@example.com"
-                  }
-                }
+                "$ref": "#/components/schemas/SendPinRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "PIN sent successfully (or would be sent in production with PIN_ENABLED=true)",
+            "description": "PIN sent successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "PIN sent",
+                    "value": {
+                      "message": "PIN sent",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request - email is required or invalid",
+            "description": "Email is required",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "email_required": {
+                    "summary": "Email is required",
+                    "value": {
+                      "message": "Email is required",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "invalid_body": {
+                    "summary": "Invalid request body",
+                    "value": {
+                      "message": "Invalid request body",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
           },
           "500": {
-            "description": "Internal server error - email sending or user creation failed",
+            "description": "Error creating user account or setting PIN",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/google": {
-      "get": {
-        "summary": "Initiate Google OAuth login",
-        "description": "Redirects user to Google's OAuth 2.0 consent screen. After user authorizes, Google redirects back to /google/callback endpoint.",
-        "responses": {
-          "302": {
-            "description": "Redirect to Google OAuth consent screen",
-            "headers": {
-              "Location": {
-                "description": "Google OAuth authorization URL",
-                "schema": {
-                  "type": "string",
-                  "format": "uri",
-                  "example": "https://accounts.google.com/o/oauth2/v2/auth?..."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/google/callback": {
-      "get": {
-        "summary": "Handle Google OAuth callback",
-        "description": "Processes the OAuth authorization code from Google. Exchanges code for user info, creates or updates user account, creates a new session with device binding, and redirects to frontend with tokens as URL parameters.",
-        "parameters": [
-          {
-            "name": "code",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "OAuth authorization code from Google"
-          },
-          {
-            "name": "state",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "description": "State parameter for CSRF protection (generated during /google request)"
-          }
-        ],
-        "responses": {
-          "302": {
-            "description": "Redirect to frontend with tokens as URL parameters",
-            "headers": {
-              "Location": {
-                "description": "Frontend URL with tokens as query parameters: ?access_token=...&refresh_token=...&token_type=Bearer&expires_in=3600",
-                "schema": {
-                  "type": "string",
-                  "format": "uri",
-                  "example": "http://localhost:3000?access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&refresh_token=dGhpc2lzYXJlZnJlc2h0b2tlbg&token_type=Bearer&expires_in=3600"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request - missing or invalid authorization code",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error - OAuth token exchange or user creation failed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "create_user_error": {
+                    "summary": "Error create user account",
+                    "value": {
+                      "message": "Error create user account",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "set_pin_error": {
+                    "summary": "Error set login PIN",
+                    "value": {
+                      "message": "Error set login PIN",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "internal_error": {
+                    "summary": "Internal server error",
+                    "value": {
+                      "message": "Internal server error",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
@@ -356,17 +496,23 @@
     },
     "/profile": {
       "get": {
+        "tags": ["UserHandler"],
         "summary": "Get user profile",
-        "description": "Returns the authenticated user's profile information including email, username, and registration timestamp.",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "User profile retrieved successfully",
+            "description": "Profile retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "allOf": [
-                    {"$ref": "#/components/schemas/SuccessResponse"},
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
                     {
                       "type": "object",
                       "properties": {
@@ -381,16 +527,245 @@
                       }
                     }
                   ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Profile retrieved successfully",
+                    "value": {
+                      "message": "Profile retrieved successfully",
+                      "errors": null,
+                      "data": {
+                        "user": {
+                          "id": "507f1f77bcf86cd799439011",
+                          "email": "user@example.com",
+                          "registered_at": "2023-01-01T00:00:00Z",
+                          "created_at": "2023-01-01T00:00:00Z",
+                          "updated_at": "2023-01-01T00:00:00Z"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "invalid_request": {
+                    "summary": "Invalid request parameters",
+                    "value": {
+                      "message": "Invalid request body",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
           },
           "401": {
-            "description": "Unauthorized - user not authenticated or user not found",
+            "description": "Unauthorized - user not found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "user_not_found": {
+                    "summary": "User not found",
+                    "value": {
+                      "message": "User not found",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "internal_error": {
+                    "summary": "Internal server error",
+                    "value": {
+                      "message": "Internal server error",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/google": {
+      "get": {
+        "tags": ["UserHandler"],
+        "summary": "Initiate Google OAuth login",
+        "responses": {
+          "302": {
+            "description": "Redirect to Google OAuth",
+            "headers": {
+              "Location": {
+                "description": "Google OAuth URL",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/google/callback": {
+      "get": {
+        "tags": ["UserHandler"],
+        "summary": "Google OAuth callback",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Authorization code from Google"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to web application with tokens",
+            "headers": {
+              "Location": {
+                "description": "Web application URL with access token parameters",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing authorization code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "missing_code": {
+                    "summary": "Missing authorization code",
+                    "value": {
+                      "message": "Invalid token",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error during Google OAuth process",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "exchange_token_error": {
+                    "summary": "Error exchange authorization code",
+                    "value": {
+                      "message": "Error exchange authorization code",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "get_user_info_error": {
+                    "summary": "Error retrieve user information",
+                    "value": {
+                      "message": "Error retrieve user information",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "parse_user_info_error": {
+                    "summary": "Error parse user information",
+                    "value": {
+                      "message": "Error parse user information",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "create_google_user_error": {
+                    "summary": "Error create Google user",
+                    "value": {
+                      "message": "Error create Google user",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "update_google_id_error": {
+                    "summary": "Error link Google account",
+                    "value": {
+                      "message": "Error link Google account",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "create_session_error": {
+                    "summary": "Error create user session",
+                    "value": {
+                      "message": "Error create user session",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "generate_access_token_error": {
+                    "summary": "Error generate access token",
+                    "value": {
+                      "message": "Error generate access token",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "generate_refresh_token_error": {
+                    "summary": "Error generate refresh token",
+                    "value": {
+                      "message": "Error generate refresh token",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "update_session_error": {
+                    "summary": "Error update user session",
+                    "value": {
+                      "message": "Error update user session",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "internal_error": {
+                    "summary": "Internal server error",
+                    "value": {
+                      "message": "Internal server error",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
@@ -400,26 +775,31 @@
     },
     "/devices": {
       "get": {
-        "summary": "List active device sessions",
-        "description": "Returns all active device sessions for the authenticated user. Each session represents a login from a different device/browser. Includes IP address, last activity timestamp, and creation time.",
-        "security": [{"bearerAuth": []}],
+        "tags": ["UserHandler"],
+        "summary": "Get user devices (sessions)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "User's active device sessions retrieved successfully",
+            "description": "Devices retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "allOf": [
-                    {"$ref": "#/components/schemas/SuccessResponse"},
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
                     {
                       "type": "object",
                       "properties": {
                         "data": {
                           "type": "object",
                           "properties": {
-                            "devices": {
+                            "sessions": {
                               "type": "array",
-                              "description": "List of active sessions",
                               "items": {
                                 "$ref": "#/components/schemas/UserSession"
                               }
@@ -429,26 +809,55 @@
                       }
                     }
                   ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - user not authenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Devices retrieved successfully",
+                    "value": {
+                      "message": "Devices retrieved successfully",
+                      "errors": null,
+                      "data": {
+                        "sessions": [
+                          {
+                            "id": "507f1f77bcf86cd799439011",
+                            "user_id": "507f1f77bcf86cd799439012",
+                            "ip_address": "192.168.1.1",
+                            "is_active": true,
+                            "last_activity_at": "2023-01-01T00:00:00Z",
+                            "created_at": "2023-01-01T00:00:00Z"
+                          }
+                        ]
+                      }
+                    }
+                  }
                 }
               }
             }
           },
           "500": {
-            "description": "Internal server error - failed to retrieve sessions",
+            "description": "Failed to get user session",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "session_error": {
+                    "summary": "Failed to get user session",
+                    "value": {
+                      "message": "Failed to get user session",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "internal_error": {
+                    "summary": "Internal server error",
+                    "value": {
+                      "message": "Internal server error",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
@@ -458,9 +867,13 @@
     },
     "/devices/{sessionId}/revoke": {
       "post": {
-        "summary": "Revoke a specific device session",
-        "description": "Deactivates and revokes a specific device session. The user who owns the session can revoke any of their sessions. After revocation, the device cannot use the revoked session ID anymore.",
-        "security": [{"bearerAuth": []}],
+        "tags": ["UserHandler"],
+        "summary": "Revoke specific device session",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "sessionId",
@@ -469,47 +882,102 @@
             "schema": {
               "type": "string"
             },
-            "description": "Session ID to revoke (base64 URL-safe encoded)",
-            "example": "abc123def456ghi789"
+            "description": "Session ID to revoke"
           }
         ],
         "responses": {
           "200": {
-            "description": "Device session revoked successfully",
+            "description": "Device revoked successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Device revoked successfully",
+                    "value": {
+                      "message": "Device revoked successfully",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
           },
-          "401": {
-            "description": "Unauthorized - user not authenticated",
+          "400": {
+            "description": "Invalid session ID format",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "invalid_session": {
+                    "summary": "Invalid session ID",
+                    "value": {
+                      "message": "Invalid session ID",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
           },
           "404": {
-            "description": "Device session not found for this user",
+            "description": "Device not found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "device_not_found": {
+                    "summary": "Device not found",
+                    "value": {
+                      "message": "Device not found",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
           },
           "500": {
-            "description": "Internal server error - session deactivation failed",
+            "description": "Failed to deactivate session",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "deactivate_error": {
+                    "summary": "Failed to deactivate session",
+                    "value": {
+                      "message": "Failed to deactivate session",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "find_error": {
+                    "summary": "Failed to find user session",
+                    "value": {
+                      "message": "Failed to find user session",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "internal_error": {
+                    "summary": "Internal server error",
+                    "value": {
+                      "message": "Internal server error",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
@@ -519,36 +987,129 @@
     },
     "/devices/revoke-all": {
       "post": {
+        "tags": ["UserHandler"],
         "summary": "Logout from all devices",
-        "description": "Deactivates all active device sessions for the authenticated user. User is logged out from all devices simultaneously. Client should discard all stored tokens after receiving this response.",
-        "security": [{"bearerAuth": []}],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Successfully logged out from all devices. Client should clear all stored tokens.",
+            "description": "Logged out from all devices",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - user not authenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Logged out from all devices",
+                    "value": {
+                      "message": "Logged out from all devices",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
                 }
               }
             }
           },
           "500": {
-            "description": "Internal server error - session clearing failed",
+            "description": "Failed to clear all user sessions",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "clear_sessions_error": {
+                    "summary": "Failed to clear all user sessions",
+                    "value": {
+                      "message": "Failed to clear all user sessions",
+                      "errors": null,
+                      "data": null
+                    }
+                  },
+                  "internal_error": {
+                    "summary": "Internal server error",
+                    "value": {
+                      "message": "Internal server error",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/check": {
+      "get": {
+        "tags": ["UserHandler"],
+        "summary": "Check authentication status",
+        "responses": {
+          "200": {
+            "description": "Authentication check",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Authentication check successful",
+                    "value": {
+                      "message": "Authentication check successful",
+                      "errors": null,
+                      "data": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check endpoint",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2023-01-01T00:00:00Z"
+                    },
+                    "service": {
+                      "type": "string",
+                      "example": "auth-service"
+                    }
+                  }
+                },
+                "examples": {
+                  "healthy": {
+                    "summary": "Service is healthy",
+                    "value": {
+                      "status": "ok",
+                      "timestamp": "2023-01-01T00:00:00Z",
+                      "service": "auth-service"
+                    }
+                  }
                 }
               }
             }
@@ -561,20 +1122,18 @@
     "schemas": {
       "SuccessResponse": {
         "type": "object",
-        "description": "Standard success response format",
         "properties": {
           "message": {
             "type": "string",
-            "description": "Human-readable success message",
             "example": "Operation successful"
           },
           "errors": {
-            "type": ["null", "array"],
+            "type": "object",
             "nullable": true,
-            "description": "Array of error objects (null for success)"
+            "example": null
           },
           "data": {
-            "type": ["null", "object"],
+            "type": "object",
             "nullable": true,
             "description": "Response payload (null if no data)"
           }
@@ -583,141 +1142,144 @@
       },
       "ErrorResponse": {
         "type": "object",
-        "description": "Standard error response format",
         "properties": {
           "message": {
             "type": "string",
-            "description": "Human-readable error message",
             "example": "An error occurred"
           },
           "errors": {
-            "type": ["null", "array"],
+            "type": "object",
             "nullable": true,
-            "items": {
-              "type": "object"
-            },
-            "description": "Array of specific error details"
+            "description": "Response errors (null if no errors)"
           },
           "data": {
-            "type": ["null", "object"],
+            "type": "object",
             "nullable": true,
-            "description": "Additional error context (always null for errors)"
+            "example": null
           }
         },
         "required": ["message", "errors", "data"]
       },
-      "TokenData": {
-        "type": "object",
-        "description": "Authentication tokens returned in response body",
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "description": "JWT access token for authenticating API requests",
-            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-          },
-          "refresh_token": {
-            "type": "string",
-            "description": "Refresh token for obtaining new access tokens",
-            "example": "dGhpc2lzYXJlZnJlc2h0b2tlbg"
-          },
-          "token_type": {
-            "type": "string",
-            "description": "Token type (always Bearer)",
-            "example": "Bearer"
-          },
-          "expires_in": {
-            "type": "integer",
-            "description": "Access token expiry time in seconds",
-            "example": 3600
-          }
-        },
-        "required": ["access_token", "refresh_token", "token_type", "expires_in"]
-      },
       "User": {
         "type": "object",
-        "description": "User profile object returned by /profile endpoint",
         "properties": {
           "id": {
             "type": "string",
-            "description": "MongoDB ObjectID",
             "example": "507f1f77bcf86cd799439011"
+          },
+          "username": {
+            "type": "string",
+            "example": "johndoe"
           },
           "email": {
             "type": "string",
             "format": "email",
-            "description": "User's email address",
             "example": "user@example.com"
-          },
-          "username": {
-            "type": "string",
-            "description": "User's username (optional)",
-            "example": "johndoe"
           },
           "registered_at": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 timestamp of when user completed registration",
-            "example": "2024-01-15T10:30:00Z"
+            "example": "2023-01-01T00:00:00Z"
           },
           "created_at": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 timestamp of user account creation",
-            "example": "2024-01-15T08:00:00Z"
+            "example": "2023-01-01T00:00:00Z"
           },
           "updated_at": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 timestamp of last profile update",
-            "example": "2024-01-15T10:30:00Z"
+            "example": "2023-01-01T00:00:00Z"
           }
-        },
-        "required": ["id", "email", "created_at", "updated_at"]
+        }
       },
       "UserSession": {
         "type": "object",
-        "description": "Active user device session for multi-device logout",
         "properties": {
           "id": {
             "type": "string",
-            "description": "MongoDB ObjectID of session document",
-            "example": "507f1f77bcf86cd799439012"
+            "example": "507f1f77bcf86cd799439011"
           },
           "user_id": {
             "type": "string",
-            "description": "MongoDB ObjectID of user who owns this session",
-            "example": "507f1f77bcf86cd799439011"
-          },
-          "session_id": {
-            "type": "string",
-            "description": "Unique session identifier (base64 URL-safe encoded)",
-            "example": "abc123def456ghi789jkl012"
+            "example": "507f1f77bcf86cd799439012"
           },
           "ip_address": {
             "type": "string",
-            "format": "ipv4",
-            "description": "Client IP address for this session",
-            "example": "192.168.1.100"
+            "example": "192.168.1.1"
           },
           "is_active": {
             "type": "boolean",
-            "description": "Whether session is currently active",
             "example": true
           },
           "last_activity_at": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 timestamp of last API request using this session",
-            "example": "2024-01-15T14:25:30Z"
+            "example": "2023-01-01T00:00:00Z"
           },
           "created_at": {
             "type": "string",
             "format": "date-time",
-            "description": "ISO 8601 timestamp of session creation (login time)",
-            "example": "2024-01-15T10:30:00Z"
+            "example": "2023-01-01T00:00:00Z"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "pin": {
+            "type": "string",
+            "example": "123456"
           }
         },
-        "required": ["id", "user_id", "session_id", "ip_address", "is_active", "created_at"]
+        "required": ["email", "pin"]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "refresh_token": {
+            "type": "string",
+            "example": "dGhpcy1pcy1hLXJlZnJlc2gtdG9rZW4..."
+          },
+          "token_type": {
+            "type": "string",
+            "example": "Bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "example": 3600
+          }
+        }
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "example": "dGhpcy1pcy1hLXJlZnJlc2gtdG9rZW4..."
+          }
+        },
+        "required": ["refresh_token"]
+      },
+      "SendPinRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          }
+        },
+        "required": ["email"]
       }
     },
     "securitySchemes": {
