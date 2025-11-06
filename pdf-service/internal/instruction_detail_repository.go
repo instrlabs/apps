@@ -2,9 +2,9 @@ package internal
 
 import (
 	"context"
-	"log"
 	"time"
 
+	"github.com/gofiber/fiber/v2/log"
 	initx "github.com/instrlabs/shared/init"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -35,7 +35,7 @@ func (r *InstructionDetailRepository) CreateMany(details []InstructionDetail) ([
 
 	_, err := r.collection.InsertMany(ctx, docs)
 	if err != nil {
-		log.Printf("Failed to create instruction details: %v", err)
+		log.Errorf("Failed to create instruction details: %v", err)
 		return nil, err
 	}
 
@@ -52,7 +52,7 @@ func (r *InstructionDetailRepository) GetByID(id primitive.ObjectID) (*Instructi
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
-		log.Printf("Failed to get instruction detail by ID %s: %v", id.Hex(), err)
+		log.Errorf("Failed to get instruction detail by ID %s: %v", id.Hex(), err)
 		return nil, err
 	}
 
@@ -65,14 +65,14 @@ func (r *InstructionDetailRepository) ListByInstruction(instructionID primitive.
 
 	cursor, err := r.collection.Find(ctx, bson.M{"instruction_id": instructionID})
 	if err != nil {
-		log.Printf("Failed to list instruction details for instruction %s: %v", instructionID.Hex(), err)
+		log.Errorf("Failed to list instruction details for instruction %s: %v", instructionID.Hex(), err)
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
 	var details []InstructionDetail
 	if err := cursor.All(ctx, &details); err != nil {
-		log.Printf("Failed to decode instruction details: %v", err)
+		log.Errorf("Failed to decode instruction details: %v", err)
 		return nil, err
 	}
 
@@ -92,7 +92,7 @@ func (r *InstructionDetailRepository) UpdateStatus(id primitive.ObjectID, status
 
 	_, err := r.collection.UpdateOne(ctx, bson.M{"_id": id}, update)
 	if err != nil {
-		log.Printf("Failed to update status for instruction detail %s: %v", id.Hex(), err)
+		log.Errorf("Failed to update status for instruction detail %s: %v", id.Hex(), err)
 		return err
 	}
 
@@ -113,7 +113,7 @@ func (r *InstructionDetailRepository) UpdateStatusAndSize(id primitive.ObjectID,
 
 	_, err := r.collection.UpdateOne(ctx, bson.M{"_id": id}, update)
 	if err != nil {
-		log.Printf("Failed to update status and file size for instruction detail %s: %v", id.Hex(), err)
+		log.Errorf("Failed to update status and file size for instruction detail %s: %v", id.Hex(), err)
 		return err
 	}
 
@@ -133,14 +133,14 @@ func (r *InstructionDetailRepository) ListOlderThan(olderThan time.Time) ([]Inst
 
 	cursor, err := r.collection.Find(ctx, filter)
 	if err != nil {
-		log.Printf("Failed to list files older than %v: %v", olderThan, err)
+		log.Errorf("Failed to list files older than %v: %v", olderThan, err)
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
 	var details []InstructionDetail
 	if err := cursor.All(ctx, &details); err != nil {
-		log.Printf("Failed to decode older files: %v", err)
+		log.Errorf("Failed to decode older files: %v", err)
 		return nil, err
 	}
 
@@ -160,14 +160,14 @@ func (r *InstructionDetailRepository) ListPendingUpdatedBefore(before time.Time)
 
 	cursor, err := r.collection.Find(ctx, filter)
 	if err != nil {
-		log.Printf("Failed to list stale pending files: %v", err)
+		log.Errorf("Failed to list stale pending files: %v", err)
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
 	var details []InstructionDetail
 	if err := cursor.All(ctx, &details); err != nil {
-		log.Printf("Failed to decode stale pending files: %v", err)
+		log.Errorf("Failed to decode stale pending files: %v", err)
 		return nil, err
 	}
 
@@ -197,7 +197,7 @@ func (r *InstructionDetailRepository) MarkCleaned(ids []primitive.ObjectID) erro
 
 	_, err := r.collection.UpdateMany(ctx, filter, update)
 	if err != nil {
-		log.Printf("Failed to mark files as cleaned: %v", err)
+		log.Errorf("Failed to mark files as cleaned: %v", err)
 		return err
 	}
 
@@ -212,14 +212,14 @@ func (r *InstructionDetailRepository) ListUncleaned() ([]InstructionDetail, erro
 
 	cursor, err := r.collection.Find(ctx, filter)
 	if err != nil {
-		log.Printf("Failed to list uncleaned files: %v", err)
+		log.Errorf("Failed to list uncleaned files: %v", err)
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
 	var details []InstructionDetail
 	if err := cursor.All(ctx, &details); err != nil {
-		log.Printf("Failed to decode uncleaned files: %v", err)
+		log.Errorf("Failed to decode uncleaned files: %v", err)
 		return nil, err
 	}
 

@@ -457,13 +457,62 @@ All Go services should use consistent response format:
 
 ### Logging Standards
 
-Use structured logging with consistent fields:
+All services use Fiber's built-in logger for simple message-based logging:
 
 ```go
-// Go logging
-log.Infof("Request completed: method=%s path=%s status=%d duration=%s",
-    c.Method(), c.Path(), c.Response().StatusCode(), time.Since(start))
+import "github.com/gofiber/fiber/v2/log"
 ```
+
+#### Available Log Methods
+
+```go
+// Simple info messages
+log.Info("Server started successfully")
+
+// Formatted info with values
+log.Infof("User logged in successfully: %s", email)
+
+// Warnings
+log.Warn("Invalid token provided")
+log.Warnf("Rate limit exceeded for IP: %s", ipAddress)
+
+// Errors
+log.Error("Failed to connect to database")
+log.Errorf("Failed to create session: %v", err)
+
+// Fatal errors (exits the application)
+log.Fatal("Unable to start server")
+log.Fatalf("Failed to load config: %v", err)
+```
+
+#### Real Examples from Services
+
+```go
+// Auth Service - function context prefix pattern
+log.Info("Login: Processing login request")
+log.Infof("Login: Attempting to login user with email: %s", input.Email)
+log.Errorf("Login: Failed to create session: %v", err)
+log.Warnf("Login: Invalid request body: %v", err)
+
+// PDF Service - operation logging
+log.Errorf("Failed to compress PDF: %v", err)
+log.Infof("PDF compressed successfully: %d bytes -> %d bytes", originalSize, compressedSize)
+
+// Notification Service - state tracking
+log.Infof("New SSE client connected for user %s. Total clients: %d", userId, totalClients)
+log.Infof("SSE client disconnected for user %s", userId)
+```
+
+#### HTTP Request Logging Middleware
+
+HTTP requests are automatically logged in JSON format via middleware:
+
+```go
+// Setup in main.go
+middlewarex.SetupLogger(app)
+```
+
+This logs all HTTP requests with timestamp, method, path, status, latency, and user agent.
 
 ## API Documentation Standards
 

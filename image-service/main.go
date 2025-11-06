@@ -5,7 +5,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
-	initx "github.com/instrlabs/shared/init"
+	"github.com/instrlabs/shared/initx"
+	"github.com/instrlabs/shared/middlewarex"
 	natsgo "github.com/nats-io/nats.go"
 
 	"github.com/instrlabs/image-service/internal"
@@ -13,40 +14,30 @@ import (
 
 func main() {
 	cfg := internal.LoadConfig()
+	s3 := initx.NewS3()
 
-	s3 := initx.NewS3(&initx.S3Config{
-		S3Endpoint:  cfg.S3Endpoint,
-		S3AccessKey: cfg.S3AccessKey,
-		S3SecretKey: cfg.S3SecretKey,
-		S3UseSSL:    cfg.S3UseSSL,
-		S3Region:    cfg.S3Region,
-		S3Bucket:    cfg.S3Bucket,
-	})
-	mongo := initx.NewMongo(&initx.MongoConfig{
-		MongoURI: cfg.MongoURI,
-		MongoDB:  cfg.MongoDB,
-	})
-	defer mongo.Close()
+	mongoClient, mongoDB := initx.NewMongo()
+	defer initx.CloseMongo(mongoClient)
+
 	nats := initx.NewNats(cfg.NatsURI)
-	defer nats.Close()
+	defer initx.CloseNats(nats)
 
 	app := fiber.New(fiber.Config{})
 
-	initx.SetupPrometheus(app)
-	initx.SetupLogger(app)
-	initx.SetupServiceSwagger(app, cfg.ApiUrl, "/images")
-	initx.SetupServiceHealth(app)
-	initx.SetupAuthenticated(app, []string{})
+	middlewarex.SetupPrometheus(app)
+	middlewarex.SetupServiceHealth(app)
+	middlewarex.SetupServiceSwagger(app, "/images")
+	middlewarex.SetupAuthentication(app, []string{})
 
-	instrRepo := internal.NewInstructionRepository(mongo)
-	detailRepo := internal.NewInstructionDetailRepository(mongo)
+	instrRepo := internal.NewInstructionRepository(mongoDB)
+	detailRepo := internal.NewInstructionDetailRepository(mongoDB)
 
 	imageSvc := internal.NewImageService()
 	productClient := internal.NewProductClient(cfg.ProductServiceURL)
 
 	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, detailRepo, productClient, imageSvc)
 
-	_, _ = nats.Conn.Subscribe(cfg.NatsSubjectImageRequests, func(m *natsgo.Msg) {
+	_, _ = nats.Subscribe(cfg.NatsSubjectImageRequests, func(m *natsgo.Msg) {
 		instrHandler.RunInstructionMessage(m.Data)
 	})
 
@@ -54,23 +45,15 @@ func main() {
 		ticker := time.NewTicker(30 * time.Minute)
 		defer ticker.Stop()
 		for range ticker.C {
-			err := instrHandler.CleanInstruction()
-			if err != nil {
-				log.Errorf("CleanInstruction: %v", err)
-			}
+			instrHandler.CleanInstruction()
 		}
 	}()
 
 	app.Post("/instructions", instrHandler.CreateInstruction)
-	app.Post("/instructions/:id/details", instrHandler.CreateInstructionDetails)
-
-	app.Get("/instructions/:id/details/:detailId", instrHandler.GetInstructionDetail)
-	app.Get("/instructions/:id/details/:detailId/file", instrHandler.GetInstructionDetailFile)
-	app.Get("/instructions", instrHandler.ListInstructions)
+	app.Post("/instructions/:id", instrHandler.CreateInstructionDetails)
 	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
-	app.Get("/instructions/:id/details", instrHandler.GetInstructionDetails)
-
-	app.Get("/files", instrHandler.ListUncleanedFiles)
+	app.Get("/instructions/:id/:detail_id", instrHandler.GetInstructionDetail)
+	app.Get("/instructions/:id/:detail_id/file", instrHandler.GetInstructionDetailFile)
 
 	log.Fatal(app.Listen(cfg.Port))
 }

@@ -2,47 +2,62 @@ package internal
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/jpeg"
 	"image/png"
+	"log"
 
 	"github.com/disintegration/imaging"
-	"github.com/gofiber/fiber/v2/log"
 )
 
 type ImageService struct{}
 
 func NewImageService() *ImageService { return &ImageService{} }
 
+func (s *ImageService) Run(productKey string, file []byte) ([]byte, error) {
+	switch productKey {
+	case "images/compress":
+		return s.Compress(file)
+	default:
+		return nil, fmt.Errorf("unsupported product key: %s", productKey)
+	}
+}
+
 func (s *ImageService) Compress(file []byte) ([]byte, error) {
 	img, err := imaging.Decode(bytes.NewReader(file))
 	if err != nil {
-		log.Errorf("Failed to decode image: %v", err)
+		log.Printf("Failed to decode image: %v", err)
 		return nil, err
 	}
 
 	var buf bytes.Buffer
 	format := detectFormat(file)
+	log.Printf("Compressing image: format=%s size=%d", format, len(file))
+
 	switch format {
 	case "png":
 		enc := png.Encoder{CompressionLevel: png.BestCompression}
 		if err := enc.Encode(&buf, img); err != nil {
-			log.Errorf("Failed to encode image: %v", err)
+			log.Printf("Failed to encode PNG: %v", err)
 			return nil, err
 		}
 	case "jpeg", "jpg":
 		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 60}); err != nil {
-			log.Errorf("Failed to encode image: %v", err)
+			log.Printf("Failed to encode JPEG: %v", err)
 			return nil, err
 		}
 	default:
 		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 60}); err != nil {
-			log.Errorf("Failed to encode image: %v", err)
+			log.Printf("Failed to encode image (default JPEG): %v", err)
 			return nil, err
 		}
 	}
 
 	out := buf.Bytes()
+	log.Printf("Image compressed successfully: originalSize=%d compressedSize=%d ratio=%.2f",
+		len(file), len(out), float64(len(out))/float64(len(file)))
+
 	return out, nil
 }
 

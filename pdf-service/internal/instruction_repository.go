@@ -6,6 +6,7 @@ import (
 	"time"
 
 	initx "github.com/instrlabs/shared/init"
+	"github.com/instrlabs/shared/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -22,7 +23,7 @@ func NewInstructionRepository(db *initx.Mongo) *InstructionRepository {
 	}
 }
 
-func (r *InstructionRepository) Create(instruction *Instruction) (*Instruction, error) {
+func (r *InstructionRepository) Create(instruction *models.Instruction) (*models.Instruction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -39,11 +40,11 @@ func (r *InstructionRepository) Create(instruction *Instruction) (*Instruction, 
 	return instruction, nil
 }
 
-func (r *InstructionRepository) GetByID(id primitive.ObjectID) (*Instruction, error) {
+func (r *InstructionRepository) GetByID(id primitive.ObjectID) (*models.Instruction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var instruction Instruction
+	var instruction models.Instruction
 	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&instruction)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -56,7 +57,7 @@ func (r *InstructionRepository) GetByID(id primitive.ObjectID) (*Instruction, er
 	return &instruction, nil
 }
 
-func (r *InstructionRepository) ListLatest(userID primitive.ObjectID, limit int64) ([]Instruction, error) {
+func (r *InstructionRepository) ListLatest(userID primitive.ObjectID, limit int64) ([]models.Instruction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -71,7 +72,7 @@ func (r *InstructionRepository) ListLatest(userID primitive.ObjectID, limit int6
 	}
 	defer cursor.Close(ctx)
 
-	var instructions []Instruction
+	var instructions []models.Instruction
 	if err := cursor.All(ctx, &instructions); err != nil {
 		log.Printf("Failed to decode instructions: %v", err)
 		return nil, err
