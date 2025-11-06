@@ -4,7 +4,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/instrlabs/notification-service/internal"
-	initx "github.com/instrlabs/shared/init"
+	"github.com/instrlabs/shared/initx"
+	"github.com/instrlabs/shared/middlewarex"
 	natsgo "github.com/nats-io/nats.go"
 )
 
@@ -16,17 +17,17 @@ func main() {
 
 	sseService := internal.NewSSEService(cfg)
 
-	_, _ = natsSrv.Conn.Subscribe(cfg.NatsSubjectNotificationsSSE, func(m *natsgo.Msg) {
+	_, _ = natsSrv.Subscribe(cfg.NatsSubjectNotificationsSSE, func(m *natsgo.Msg) {
 		sseService.NotificationUser(m.Data)
 	})
 
 	app := fiber.New(fiber.Config{})
 
-	initx.SetupPrometheus(app)
-	initx.SetupServiceHealth(app)
-	initx.SetupLogger(app)
+	middlewarex.SetupPrometheus(app)
+	middlewarex.SetupServiceHealth(app)
+	middlewarex.SetupLogger(app)
 	internal.SetupMiddleware(app, cfg)
-	initx.SetupAuthenticated(app, []string{})
+	middlewarex.SetupAuthentication(app, []string{})
 
 	app.Get("/sse", sseService.HandleSSE)
 

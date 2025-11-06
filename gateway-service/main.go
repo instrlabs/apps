@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/instrlabs/gateway-service/internal"
-	initx "github.com/instrlabs/shared/init"
+	"github.com/instrlabs/shared/middlewarex"
 )
 
 func main() {
@@ -12,9 +12,9 @@ func main() {
 
 	app := fiber.New(fiber.Config{})
 
-	initx.SetupPrometheus(app)
-	initx.SetupServiceHealth(app)
-	initx.SetupLogger(app)
+	middlewarex.SetupPrometheus(app)
+	middlewarex.SetupServiceHealth(app)
+	middlewarex.SetupLogger(app)
 	internal.SetupGatewaySwaggerUI(app)
 	internal.SetupMiddleware(app, cfg)
 	internal.SetupGatewayRoutes(app, cfg)
