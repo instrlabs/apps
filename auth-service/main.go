@@ -23,14 +23,6 @@ func main() {
 	middlewarex.SetupLogger(app)
 	middlewarex.SetupServiceSwagger(app, "/auth")
 	middlewarex.SetupServiceHealth(app)
-	middlewarex.SetupAuthentication(app, []string{
-		"/login",
-		"/refresh",
-		"/send-pin",
-		"/check",
-		"/google",
-		"/google/callback",
-	})
 
 	app.Post("/login", userHandler.Login)
 	app.Post("/logout", userHandler.Logout)

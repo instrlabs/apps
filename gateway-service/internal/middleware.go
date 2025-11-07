@@ -53,7 +53,7 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.Origins,
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
-		AllowHeaders:     "content-type, cookie, authorization",
+		AllowHeaders:     "content-type, cookie, authorization, x-guest-id",
 		AllowCredentials: true,
 	}))
 
@@ -72,7 +72,7 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		return c.Next()
 	})
 
-	// Authentication middleware
+	// Authentication middleware (optional for image-service)
 	app.Use(func(c *fiber.Ctx) error {
 		var accessToken string
 
@@ -84,9 +84,15 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 			}
 		}
 
-		c.Request().Header.Set("x-user-id", "")
-		c.Request().Header.Set("x-guest-id", "")
+		// Forward guest ID header if present
+		guestID := c.Get("x-guest-id")
+		if guestID != "" {
+			c.Request().Header.Set("x-guest-id", guestID)
+		}
 
+		c.Request().Header.Set("x-user-id", "")
+
+		// Optional authentication: only validate if token is provided
 		if accessToken != "" {
 			info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken)
 			if err != nil {
@@ -99,6 +105,9 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 			}
 
 			c.Request().Header.Set("x-user-id", info.UserID)
+		} else {
+			// No token provided - continue without authentication (guest access)
+			log.Infof("No authentication token provided - allowing guest access")
 		}
 
 		return c.Next()
