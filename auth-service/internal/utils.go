@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2/log"
@@ -12,7 +13,6 @@ import (
 	"github.com/instrlabs/shared/functionx"
 )
 
-// GenerateSixDigitPIN generates a cryptographically secure 6-digit PIN
 func GenerateSixDigitPIN() string {
 	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
 	if err != nil {
@@ -22,16 +22,15 @@ func GenerateSixDigitPIN() string {
 	return fmt.Sprintf("%06d", n.Int64())
 }
 
-func GenerateAccessToken(userID, sessionID string) string {
+func GenerateAccessToken(userID string) string {
 	jwtSecret := functionx.GetEnvString("JWT_SECRET", "secret")
 	now := time.Now().UTC()
 	expirationTime := now.Add(1 * time.Hour)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":    userID,
-		"session_id": sessionID,
-		"iat":        now.Unix(),
-		"exp":        expirationTime.Unix(),
+		"user_id": userID,
+		"iat":     now.Unix(),
+		"exp":     expirationTime.Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(jwtSecret))
@@ -50,4 +49,24 @@ func GenerateRefreshToken() string {
 		return ""
 	}
 	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+func GenerateUniqueUsername(email string) (string, error) {
+	base := email
+	if at := strings.Index(email, "@"); at != -1 {
+		base = email[:at]
+	}
+	base = strings.ToLower(strings.TrimSpace(base))
+	if base == "" {
+		base = "user"
+	}
+
+	nBig, err := rand.Int(rand.Reader, big.NewInt(10000))
+	if err != nil {
+		return "", err
+	}
+	suffix := fmt.Sprintf("%04d", nBig.Int64())
+	candidate := fmt.Sprintf("%s%s", base, suffix)
+
+	return candidate, nil
 }

@@ -5,12 +5,14 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2/log"
+	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -67,15 +69,26 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	log.Infof("Login: Attempting to login user with email: %s", input.Email)
-	user := h.userRepo.FindByEmail(input.Email)
-	if user == nil || user.ID.IsZero() {
-		log.Infof("Login: Invalid credentials for email: %s", input.Email)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": ErrInvalidCredentials,
+
+	var user User
+	err := h.userRepo.FindByEmail(input.Email, &user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			log.Infof("Login: User not found for email: %s", input.Email)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": ErrInvalidCredentials,
+				"errors":  nil,
+				"data":    nil,
+			})
+		}
+		log.Errorf("Login: Failed to find user: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": ErrInternalServer,
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
+
 	if !user.ComparePin(input.Pin) {
 		log.Infof("Login: Invalid PIN for email: %s", input.Email)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -86,13 +99,11 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 	}
 
 	_ = h.userRepo.ClearPin(user.ID.Hex())
-	if user.RegisteredAt == nil || user.RegisteredAt.IsZero() {
-		if err := h.userRepo.SetRegisteredAt(user.ID.Hex()); err != nil {
-			log.Errorf("Login: Failed to set RegisteredAt for user %s: %v", user.ID.Hex(), err)
-		}
+	if user.RegisteredAt == nil {
+		_ = h.userRepo.SetRegisteredAt(user.ID.Hex())
 	}
 
-	accessToken := GenerateAccessToken(user.ID.Hex(), "")
+	accessToken := GenerateAccessToken(user.ID.Hex())
 	refreshToken := GenerateRefreshToken()
 
 	if err := h.userRepo.AddRefreshToken(user.ID.Hex(), refreshToken); err != nil {
@@ -146,7 +157,8 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 	refreshToken := input.RefreshToken
 	log.Infof("RefreshToken: Refresh token received from request body")
 
-	if !h.userRepo.ValidateRefreshToken(userId, refreshToken) {
+	err := h.userRepo.ValidateRefreshToken(userId, refreshToken)
+	if err != nil {
 		log.Warn("RefreshToken: Invalid refresh token")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrInvalidToken,
@@ -155,8 +167,9 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
-	user := h.userRepo.FindByID(userId)
-	if user == nil || user.ID.IsZero() {
+	var user User
+	err = h.userRepo.FindByID(userId, &user)
+	if err != nil {
 		log.Warn("RefreshToken: User not found")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrUserNotFound,
@@ -165,7 +178,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
-	newAccessToken := GenerateAccessToken(user.ID.Hex(), "")
+	newAccessToken := GenerateAccessToken(user.ID.Hex())
 	newRefreshToken := GenerateRefreshToken()
 
 	if err := h.userRepo.RemoveRefreshToken(user.ID.Hex(), refreshToken); err != nil {
@@ -289,33 +302,53 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 			"data":    nil,
 		})
 	}
-	user := h.userRepo.FindByGoogleID(googleInfo.ID)
-	if user == nil || user.ID.IsZero() {
-		u2 := h.userRepo.FindByEmail(googleInfo.Email)
-		if u2 == nil || u2.ID.IsZero() {
-			newUser := NewGoogleUser(googleInfo.Email, googleInfo.ID)
-			created := h.userRepo.Create(newUser)
-			if created == nil {
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"message": ErrCreateGoogleUser,
-					"errors":  nil,
-					"data":    nil,
-				})
+	var user User
+	err = h.userRepo.FindByGoogleID(googleInfo.ID, &user)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			var u2 User
+			err := h.userRepo.FindByEmail(googleInfo.Email, &u2)
+			if err != nil {
+				if errors.Is(err, mongo.ErrNoDocuments) {
+					newUser := NewGoogleUser(googleInfo.Email, googleInfo.ID)
+					if err := h.userRepo.Create(newUser); err != nil {
+						log.Errorf("GoogleCallback: Failed to create user: %v", err)
+						return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+							"message": ErrCreateGoogleUser,
+							"errors":  nil,
+							"data":    nil,
+						})
+					}
+					user = *newUser
+				} else {
+					log.Errorf("GoogleCallback: Failed to find user by email: %v", err)
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+						"message": ErrInternalServer,
+						"errors":  nil,
+						"data":    nil,
+					})
+				}
+			} else {
+				user = u2
+				if err := h.userRepo.UpdateGoogleID(user.ID.Hex(), googleInfo.ID); err != nil {
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+						"message": ErrUpdateGoogleID,
+						"errors":  nil,
+						"data":    nil,
+					})
+				}
 			}
-			user = created
 		} else {
-			user = u2
-			if err := h.userRepo.UpdateGoogleID(user.ID.Hex(), googleInfo.ID); err != nil {
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"message": ErrUpdateGoogleID,
-					"errors":  nil,
-					"data":    nil,
-				})
-			}
+			log.Errorf("GoogleCallback: Failed to find user by Google ID: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": ErrInternalServer,
+				"errors":  nil,
+				"data":    nil,
+			})
 		}
 	}
 
-	accessToken := GenerateAccessToken(user.ID.Hex(), "")
+	accessToken := GenerateAccessToken(user.ID.Hex())
 	refreshToken := GenerateRefreshToken()
 
 	if err := h.userRepo.AddRefreshToken(user.ID.Hex(), refreshToken); err != nil {
@@ -343,11 +376,20 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 	log.Info("GetProfile: Processing profile request using locals.userId")
 
 	userId, _ := c.Locals("userId").(string)
-	user := h.userRepo.FindByID(userId)
-	if user == nil || user.ID.IsZero() {
-		log.Infof("GetProfile: User not found for userId %s", userId)
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": ErrUserNotFound,
+	var user User
+	err := h.userRepo.FindByID(userId, &user)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			log.Infof("GetProfile: User not found for userId %s", userId)
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"message": ErrUserNotFound,
+				"errors":  nil,
+				"data":    nil,
+			})
+		}
+		log.Errorf("GetProfile: Failed to find user: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": ErrInternalServer,
 			"errors":  nil,
 			"data":    nil,
 		})
@@ -424,12 +466,24 @@ func (h *UserHandler) SendPin(c *fiber.Ctx) error {
 	}
 
 	log.Infof("SendPin: Sending pin with email: %s", input.Email)
-	user := h.userRepo.FindByEmail(input.Email)
-	if user == nil || user.ID.IsZero() {
-		newUser := NewUser(input.Email)
-		if created := h.userRepo.Create(newUser); created == nil {
+	var user User
+	err := h.userRepo.FindByEmail(input.Email, &user)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			newUser := NewUser(input.Email)
+			if err := h.userRepo.Create(newUser); err != nil {
+				log.Errorf("SendPin: Failed to create user: %v", err)
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"message": ErrCreateUser,
+					"errors":  nil,
+					"data":    nil,
+				})
+			}
+			user = *newUser
+		} else {
+			log.Errorf("SendPin: Failed to find user: %v", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"message": ErrCreateUser,
+				"message": ErrInternalServer,
 				"errors":  nil,
 				"data":    nil,
 			})

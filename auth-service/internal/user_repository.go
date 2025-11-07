@@ -2,17 +2,10 @@ package internal
 
 import (
 	"context"
-	"crypto/rand"
-	"errors"
-	"fmt"
-	"math/big"
-	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2/log"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -28,89 +21,41 @@ func NewUserRepository(db *mongo.Database) *UserRepository {
 	}
 }
 
-func (r *UserRepository) Create(user *User) *User {
+func (r *UserRepository) Create(user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var existingUser User
-	err := r.collection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&existingUser)
-	if err == nil {
-		log.Errorf("User already exists with email %s", user.Email)
-		return nil
-	}
-
-	if strings.TrimSpace(user.Username) == "" {
-		uname, genErr := r.generateUniqueUsername(ctx, user.Email)
-		if genErr != nil {
-			log.Errorf("Failed to generate unique username for %s: %v", user.Email, genErr)
-			return nil
-		}
-		user.Username = uname
-	}
-
-	_, err = r.collection.InsertOne(ctx, user)
-	if err != nil {
-		log.Errorf("Failed to create user: %v", err)
-		return nil
-	}
-
-	return user
+	_, err := r.collection.InsertOne(ctx, user)
+	return err
 }
 
-func (r *UserRepository) FindByEmail(email string) *User {
+func (r *UserRepository) FindByEmail(email string, user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var user User
-	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			log.Warnf("User not found for email: %s", email)
-			return nil
-		}
-		log.Errorf("Failed to find user by email: %v", err)
-		return nil
-	}
-
-	return &user
+	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(user)
+	return err
 }
 
-func (r *UserRepository) FindByID(id string) *User {
+func (r *UserRepository) FindByID(id string, user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var user User
-	objectID, _ := primitive.ObjectIDFromHex(id)
-	err := r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&user)
+	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			log.Warnf("User not found for ID: %s", id)
-			return nil
-		}
-		log.Errorf("Failed to find user by ID: %v", err)
-		return nil
+		return err
 	}
 
-	return &user
+	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(user)
+	return err
 }
 
-func (r *UserRepository) FindByGoogleID(googleID string) *User {
+func (r *UserRepository) FindByGoogleID(googleID string, user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var user User
-	err := r.collection.FindOne(ctx, bson.M{"google_id": googleID}).Decode(&user)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			log.Warnf("Google ID not found for user: %s", googleID)
-			return nil
-		}
-
-		log.Errorf("Failed to find user by Google ID: %v", err)
-		return nil
-	}
-
-	return &user
+	err := r.collection.FindOne(ctx, bson.M{"google_id": googleID}).Decode(user)
+	return err
 }
 
 func (r *UserRepository) UpdateGoogleID(userID string, googleID string) error {
@@ -118,6 +63,10 @@ func (r *UserRepository) UpdateGoogleID(userID string, googleID string) error {
 	defer cancel()
 
 	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return err
+	}
+
 	update := bson.M{
 		"$set": bson.M{
 			"google_id":  googleID,
@@ -126,11 +75,7 @@ func (r *UserRepository) UpdateGoogleID(userID string, googleID string) error {
 	}
 
 	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	if err != nil {
-		log.Errorf("Failed to update google ID for user %s: %v", userID, err)
-		return err
-	}
-	return nil
+	return err
 }
 
 func (r *UserRepository) SetPinWithExpiry(email, hashedPin string) error {
@@ -146,11 +91,7 @@ func (r *UserRepository) SetPinWithExpiry(email, hashedPin string) error {
 		},
 	}
 	_, err := r.collection.UpdateOne(ctx, bson.M{"email": email}, update)
-	if err != nil {
-		log.Errorf("Failed to set PIN for user %s: %v", email, err)
-		return err
-	}
-	return nil
+	return err
 }
 
 func (r *UserRepository) ClearPin(userID string) error {
@@ -159,7 +100,7 @@ func (r *UserRepository) ClearPin(userID string) error {
 
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return errors.New("invalid user ID")
+		return err
 	}
 
 	update := bson.M{
@@ -178,8 +119,12 @@ func (r *UserRepository) SetRegisteredAt(userID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return err
+	}
+
 	t := time.Now().UTC()
-	objectID, _ := primitive.ObjectIDFromHex(userID)
 	update := bson.M{
 		"$set": bson.M{
 			"registered_at": t,
@@ -187,42 +132,8 @@ func (r *UserRepository) SetRegisteredAt(userID string) error {
 		},
 	}
 
-	_, err := r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	if err != nil {
-		log.Errorf("Failed to update registered_at for user %s: %v", userID, err)
-		return err
-	}
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
 	return err
-}
-
-func (r *UserRepository) generateUniqueUsername(ctx context.Context, email string) (string, error) {
-	base := email
-	if at := strings.Index(email, "@"); at != -1 {
-		base = email[:at]
-	}
-	base = strings.ToLower(strings.TrimSpace(base))
-	if base == "" {
-		base = "user"
-	}
-
-	for i := 0; i < 20; i++ {
-		nBig, err := rand.Int(rand.Reader, big.NewInt(10000))
-		if err != nil {
-			return "", err
-		}
-		suffix := fmt.Sprintf("%04d", nBig.Int64())
-		candidate := fmt.Sprintf("%s%s", base, suffix)
-
-		var tmp User
-		err = r.collection.FindOne(ctx, bson.M{"username": candidate}).Decode(&tmp)
-		if err != nil {
-			if errors.Is(err, mongo.ErrNoDocuments) {
-				return candidate, nil
-			}
-			return "", err
-		}
-	}
-	return "", fmt.Errorf("unable to generate unique username")
 }
 
 func (r *UserRepository) AddRefreshToken(userID, token string) error {
@@ -231,7 +142,7 @@ func (r *UserRepository) AddRefreshToken(userID, token string) error {
 
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return errors.New("invalid user ID")
+		return err
 	}
 
 	update := bson.M{
@@ -244,11 +155,7 @@ func (r *UserRepository) AddRefreshToken(userID, token string) error {
 	}
 
 	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	if err != nil {
-		log.Errorf("Failed to add refresh token for user %s: %v", userID, err)
-		return err
-	}
-	return nil
+	return err
 }
 
 func (r *UserRepository) RemoveRefreshToken(userID, token string) error {
@@ -257,7 +164,7 @@ func (r *UserRepository) RemoveRefreshToken(userID, token string) error {
 
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return errors.New("invalid user ID")
+		return err
 	}
 
 	update := bson.M{
@@ -270,20 +177,16 @@ func (r *UserRepository) RemoveRefreshToken(userID, token string) error {
 	}
 
 	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	if err != nil {
-		log.Errorf("Failed to remove refresh token for user %s: %v", userID, err)
-		return err
-	}
-	return nil
+	return err
 }
 
-func (r *UserRepository) ValidateRefreshToken(userID, token string) bool {
+func (r *UserRepository) ValidateRefreshToken(userID, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return false
+		return err
 	}
 
 	var user User
@@ -292,7 +195,7 @@ func (r *UserRepository) ValidateRefreshToken(userID, token string) bool {
 		"refresh_tokens": token,
 	}).Decode(&user)
 
-	return err == nil
+	return err
 }
 
 func (r *UserRepository) ClearAllRefreshTokens(userID string) error {
@@ -301,7 +204,7 @@ func (r *UserRepository) ClearAllRefreshTokens(userID string) error {
 
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return errors.New("invalid user ID")
+		return err
 	}
 
 	update := bson.M{
@@ -312,9 +215,5 @@ func (r *UserRepository) ClearAllRefreshTokens(userID string) error {
 	}
 
 	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	if err != nil {
-		log.Errorf("Failed to clear refresh tokens for user %s: %v", userID, err)
-		return err
-	}
-	return nil
+	return err
 }

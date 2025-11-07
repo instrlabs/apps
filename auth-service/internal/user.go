@@ -22,8 +22,10 @@ type User struct {
 
 func NewUser(email string) *User {
 	now := time.Now().UTC()
+	username, _ := GenerateUniqueUsername(email)
 	return &User{
 		ID:        primitive.NewObjectID(),
+		Username:  username,
 		Email:     email,
 		CreatedAt: now,
 		UpdatedAt: now,

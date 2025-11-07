@@ -4,6 +4,7 @@ package internal
 const (
 	// General errors
 	ErrInvalidRequestBody = "Invalid request body"
+	ErrInternalServer     = "Internal server error"
 
 	// Authentication errors
 	ErrInvalidCredentials = "Invalid email or pin"
