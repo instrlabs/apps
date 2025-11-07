@@ -20,7 +20,7 @@ func main() {
 	middlewarex.SetupPrometheus(app)
 	middlewarex.SetupServiceHealth(app)
 	middlewarex.SetupServiceSwagger(app, "/products")
-	middlewarex.SetupAuthentication(app, []string{})
+	middlewarex.SetupAuthentication(app)
 
 	productRepo := internal.NewProductRepository(mongoDB)
 	productHandler := internal.NewProductHandler(productRepo)

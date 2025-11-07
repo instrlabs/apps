@@ -27,7 +27,7 @@ func main() {
 	middlewarex.SetupPrometheus(app)
 	middlewarex.SetupServiceHealth(app)
 	middlewarex.SetupServiceSwagger(app, "/pdfs")
-	middlewarex.SetupAuthentication(app, []string{})
+	middlewarex.SetupAuthentication(app)
 
 	instrRepo := internal.NewInstructionRepository(mongoDB)
 	detailRepo := internal.NewInstructionDetailRepository(mongoDB)

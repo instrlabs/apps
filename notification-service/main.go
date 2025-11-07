@@ -27,7 +27,7 @@ func main() {
 	middlewarex.SetupServiceHealth(app)
 	middlewarex.SetupLogger(app)
 	internal.SetupMiddleware(app, cfg)
-	middlewarex.SetupAuthentication(app, []string{})
+	middlewarex.SetupAuthentication(app)
 
 	app.Get("/sse", sseService.HandleSSE)
 

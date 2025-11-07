@@ -425,6 +425,7 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 	log.Info("GetProfile: Processing profile request using locals.userId")
 
 	userId, _ := c.Locals("userId").(string)
+
 	var user User
 	err := h.userRepo.FindByID(userId, &user)
 	if err != nil {

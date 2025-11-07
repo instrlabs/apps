@@ -23,6 +23,7 @@ func main() {
 	middlewarex.SetupLogger(app)
 	middlewarex.SetupServiceSwagger(app, "/auth")
 	middlewarex.SetupServiceHealth(app)
+	middlewarex.SetupAuthentication(app)
 
 	app.Post("/login", userHandler.Login)
 	app.Post("/logout", userHandler.Logout)
