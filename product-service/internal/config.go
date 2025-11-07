@@ -1,7 +1,7 @@
 package internal
 
 import (
-	initx "github.com/instrlabs/shared/init"
+	"github.com/instrlabs/shared/functionx"
 	"github.com/joho/godotenv"
 )
 
@@ -22,12 +22,12 @@ func LoadConfig() *Config {
 	_ = godotenv.Load()
 
 	return &Config{
-		Environment: initx.GetEnv("ENVIRONMENT", "development"),
-		Port:        initx.GetEnv("PORT", "3005"),
+		Environment: functionx.GetEnvString("ENVIRONMENT", "development"),
+		Port:        functionx.GetEnvString("PORT", ":3005"),
 
-		MongoURI: initx.GetEnv("MONGO_URI", "mongodb://localhost:27017"),
-		MongoDB:  initx.GetEnv("MONGO_DB", "instrlabs"),
+		MongoURI: functionx.GetEnvString("MONGO_URI", "mongodb://localhost:27017"),
+		MongoDB:  functionx.GetEnvString("MONGO_DB", "instrlabs-apps"),
 
-		ApiUrl: initx.GetEnv("API_URL", "http://localhost:3000"),
+		ApiUrl: functionx.GetEnvString("API_URL", ""),
 	}
 }

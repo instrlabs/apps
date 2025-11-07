@@ -11,7 +11,6 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2/log"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -21,16 +20,14 @@ import (
 )
 
 type UserHandler struct {
-	cfg         *Config
-	userRepo    UserRepositoryInterface
-	sessionRepo UserSessionRepositoryInterface
+	cfg      *Config
+	userRepo UserRepositoryInterface
 }
 
-func NewUserHandler(cfg *Config, userRepo UserRepositoryInterface, sessionRepo UserSessionRepositoryInterface) *UserHandler {
+func NewUserHandler(cfg *Config, userRepo UserRepositoryInterface) *UserHandler {
 	return &UserHandler{
-		cfg:         cfg,
-		userRepo:    userRepo,
-		sessionRepo: sessionRepo,
+		cfg:      cfg,
+		userRepo: userRepo,
 	}
 }
 
@@ -95,25 +92,13 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		}
 	}
 
-	userIP, _ := c.Locals("userIP").(string)
-	userAgent, _ := c.Locals("userAgent").(string)
-
-	session, err := h.sessionRepo.CreateUserSession(user.ID.Hex(), userIP, userAgent)
-	if err != nil {
-		log.Errorf("Login: Failed to create session: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrCreateSession,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	accessToken := GenerateAccessToken(user.ID.Hex(), session.ID.Hex())
+	accessToken := GenerateAccessToken(user.ID.Hex(), "")
 	refreshToken := GenerateRefreshToken()
 
-	if err := h.sessionRepo.UpdateUserSessionRefreshToken(session.ID, refreshToken); err != nil {
+	if err := h.userRepo.AddRefreshToken(user.ID.Hex(), refreshToken); err != nil {
+		log.Errorf("Login: Failed to add refresh token: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrUpdateSession,
+			"message": ErrCreateSession,
 			"errors":  nil,
 			"data":    nil,
 		})
@@ -157,12 +142,12 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
+	userId, _ := c.Locals("userId").(string)
 	refreshToken := input.RefreshToken
 	log.Infof("RefreshToken: Refresh token received from request body")
 
-	session, err := h.sessionRepo.FindUserSessionByRefreshToken(refreshToken)
-	if session == nil || err != nil {
-		log.Warn("RefreshToken: Invalid refresh token or session")
+	if !h.userRepo.ValidateRefreshToken(userId, refreshToken) {
+		log.Warn("RefreshToken: Invalid refresh token")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": ErrInvalidToken,
 			"errors":  nil,
@@ -170,20 +155,7 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
-	userIP, _ := c.Locals("userIP").(string)
-	userAgent, _ := c.Locals("userAgent").(string)
-	deviceHash := GenerateDeviceHash(userIP, userAgent)
-
-	if !h.sessionRepo.ValidateUserSession(session.ID, session.UserID, deviceHash) {
-		log.Warn("RefreshToken: Device hash mismatch - possible token theft")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": ErrInvalidToken,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	user := h.userRepo.FindByID(session.UserID)
+	user := h.userRepo.FindByID(userId)
 	if user == nil || user.ID.IsZero() {
 		log.Warn("RefreshToken: User not found")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -193,10 +165,20 @@ func (h *UserHandler) RefreshToken(c *fiber.Ctx) error {
 		})
 	}
 
-	newAccessToken := GenerateAccessToken(user.ID.Hex(), session.ID.Hex())
+	newAccessToken := GenerateAccessToken(user.ID.Hex(), "")
 	newRefreshToken := GenerateRefreshToken()
 
-	if err := h.sessionRepo.UpdateUserSessionRefreshToken(session.ID, newRefreshToken); err != nil {
+	if err := h.userRepo.RemoveRefreshToken(user.ID.Hex(), refreshToken); err != nil {
+		log.Errorf("RefreshToken: Failed to remove old refresh token: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": ErrUpdateSession,
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	if err := h.userRepo.AddRefreshToken(user.ID.Hex(), newRefreshToken); err != nil {
+		log.Errorf("RefreshToken: Failed to add new refresh token: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": ErrUpdateSession,
 			"errors":  nil,
@@ -333,26 +315,13 @@ func (h *UserHandler) GoogleCallback(c *fiber.Ctx) error {
 		}
 	}
 
-	userIP, _ := c.Locals("userIP").(string)
-	userAgent, _ := c.Locals("userAgent").(string)
-
-	session, err := h.sessionRepo.CreateUserSession(user.ID.Hex(), userIP, userAgent)
-	if err != nil {
-		log.Errorf("GoogleCallback: Failed to create session: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrCreateSession,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	accessToken := GenerateAccessToken(user.ID.Hex(), session.ID.Hex())
+	accessToken := GenerateAccessToken(user.ID.Hex(), "")
 	refreshToken := GenerateRefreshToken()
 
-	if err := h.sessionRepo.UpdateUserSessionRefreshToken(session.ID, refreshToken); err != nil {
-		log.Errorf("GoogleCallback: Failed to update refresh token: %v", err)
+	if err := h.userRepo.AddRefreshToken(user.ID.Hex(), refreshToken); err != nil {
+		log.Errorf("GoogleCallback: Failed to add refresh token: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrUpdateSession,
+			"message": ErrCreateSession,
 			"errors":  nil,
 			"data":    nil,
 		})
@@ -393,23 +362,26 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) Logout(c *fiber.Ctx) error {
-	log.Info("Logout: Processing logout request using Locals UserID")
+	log.Info("Logout: Processing logout request")
 
 	userId, _ := c.Locals("userId").(string)
-	sessionId, _ := c.Locals("sessionId").(string)
 
-	if sessionId != "" {
-		sessionObjID, err := primitive.ObjectIDFromHex(sessionId)
-		if err != nil {
-			log.Errorf("Logout: Invalid session ID format: %v", err)
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"message": ErrInvalidSessionID,
+	var input struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	if err := c.BodyParser(&input); err == nil && input.RefreshToken != "" {
+		if err := h.userRepo.RemoveRefreshToken(userId, input.RefreshToken); err != nil {
+			log.Errorf("Logout: Failed to remove refresh token: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": ErrFailedToLogout,
 				"errors":  nil,
 				"data":    nil,
 			})
 		}
-		if err := h.sessionRepo.DeactivateUserSession(sessionObjID); err != nil {
-			log.Errorf("Logout: Failed to deactivate session: %v", err)
+	} else {
+		if err := h.userRepo.ClearAllRefreshTokens(userId); err != nil {
+			log.Errorf("Logout: Failed to clear all refresh tokens: %v", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": ErrFailedToLogout,
 				"errors":  nil,
@@ -421,102 +393,6 @@ func (h *UserHandler) Logout(c *fiber.Ctx) error {
 	log.Infof("Logout: User logged out successfully: %s", userId)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": SuccessLogoutSuccessful,
-		"errors":  nil,
-		"data":    nil,
-	})
-}
-
-func (h *UserHandler) GetDevices(c *fiber.Ctx) error {
-	log.Info("GetDevices: Retrieving user devices")
-
-	userId, _ := c.Locals("userId").(string)
-	sessions, err := h.sessionRepo.GetUserSessions(userId)
-	if err != nil {
-		log.Errorf("GetDevices: Failed to get sessions: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrGetUserSession,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	log.Infof("GetDevices: Retrieved %d devices for user %s", len(sessions), userId)
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": SuccessDevicesRetrieved,
-		"errors":  nil,
-		"data":    fiber.Map{"sessions": sessions},
-	})
-}
-
-func (h *UserHandler) RevokeDevice(c *fiber.Ctx) error {
-	log.Info("RevokeDevice: Revoking device access")
-
-	userId, _ := c.Locals("userId").(string)
-	sessionId := c.Params("sessionId")
-
-	sessionObjID, err := primitive.ObjectIDFromHex(sessionId)
-	if err != nil {
-		log.Errorf("RevokeDevice: Invalid session ID format: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": ErrInvalidSessionID,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	session, err := h.sessionRepo.FindUserSessionByID(sessionObjID, userId)
-	if err != nil {
-		log.Errorf("RevokeDevice: Failed to find session: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrFindUserSession,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	if session == nil {
-		log.Warnf("RevokeDevice: Session %s not found for user %s", sessionId, userId)
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": ErrDeviceNotFound,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	if err := h.sessionRepo.DeactivateUserSession(sessionObjID); err != nil {
-		log.Errorf("RevokeDevice: Failed to deactivate session: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrDeactivateSession,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	log.Infof("RevokeDevice: Device %s revoked for user %s", sessionId, userId)
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": SuccessDeviceRevoked,
-		"errors":  nil,
-		"data":    nil,
-	})
-}
-
-func (h *UserHandler) LogoutAllDevices(c *fiber.Ctx) error {
-	log.Info("LogoutAllDevices: Logging out from all devices")
-
-	userId, _ := c.Locals("userId").(string)
-
-	if err := h.sessionRepo.ClearAllUserSessions(userId); err != nil {
-		log.Errorf("LogoutAllDevices: Failed to deactivate sessions: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": ErrClearAllSessions,
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	log.Infof("LogoutAllDevices: User %s logged out from all devices", userId)
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": SuccessLoggedOutAllDevices,
 		"errors":  nil,
 		"data":    nil,
 	})

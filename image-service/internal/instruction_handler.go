@@ -312,7 +312,7 @@ func (h *InstructionHandler) GetInstructionByID(c *fiber.Ctx) error {
 
 func (h *InstructionHandler) GetInstructionDetail(c *fiber.Ctx) error {
 	instrIDHex := c.Params("id")
-	detailIDHex := c.Params("detailId")
+	detailIDHex := c.Params("detail_id")
 
 	if instrIDHex == "" || detailIDHex == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -377,7 +377,7 @@ func (h *InstructionHandler) GetInstructionDetail(c *fiber.Ctx) error {
 
 func (h *InstructionHandler) GetInstructionDetailFile(c *fiber.Ctx) error {
 	instrIDHex := c.Params("id")
-	detailIDHex := c.Params("detailId")
+	detailIDHex := c.Params("detail_id")
 	if instrIDHex == "" || detailIDHex == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "instruction id and detail id required",

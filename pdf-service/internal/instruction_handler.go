@@ -2,22 +2,26 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
-	initx "github.com/instrlabs/shared/init"
+	"github.com/instrlabs/pdf-service/pkg/utils"
+	"github.com/instrlabs/shared/modelx"
+	"github.com/minio/minio-go/v7"
+	natsgo "github.com/nats-io/nats.go"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type InstructionHandler struct {
 	cfg           *Config
-	s3            *initx.S3
-	nats          *initx.Nats
+	s3            *minio.Client
+	nats          *natsgo.Conn
 	instrRepo     *InstructionRepository
 	detailRepo    *InstructionDetailRepository
 	productClient *ProductClient
@@ -26,144 +30,183 @@ type InstructionHandler struct {
 
 func NewInstructionHandler(
 	cfg *Config,
-	s3 *initx.S3,
-	nats *initx.Nats,
+	s3 *minio.Client,
+	nats *natsgo.Conn,
 	instrRepo *InstructionRepository,
 	detailRepo *InstructionDetailRepository,
 	productClient *ProductClient,
-	pdfSvc *PDFService,
-) *InstructionHandler {
-	return &InstructionHandler{
-		cfg:           cfg,
-		s3:            s3,
-		nats:          nats,
-		instrRepo:     instrRepo,
-		detailRepo:    detailRepo,
-		productClient: productClient,
-		pdfSvc:        pdfSvc,
+	pdfSvc *PDFService) *InstructionHandler {
+	return &InstructionHandler{cfg: cfg, s3: s3, nats: nats, instrRepo: instrRepo, detailRepo: detailRepo, productClient: productClient, pdfSvc: pdfSvc}
+}
+
+func (h *InstructionHandler) putObject(objectName string, data []byte) error {
+	ctx := context.Background()
+	_, err := h.s3.PutObject(ctx, h.cfg.S3Bucket, objectName, bytes.NewReader(data), int64(len(data)), minio.PutObjectOptions{})
+	return err
+}
+
+func (h *InstructionHandler) getObject(objectName string) ([]byte, error) {
+	ctx := context.Background()
+	obj, err := h.s3.GetObject(ctx, h.cfg.S3Bucket, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, err
 	}
+	defer obj.Close()
+	return io.ReadAll(obj)
+}
+
+func (h *InstructionHandler) deleteObject(objectName string) error {
+	ctx := context.Background()
+	return h.s3.RemoveObject(ctx, h.cfg.S3Bucket, objectName, minio.RemoveObjectOptions{})
+}
+
+func (h *InstructionHandler) publishFileNotification(userID, instrID, fileID primitive.ObjectID) error {
+	pdfNotification := modelx.InstructionNotification{
+		UserID:              userID,
+		InstructionID:       instrID,
+		InstructionDetailID: fileID,
+		CreatedAt:           time.Now().UTC(),
+	}
+
+	b, _ := json.Marshal(pdfNotification)
+	err := h.nats.Publish(h.cfg.NatsSubjectNotificationsSSE, b)
+
+	return err
 }
 
 func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
-	var req struct {
-		ProductID string `json:"product_id"`
+	type RequestBody struct {
+		ProductIDHex string `json:"product_id"`
 	}
 
-	if err := c.BodyParser(&req); err != nil {
+	var body RequestBody
+	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid request body",
-			"errors":  err.Error(),
-			"data":    nil,
-		})
-	}
-
-	productID, err := primitive.ObjectIDFromHex(req.ProductID)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid product ID",
-			"errors":  err.Error(),
-			"data":    nil,
-		})
-	}
-
-	// Verify product exists
-	product, err := h.productClient.FindByID(productID, "pdf")
-	if err != nil || product == nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Product not found",
+			"message": "invalid request body",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	userIDStr := c.Locals("userId").(string)
-	userID, err := primitive.ObjectIDFromHex(userIDStr)
-	if err != nil {
+	if body.ProductIDHex == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid user ID",
-			"errors":  err.Error(),
+			"message": "ProductID is required",
+			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	instruction := &Instruction{
-		UserID:    userID,
+	productID, _ := primitive.ObjectIDFromHex(body.ProductIDHex)
+	product, _ := h.productClient.FindByID(productID, "pdf")
+	if product == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "product not found",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	userID, _ := c.Locals("userId").(string)
+	userObjID, _ := primitive.ObjectIDFromHex(userID)
+
+	instruction := &modelx.Instruction{
+		ID:        primitive.NewObjectID(),
+		UserID:    userObjID,
 		ProductID: productID,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 
-	createdInstruction, err := h.instrRepo.Create(instruction)
-	if err != nil {
+	if err := h.instrRepo.Create(instruction); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Failed to create instruction",
-			"errors":  err.Error(),
+			"message": "failed to create instruction",
+			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "Instruction created successfully",
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "instruction creation successful",
 		"errors":  nil,
-		"data":    createdInstruction,
+		"data":    fiber.Map{"instruction": instruction},
 	})
 }
 
 func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
-	idHex := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idHex)
+	instrIDHex := c.Params("id")
+	instrID, err := primitive.ObjectIDFromHex(instrIDHex)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid instruction ID",
-			"errors":  err.Error(),
+			"message": "invalid instruction id",
+			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	// Get instruction to verify ownership
-	instruction, err := h.instrRepo.GetByID(id)
-	if err != nil || instruction == nil {
+	var instr modelx.Instruction
+	if err := h.instrRepo.GetByID(instrID, instr); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Instruction not found",
-			"errors":  err,
+			"message": "instruction not found",
+			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	localUserIDStr := c.Locals("userId").(string)
-	localUserID, err := primitive.ObjectIDFromHex(localUserIDStr)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid user ID",
-			"errors":  err.Error(),
-			"data":    nil,
-		})
-	}
-	if instruction.UserID != localUserID {
+	userIDHex, _ := c.Locals("userId").(string)
+	userID, _ := primitive.ObjectIDFromHex(userIDHex)
+	if instr.UserID != userID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "Access denied",
+			"message": "user not authorized to create instruction details",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
 	fh, err := c.FormFile("file")
-	if err != nil || fh == nil {
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "File upload required",
-			"errors":  err.Error(),
+			"message": "failed to read uploaded file",
+			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	// Read file
-	f, _ := fh.Open()
-	b, _ := io.ReadAll(f)
-	_ = f.Close()
-
-	// Validate PDF file
-	if err := h.pdfSvc.Validate(b); err != nil {
+	const maxFileSize = 50 * 1024 * 1024
+	if fh.Size > maxFileSize {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid PDF file",
-			"errors":  err.Error(),
+			"message": "fileSize too large",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	allowedTypes := []string{"application/pdf"}
+	contentType := fh.Header.Get("Content-Type")
+	if !utils.Contains(allowedTypes, contentType) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "invalid file type",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	f, err := fh.Open()
+	if err != nil {
+		log.Errorf("CreateInstructionDetails: Failed to open uploaded file: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "failed to read uploaded file",
+			"errors":  nil,
+			"data":    nil,
+		})
+	}
+
+	defer f.Close()
+	b, err := io.ReadAll(f)
+	if err != nil {
+		log.Errorf("CreateInstructionDetails: Failed to read uploaded file content: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "failed to read file content",
+			"errors":  nil,
 			"data":    nil,
 		})
 	}
@@ -171,98 +214,72 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 	inputID := primitive.NewObjectID()
 	outputID := primitive.NewObjectID()
 	ext := filepath.Ext(fh.Filename)
-
-	inName := "pdfs/" + inputID.Hex() + "_input" + ext
-	outName := "pdfs/" + outputID.Hex() + "_output" + ext
+	inputFileName := inputID.Hex() + ext
+	outputFileName := outputID.Hex() + ext
+	inputFilePath := "pdfs/" + inputFileName
+	outputFilePath := "pdfs/" + outputFileName
 
 	now := time.Now().UTC()
-	input := &InstructionDetail{
+
+	input := &modelx.InstructionFile{
 		ID:            inputID,
-		InstructionID: instruction.ID,
-		FileName:      fh.Filename,
+		InstructionID: instr.ID,
+		FileName:      inputFilePath,
 		FileSize:      int64(len(b)),
-		Status:        FileStatusDone,
-		FilePath:      inName,
+		MimeType:      utils.GetMimeTypeFromName(fh.Filename),
+		Status:        modelx.InstructionDetailStatusPending,
 		OutputID:      &outputID,
+		FilePath:      inputFilePath,
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}
-
-	output := &InstructionDetail{
+	output := &modelx.InstructionFile{
 		ID:            outputID,
-		InstructionID: instruction.ID,
-		FileName:      "compressed_" + fh.Filename,
+		InstructionID: instr.ID,
+		FileName:      outputFilePath,
 		FileSize:      0,
-		Status:        FileStatusPending,
-		FilePath:      outName,
+		MimeType:      utils.GetMimeTypeFromName(fh.Filename),
+		Status:        modelx.InstructionDetailStatusPending,
+		FilePath:      outputFilePath,
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}
 
-	// Upload input file to S3
-	if err := h.s3.Put(inName, b); err != nil {
-		log.Infof("Failed to upload file to S3: %v", err)
+	if err := h.detailRepo.CreateMany([]*modelx.InstructionFile{input, output}); err != nil {
+		log.Errorf("CreateInstructionDetails: Failed to create instruction details: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Failed to upload file",
-			"errors":  err.Error(),
+			"message": "failed to create file records",
+			"errors":  []string{err.Error()},
 			"data":    nil,
 		})
 	}
 
-	// Create details
-	details := []InstructionDetail{*input, *output}
-	createdDetails, err := h.detailRepo.CreateMany(details)
-	if err != nil {
+	if err := h.putObject(input.FileName, b); err != nil {
+		log.Errorf("CreateInstructionDetails: Failed to upload file to S3: %v", err)
+		_ = h.detailRepo.UpdateStatus(inputID, modelx.InstructionDetailStatusFailed)
+		_ = h.detailRepo.UpdateStatus(outputID, modelx.InstructionDetailStatusFailed)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Failed to create instruction details",
-			"errors":  err.Error(),
+			"message": "upload failed",
+			"errors":  []string{fmt.Sprintf("failed to upload file to storage: %v", err)},
 			"data":    nil,
 		})
 	}
 
-	// Publish NATS message for processing
-	if err := h.nats.Conn.Publish(h.cfg.NatsSubjectPdfRequests, []byte(inputID.Hex())); err != nil {
-		log.Infof("Failed to publish NATS message: %v", err)
+	if err := h.nats.Publish(h.cfg.NatsSubjectPdfRequests, []byte(inputID.Hex())); err != nil {
+		log.Errorf("CreateInstructionDetails: Failed to queue processing request: %v", err)
+		_ = h.detailRepo.UpdateStatus(inputID, modelx.InstructionDetailStatusFailed)
+		_ = h.detailRepo.UpdateStatus(outputID, modelx.InstructionDetailStatusFailed)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "failed to queue processing request",
+			"errors":  []string{fmt.Sprintf("failed to publish to message queue: %v", err)},
+			"data":    nil,
+		})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "File uploaded successfully",
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "file created",
 		"errors":  nil,
-		"data":    createdDetails,
-	})
-}
-
-func (h *InstructionHandler) ListInstructions(c *fiber.Ctx) error {
-	userIDStr := c.Locals("userId").(string)
-
-	userID, err := primitive.ObjectIDFromHex(userIDStr)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid user ID",
-			"errors":  err.Error(),
-			"data":    nil,
-		})
-	}
-
-	limitStr := c.Query("limit", "10")
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil || limit <= 0 || limit > 100 {
-		limit = 10
-	}
-
-	instructions, err := h.instrRepo.ListLatest(userID, limit)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Failed to fetch instructions",
-			"errors":  err.Error(),
-			"data":    nil,
-		})
-	}
-
-	return c.JSON(fiber.Map{
-		"message": "Success",
-		"errors":  nil,
-		"data":    instructions,
+		"data":    fiber.Map{"input": input, "output": output},
 	})
 }
 
@@ -271,288 +288,45 @@ func (h *InstructionHandler) GetInstructionByID(c *fiber.Ctx) error {
 	id, err := primitive.ObjectIDFromHex(idHex)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid instruction ID",
-			"errors":  err.Error(),
+			"message": "invalid id",
+			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	instruction, err := h.instrRepo.GetByID(id)
-	if err != nil || instruction == nil {
+	var instr modelx.Instruction
+	if err := h.instrRepo.GetByID(id, instr); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Instruction not found",
-			"errors":  err,
-			"data":    nil,
-		})
-	}
-
-	localUserIDStr := c.Locals("userId").(string)
-	localUserID, err := primitive.ObjectIDFromHex(localUserIDStr)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid user ID",
-			"errors":  err.Error(),
-			"data":    nil,
-		})
-	}
-	if instruction.UserID != localUserID {
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "Access denied",
+			"message": "instruction not found",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "Success",
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "ok",
 		"errors":  nil,
-		"data":    instruction,
-	})
-}
-
-func (h *InstructionHandler) ListUncleanedFiles(c *fiber.Ctx) error {
-	details, err := h.detailRepo.ListUncleaned()
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Failed to fetch uncleaned files",
-			"errors":  err.Error(),
-			"data":    nil,
-		})
-	}
-
-	return c.JSON(fiber.Map{
-		"message": "Success",
-		"errors":  nil,
-		"data":    details,
-	})
-}
-
-// RunInstructionMessage processes PDF compression request from NATS message
-func (h *InstructionHandler) RunInstructionMessage(data []byte) {
-	inputIDHex := string(bytes.TrimSpace(data))
-	inputID, err := primitive.ObjectIDFromHex(inputIDHex)
-	if err != nil {
-		log.Infof("RunInstructionMessage: invalid input ID: %q err=%v", inputIDHex, err)
-		return
-	}
-
-	// 1. Get input file record
-	input, err := h.detailRepo.GetByID(inputID)
-	if err != nil || input == nil || input.ID.IsZero() {
-		log.Infof("RunInstructionMessage: input file not found: %s", inputIDHex)
-		return
-	}
-
-	// 2. Get output file record (linked via OutputID)
-	if input.OutputID == nil {
-		log.Infof("RunInstructionMessage: input file has no output: %s", inputIDHex)
-		return
-	}
-
-	output, err := h.detailRepo.GetByID(*input.OutputID)
-	if err != nil || output == nil || output.ID.IsZero() {
-		log.Infof("RunInstructionMessage: output file not found: %s", input.OutputID.Hex())
-		return
-	}
-
-	// 3. Get instruction for user context
-	instruction, err := h.instrRepo.GetByID(input.InstructionID)
-	if err != nil || instruction == nil || instruction.ID.IsZero() {
-		log.Infof("RunInstructionMessage: instruction not found: %s", input.InstructionID.Hex())
-		_ = h.detailRepo.UpdateStatus(input.ID, FileStatusFailed)
-		_ = h.detailRepo.UpdateStatus(output.ID, FileStatusFailed)
-		h.publishFileNotification(instruction, output)
-		return
-	}
-
-	// 4. Get input file from S3
-	_ = h.detailRepo.UpdateStatus(input.ID, FileStatusProcessing)
-	h.publishFileNotification(instruction, input)
-
-	inputBytes := h.s3.Get(input.FilePath)
-	if inputBytes == nil {
-		log.Infof("RunInstructionMessage: input file missing on S3: %s", input.FilePath)
-		_ = h.detailRepo.UpdateStatus(input.ID, FileStatusFailed)
-		_ = h.detailRepo.UpdateStatus(output.ID, FileStatusFailed)
-		h.publishFileNotification(instruction, input)
-		return
-	}
-
-	// 5. Compress PDF
-	compressedBytes, err := h.pdfSvc.Compress(inputBytes)
-	if err != nil {
-		log.Infof("RunInstructionMessage: PDF compression failed: %v", err)
-		_ = h.detailRepo.UpdateStatus(input.ID, FileStatusFailed)
-		_ = h.detailRepo.UpdateStatus(output.ID, FileStatusFailed)
-		h.publishFileNotification(instruction, input)
-		return
-	}
-
-	// Input processing is complete
-	_ = h.detailRepo.UpdateStatus(input.ID, FileStatusDone)
-	h.publishFileNotification(instruction, input)
-
-	// 6. Update output status and upload compressed file
-	_ = h.detailRepo.UpdateStatus(output.ID, FileStatusProcessing)
-	h.publishFileNotification(instruction, output)
-
-	if err := h.s3.Put(output.FilePath, compressedBytes); err != nil {
-		log.Infof("RunInstructionMessage: failed to upload compressed PDF to S3: %v", err)
-		_ = h.detailRepo.UpdateStatus(output.ID, FileStatusFailed)
-		h.publishFileNotification(instruction, output)
-		return
-	}
-
-	// Mark output as complete with file size
-	_ = h.detailRepo.UpdateStatusAndSize(output.ID, FileStatusDone, int64(len(compressedBytes)))
-	h.publishFileNotification(instruction, output)
-
-	log.Infof("RunInstructionMessage: PDF compressed successfully: %s -> %.1f%% reduction",
-		inputID.Hex(), float64(len(inputBytes)-len(compressedBytes))/float64(len(inputBytes))*100)
-}
-
-func (h *InstructionHandler) CleanInstruction() error {
-	cutoff := time.Now().Add(-1 * time.Hour)
-
-	// Find old completed files (DONE status, older than 1 hour)
-	files, err := h.detailRepo.ListOlderThan(cutoff)
-	if err != nil {
-		log.Infof("CleanInstruction: failed to list old files: %v", err)
-		return err
-	}
-
-	if len(files) > 0 {
-		// Delete from S3
-		for _, f := range files {
-			if f.FilePath == "" {
-				continue
-			}
-			if err := h.s3.Delete(f.FilePath); err != nil {
-				log.Infof("CleanInstruction: failed to delete S3 object %s: %v", f.FilePath, err)
-			}
-		}
-
-		// Mark as cleaned in database
-		ids := make([]primitive.ObjectID, 0, len(files))
-		for _, f := range files {
-			if !f.ID.IsZero() {
-				ids = append(ids, f.ID)
-			}
-		}
-		if err := h.detailRepo.MarkCleaned(ids); err != nil {
-			log.Infof("CleanInstruction: MarkCleaned failed for %d files: %v", len(ids), err)
-		}
-		log.Infof("CleanInstruction: marked cleaned %d files older than %s", len(ids), cutoff.UTC().Format(time.RFC3339))
-	} else {
-		log.Infof("CleanInstruction: no files older than %s", cutoff.UTC().Format(time.RFC3339))
-	}
-
-	// Find stale pending/processing files (PROCESSING status, updated before cutoff)
-	stale, err := h.detailRepo.ListPendingUpdatedBefore(cutoff)
-	if err != nil {
-		log.Infof("CleanInstruction: failed to list stale files: %v", err)
-		return err
-	}
-
-	if len(stale) > 0 {
-		// Delete stale files from S3 and mark as failed
-		for _, f := range stale {
-			if f.FilePath != "" {
-				if err := h.s3.Delete(f.FilePath); err != nil {
-					log.Infof("CleanInstruction: failed to delete stale PROCESSING S3 object %s: %v", f.FilePath, err)
-				}
-			}
-			_ = h.detailRepo.UpdateStatus(f.ID, FileStatusFailed)
-		}
-
-		// Mark as cleaned in database
-		ids := make([]primitive.ObjectID, 0, len(stale))
-		for _, f := range stale {
-			if !f.ID.IsZero() {
-				ids = append(ids, f.ID)
-			}
-		}
-		if err := h.detailRepo.MarkCleaned(ids); err != nil {
-			log.Infof("CleanInstruction: MarkCleaned failed for stale PROCESSING %d files: %v", len(ids), err)
-		}
-		log.Infof("CleanInstruction: marked FAILED and cleaned %d stale PROCESSING files (updated_at < %s)", len(ids), cutoff.UTC().Format(time.RFC3339))
-	}
-
-	return nil
-}
-
-func (h *InstructionHandler) GetInstructionDetails(c *fiber.Ctx) error {
-	idHex := c.Params("id")
-	id, err := primitive.ObjectIDFromHex(idHex)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid instruction ID",
-			"errors":  err.Error(),
-			"data":    nil,
-		})
-	}
-
-	// Verify instruction exists and user owns it
-	instruction, err := h.instrRepo.GetByID(id)
-	if err != nil || instruction == nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Instruction not found",
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	localUserIDStr := c.Locals("userId").(string)
-	localUserID, err := primitive.ObjectIDFromHex(localUserIDStr)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid user ID",
-			"errors":  err.Error(),
-			"data":    nil,
-		})
-	}
-	if instruction.UserID != localUserID {
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "Access denied",
-			"errors":  nil,
-			"data":    nil,
-		})
-	}
-
-	// List all details for this instruction
-	details, err := h.detailRepo.ListByInstruction(id)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Failed to fetch instruction details",
-			"errors":  err.Error(),
-			"data":    nil,
-		})
-	}
-
-	return c.JSON(fiber.Map{
-		"message": "Success",
-		"errors":  nil,
-		"data":    details,
+		"data":    fiber.Map{"instruction": instr},
 	})
 }
 
 func (h *InstructionHandler) GetInstructionDetail(c *fiber.Ctx) error {
-	idHex := c.Params("id")
-	detailIDHex := c.Params("detailId")
+	instrIDHex := c.Params("id")
+	detailIDHex := c.Params("detail_id")
 
-	if idHex == "" || detailIDHex == "" {
+	if instrIDHex == "" || detailIDHex == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Instruction ID and detail ID required",
+			"message": "instruction id and detail id required",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	instrID, err := primitive.ObjectIDFromHex(idHex)
+	instrID, err := primitive.ObjectIDFromHex(instrIDHex)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid instruction ID",
-			"errors":  err.Error(),
+			"message": "invalid instruction id",
+			"errors":  nil,
 			"data":    nil,
 		})
 	}
@@ -560,159 +334,193 @@ func (h *InstructionHandler) GetInstructionDetail(c *fiber.Ctx) error {
 	detailID, err := primitive.ObjectIDFromHex(detailIDHex)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid detail ID",
-			"errors":  err.Error(),
-			"data":    nil,
-		})
-	}
-
-	// Verify instruction exists and user owns it
-	instruction, err := h.instrRepo.GetByID(instrID)
-	if err != nil || instruction == nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Instruction not found",
+			"message": "invalid detail id",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	localUserIDStr := c.Locals("userId").(string)
-	localUserID, err := primitive.ObjectIDFromHex(localUserIDStr)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid user ID",
-			"errors":  err.Error(),
+	var instr modelx.Instruction
+	if err := h.instrRepo.GetByID(instrID, instr); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "instruction not found",
+			"errors":  nil,
 			"data":    nil,
 		})
 	}
-	if instruction.UserID != localUserID {
+
+	userIDHex, _ := c.Locals("userId").(string)
+	userID, _ := primitive.ObjectIDFromHex(userIDHex)
+	if instr.UserID != userID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "Access denied",
+			"message": "forbidden",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	// Get the specific detail
-	detail, err := h.detailRepo.GetByID(detailID)
-	if err != nil || detail == nil || detail.ID.IsZero() || detail.InstructionID != instrID {
+	var detail modelx.InstructionFile
+	if err := h.detailRepo.GetByID(detailID, detail); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Instruction detail not found",
+			"message": "instruction detail not found",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "Success",
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "ok",
 		"errors":  nil,
-		"data":    detail,
+		"data":    fiber.Map{"detail": detail},
 	})
 }
 
 func (h *InstructionHandler) GetInstructionDetailFile(c *fiber.Ctx) error {
-	idHex := c.Params("id")
-	detailIDHex := c.Params("detailId")
-
-	if idHex == "" || detailIDHex == "" {
+	instrIDHex := c.Params("id")
+	detailIDHex := c.Params("detail_id")
+	if instrIDHex == "" || detailIDHex == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Instruction ID and detail ID required",
+			"message": "instruction id and detail id required",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	instrID, err := primitive.ObjectIDFromHex(idHex)
+	instrID, err := primitive.ObjectIDFromHex(instrIDHex)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid instruction ID",
-			"errors":  err.Error(),
+			"message": "invalid instruction id",
+			"errors":  nil,
 			"data":    nil,
 		})
 	}
-
 	detailID, err := primitive.ObjectIDFromHex(detailIDHex)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid detail ID",
-			"errors":  err.Error(),
-			"data":    nil,
-		})
-	}
-
-	// Verify instruction exists and user owns it
-	instruction, err := h.instrRepo.GetByID(instrID)
-	if err != nil || instruction == nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Instruction not found",
+			"message": "invalid detail id",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	localUserIDStr := c.Locals("userId").(string)
-	localUserID, err := primitive.ObjectIDFromHex(localUserIDStr)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid user ID",
-			"errors":  err.Error(),
+	var instr modelx.Instruction
+	if err := h.instrRepo.GetByID(instrID, instr); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "instruction not found",
+			"errors":  nil,
 			"data":    nil,
 		})
 	}
-	if instruction.UserID != localUserID {
+
+	userIDHex, _ := c.Locals("userId").(string)
+	userID, _ := primitive.ObjectIDFromHex(userIDHex)
+	if instr.UserID != userID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "Access denied",
+			"message": "forbidden",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	// Get the detail record
-	detail, err := h.detailRepo.GetByID(detailID)
-	if err != nil || detail == nil || detail.ID.IsZero() || detail.InstructionID != instrID {
+	var instrDetail modelx.InstructionFile
+	if err := h.detailRepo.GetByID(detailID, instrDetail); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "File not found",
+			"message": "detail not found",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	// Fetch file from S3
-	fileBytes := h.s3.Get(detail.FilePath)
-	if fileBytes == nil {
+	b, err := h.getObject(instrDetail.FileName)
+	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "File blob not found",
+			"message": "file blob not found",
 			"errors":  nil,
 			"data":    nil,
 		})
 	}
 
-	// Set response headers for file download
 	c.Set("content-type", "application/octet-stream")
-	c.Set("content-disposition", "attachment; filename="+filepath.Base(detail.FileName))
-	return c.Status(fiber.StatusOK).Send(fileBytes)
+	c.Set("content-disposition", "attachment; filename="+filepath.Base(instrDetail.FileName))
+
+	return c.Status(fiber.StatusOK).Send(b)
 }
 
-func (h *InstructionHandler) publishFileNotification(instruction *Instruction, detail *InstructionDetail) {
-	if instruction == nil || detail == nil {
-		return
-	}
-
-	notification := InstructionNotification{
-		UserID:              instruction.UserID,
-		InstructionID:       instruction.ID,
-		InstructionDetailID: detail.ID,
-		Status:              detail.Status,
-		CreatedAt:           time.Now().UTC(),
-	}
-
-	notifBytes, err := json.Marshal(notification)
+func (h *InstructionHandler) RunInstructionMessage(data []byte) {
+	fileIDHex := string(bytes.TrimSpace(data))
+	fileID, err := primitive.ObjectIDFromHex(fileIDHex)
 	if err != nil {
-		log.Infof("publishFileNotification: failed to marshal notification: %v", err)
+		log.Errorf("RunInstructionMessage: Invalid file ID: %v", err)
 		return
 	}
 
-	if err := h.nats.Conn.Publish(h.cfg.NatsSubjectNotificationsSSE, notifBytes); err != nil {
-		log.Infof("publishFileNotification: failed to publish notification: %v", err)
+	var input modelx.InstructionFile
+	if err := h.detailRepo.GetByID(fileID, input); err != nil {
+		log.Info("RunInstructionMessage: Input file not found")
+		return
 	}
+
+	var output modelx.InstructionFile
+	if err := h.detailRepo.GetByID(*input.OutputID, output); err != nil {
+		log.Info("RunInstructionMessage: Output file not found")
+		return
+	}
+
+	var instr modelx.Instruction
+	if err := h.instrRepo.GetByID(input.InstructionID, instr); err != nil {
+		log.Info("RunInstructionMessage: Instruction not found")
+		_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusFailed)
+		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
+		return
+	}
+
+	product, _ := h.productClient.FindByID(instr.ProductID, "pdf")
+	if product == nil {
+		log.Info("RunInstructionMessage: Product not found")
+		_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusFailed)
+		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
+		_ = h.publishFileNotification(instr.UserID, instr.ID, input.ID)
+		return
+	}
+
+	_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusProcessing)
+	_ = h.publishFileNotification(instr.UserID, instr.ID, input.ID)
+
+	inputBytes, err := h.getObject(input.FilePath)
+	if err != nil {
+		log.Errorf("RunInstructionMessage: Input file missing on S3: %v", err)
+		_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusFailed)
+		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
+		_ = h.publishFileNotification(instr.UserID, instr.ID, input.ID)
+		return
+	}
+
+	outputBytes, err := h.pdfSvc.Compress(inputBytes)
+	if err != nil {
+		log.Errorf("RunInstructionMessage: PDF processing failed: %v", err)
+		_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusFailed)
+		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
+		_ = h.publishFileNotification(instr.UserID, instr.ID, input.ID)
+		return
+	}
+
+	_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusSuccess)
+	_ = h.publishFileNotification(instr.UserID, instr.ID, input.ID)
+	_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusProcessing)
+	_ = h.publishFileNotification(instr.UserID, instr.ID, output.ID)
+
+	if err := h.putObject(output.FileName, outputBytes); err != nil {
+		log.Errorf("RunInstructionMessage: Failed to upload output to S3: %v", err)
+		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
+		_ = h.publishFileNotification(instr.UserID, instr.ID, output.ID)
+		return
+	}
+
+	_ = h.detailRepo.UpdateFileSize(output.ID, int64(len(outputBytes)))
+	_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusSuccess)
+	_ = h.publishFileNotification(instr.UserID, instr.ID, output.ID)
+}
+
+func (h *InstructionHandler) CleanInstruction() {
+	log.Info("CleanInstruction: Cleaning instruction")
 }

@@ -3,7 +3,8 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
-	initx "github.com/instrlabs/shared/init"
+	"github.com/instrlabs/shared/initx"
+	"github.com/instrlabs/shared/middlewarex"
 
 	"github.com/instrlabs/product-service/internal"
 )
@@ -11,23 +12,17 @@ import (
 func main() {
 	cfg := internal.LoadConfig()
 
-	mongo := initx.NewMongo(&initx.MongoConfig{
-		MongoURI: cfg.MongoURI,
-		MongoDB:  cfg.MongoDB,
-	})
-	defer mongo.Close()
+	mongoClient, mongoDB := initx.NewMongo()
+	defer initx.CloseMongo(mongoClient)
 
 	app := fiber.New(fiber.Config{})
 
-	initx.SetupPrometheus(app)
-	initx.SetupLogger(app)
-	initx.SetupServiceSwagger(app, cfg.ApiUrl, "/products")
-	initx.SetupServiceHealth(app)
-	initx.SetupAuthenticated(app, []string{
-		"/",
-	})
+	middlewarex.SetupPrometheus(app)
+	middlewarex.SetupServiceHealth(app)
+	middlewarex.SetupServiceSwagger(app, "/products")
+	middlewarex.SetupAuthentication(app, []string{})
 
-	productRepo := internal.NewProductRepository(mongo)
+	productRepo := internal.NewProductRepository(mongoDB)
 	productHandler := internal.NewProductHandler(productRepo)
 
 	app.Get("/", productHandler.ListProducts)

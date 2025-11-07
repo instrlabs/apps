@@ -63,3 +63,23 @@ func (m *MockUserRepository) SetRegisteredAt(userID string) error {
 	args := m.Called(userID)
 	return args.Error(0)
 }
+
+func (m *MockUserRepository) AddRefreshToken(userID, token string) error {
+	args := m.Called(userID, token)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) RemoveRefreshToken(userID, token string) error {
+	args := m.Called(userID, token)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) ValidateRefreshToken(userID, token string) bool {
+	args := m.Called(userID, token)
+	return args.Bool(0)
+}
+
+func (m *MockUserRepository) ClearAllRefreshTokens(userID string) error {
+	args := m.Called(userID)
+	return args.Error(0)
+}

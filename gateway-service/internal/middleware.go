@@ -72,7 +72,7 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		return c.Next()
 	})
 
-	// JWT token extraction and user authentication
+	// Authentication middleware
 	app.Use(func(c *fiber.Ctx) error {
 		var accessToken string
 
@@ -85,14 +85,20 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		}
 
 		c.Request().Header.Set("x-user-id", "")
+		c.Request().Header.Set("x-guest-id", "")
 
 		if accessToken != "" {
-			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
-				log.Infof("Authenticated user %s for %s %s", info.UserID, c.Method(), c.Path())
-				c.Request().Header.Set("x-user-id", info.UserID)
-			} else {
-				log.Warnf("Token extraction failed for %s %s: %v", c.Method(), c.Path(), err)
+			info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken)
+			if err != nil {
+				log.Warnf("Authentication: Failed to extract token info: %v", err)
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"message": "Invalid token",
+					"errors":  nil,
+					"data":    nil,
+				})
 			}
+
+			c.Request().Header.Set("x-user-id", info.UserID)
 		}
 
 		return c.Next()

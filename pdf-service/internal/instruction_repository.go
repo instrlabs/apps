@@ -2,81 +2,40 @@ package internal
 
 import (
 	"context"
-	"log"
 	"time"
 
-	initx "github.com/instrlabs/shared/init"
-	"github.com/instrlabs/shared/models"
+	"github.com/instrlabs/shared/modelx"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type InstructionRepository struct {
+	db         *mongo.Database
 	collection *mongo.Collection
 }
 
-func NewInstructionRepository(db *initx.Mongo) *InstructionRepository {
+func NewInstructionRepository(db *mongo.Database) *InstructionRepository {
 	return &InstructionRepository{
-		collection: db.DB.Collection("pdf_instructions"),
+		db:         db,
+		collection: db.Collection("pdf_instructions"),
 	}
 }
 
-func (r *InstructionRepository) Create(instruction *models.Instruction) (*models.Instruction, error) {
+func (r *InstructionRepository) Create(instr *modelx.Instruction) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	instruction.ID = primitive.NewObjectID()
-	instruction.CreatedAt = time.Now()
-	instruction.UpdatedAt = time.Now()
+	_, err := r.collection.InsertOne(ctx, instr)
 
-	_, err := r.collection.InsertOne(ctx, instruction)
-	if err != nil {
-		log.Printf("Failed to create instruction: %v", err)
-		return nil, err
-	}
-
-	return instruction, nil
+	return err
 }
 
-func (r *InstructionRepository) GetByID(id primitive.ObjectID) (*models.Instruction, error) {
+func (r *InstructionRepository) GetByID(id primitive.ObjectID, instr modelx.Instruction) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var instruction models.Instruction
-	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&instruction)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, nil
-		}
-		log.Printf("Failed to get instruction by ID %s: %v", id.Hex(), err)
-		return nil, err
-	}
+	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&instr)
 
-	return &instruction, nil
-}
-
-func (r *InstructionRepository) ListLatest(userID primitive.ObjectID, limit int64) ([]models.Instruction, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	findOptions := options.Find()
-	findOptions.SetSort(bson.D{{Key: "created_at", Value: -1}})
-	findOptions.SetLimit(limit)
-
-	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID}, findOptions)
-	if err != nil {
-		log.Printf("Failed to list instructions for user %s: %v", userID.Hex(), err)
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var instructions []models.Instruction
-	if err := cursor.All(ctx, &instructions); err != nil {
-		log.Printf("Failed to decode instructions: %v", err)
-		return nil, err
-	}
-
-	return instructions, nil
+	return err
 }

@@ -15,8 +15,7 @@ func main() {
 	defer initx.CloseMongo(client)
 
 	userRepo := internal.NewUserRepository(db)
-	sessionRepo := internal.NewUserSessionRepository(db)
-	userHandler := internal.NewUserHandler(cfg, userRepo, sessionRepo)
+	userHandler := internal.NewUserHandler(cfg, userRepo)
 
 	app := fiber.New(fiber.Config{})
 
@@ -42,10 +41,6 @@ func main() {
 
 	app.Get("/google", userHandler.GoogleLogin)
 	app.Get("/google/callback", userHandler.GoogleCallback)
-
-	app.Get("/devices", userHandler.GetDevices)
-	app.Post("/devices/:sessionId/revoke", userHandler.RevokeDevice)
-	app.Post("/devices/revoke-all", userHandler.LogoutAllDevices)
 
 	log.Fatal(app.Listen(cfg.Port))
 }

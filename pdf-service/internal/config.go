@@ -1,7 +1,7 @@
 package internal
 
 import (
-	initx "github.com/instrlabs/shared/init"
+	"github.com/instrlabs/shared/functionx"
 	"github.com/joho/godotenv"
 )
 
@@ -36,24 +36,24 @@ func LoadConfig() *Config {
 	_ = godotenv.Load()
 
 	return &Config{
-		Environment: initx.GetEnv("ENVIRONMENT", "development"),
-		Port:        initx.GetEnv("PORT", "3004"),
+		Environment: functionx.GetEnvString("ENVIRONMENT", "development"),
+		Port:        functionx.GetEnvString("PORT", ":3000"),
 
-		MongoURI: initx.GetEnv("MONGO_URI", "mongodb://localhost:27017"),
-		MongoDB:  initx.GetEnv("MONGO_DB", "instrlabs"),
+		MongoURI: functionx.GetEnvString("MONGO_URI", "mongodb://localhost:27017"),
+		MongoDB:  functionx.GetEnvString("MONGO_DB", "instrlabs-apps"),
 
-		S3Endpoint:  initx.GetEnv("S3_ENDPOINT", "http://localhost:9000"),
-		S3Region:    initx.GetEnv("S3_REGION", "us-east-1"),
-		S3AccessKey: initx.GetEnv("S3_ACCESS_KEY", "minioadmin"),
-		S3SecretKey: initx.GetEnv("S3_SECRET_KEY", "minioadmin"),
-		S3Bucket:    initx.GetEnv("S3_BUCKET", "instrlabs"),
-		S3UseSSL:    initx.GetEnvBool("S3_USE_SSL", false),
+		S3Endpoint:  functionx.GetEnvString("S3_ENDPOINT", "localhost:9000"),
+		S3Region:    functionx.GetEnvString("S3_REGION", "us-east-1"),
+		S3AccessKey: functionx.GetEnvString("S3_ACCESS_KEY", "minioadmin"),
+		S3SecretKey: functionx.GetEnvString("S3_SECRET_KEY", "minioadmin"),
+		S3Bucket:    functionx.GetEnvString("S3_BUCKET", "instrlabs-apps"),
+		S3UseSSL:    functionx.GetEnvBool("S3_USE_SSL", false),
 
-		NatsURI:                     initx.GetEnv("NATS_URI", "nats://localhost:4222"),
-		NatsSubjectPdfRequests:      initx.GetEnv("NATS_SUBJECT_PDF_REQUESTS", "pdf.requests"),
-		NatsSubjectNotificationsSSE: initx.GetEnv("NATS_SUBJECT_NOTIFICATIONS_SSE", "notifications.sse"),
+		NatsURI:                     functionx.GetEnvString("NATS_URI", "nats://nats:4222"),
+		NatsSubjectPdfRequests:      functionx.GetEnvString("NATS_SUBJECT_PDF_REQUESTS", "pdf.requests"),
+		NatsSubjectNotificationsSSE: functionx.GetEnvString("NATS_SUBJECT_NOTIFICATIONS_SSE", "notifications.sse"),
 
-		ApiUrl:            initx.GetEnv("API_URL", "http://localhost:3000"),
-		ProductServiceURL: initx.GetEnv("PRODUCT_SERVICE_URL", "http://product-service:3005"),
+		ApiUrl:            functionx.GetEnvString("API_URL", ""),
+		ProductServiceURL: functionx.GetEnvString("PRODUCT_SERVICE_URL", "http://product-service:3005"),
 	}
 }

@@ -28,7 +28,7 @@ func LoadConfig() *Config {
 		Port:        functionx.GetEnvString("PORT", ":3000"),
 		Origins:     functionx.GetEnvString("ORIGINS_ALLOWED", "http://localhost:8000"),
 		JWTSecret:   functionx.GetEnvString("JWT_SECRET", ""),
-		CSRFEnabled: functionx.GetEnvBool("CSRF_ENABLED", true),
+		CSRFEnabled: functionx.GetEnvBool("CSRF_ENABLED", false),
 		Services: []ServiceConfig{
 			{
 				Name:   "auth-service",
