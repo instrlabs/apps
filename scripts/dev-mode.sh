@@ -4,7 +4,7 @@ echo "Adding local shared library replace directives..."
 
 find . -name "go.mod" -not -path "./shared/*" | while read file; do
     if ! grep -q "replace github.com/instrlabs/shared" "$file"; then
-        echo "replace github.com/instrlabs/shared => ../shared" >> "$file"
+        echo "replace github.com/instrlabs/shared => ../../instrlabs-shared" >> "$file"
         echo "✓ Added local shared to $(dirname "$file")"
     else
         echo "- Already in dev mode: $(dirname "$file")"

@@ -1,10 +1,12 @@
 package internal
 
 import (
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
@@ -12,6 +14,20 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 )
+
+var (
+	ErrForbiddenOrigin = errors.New("FORBIDDEN_ORIGIN")
+)
+
+func isAllowedOrigin(origin, allowlist string) bool {
+	origin = strings.TrimSpace(origin)
+	for _, a := range strings.Split(allowlist, ",") {
+		if strings.TrimSpace(a) == origin {
+			return true
+		}
+	}
+	return false
+}
 
 // SetupMiddleware sets up middleware for authentication
 func SetupMiddleware(app *fiber.App, cfg *Config) {
@@ -22,17 +38,40 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 	app.Use(limiter.New(limiter.Config{
 		Max:        100,
 		Expiration: time.Duration(60) * time.Second,
+		LimitReached: func(c *fiber.Ctx) error {
+			log.Warnf("Rate Limit exceeded for IP: %s", c.IP())
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"message": "Rate limit exceeded",
+				"errors":  nil,
+				"data":    nil,
+			})
+		},
 	}))
 
 	// CORS
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.Origins,
-		AllowMethods:     "GET, OPTIONS",
-		AllowHeaders:     "content-type, cookie, authorization",
+		AllowMethods:     "GET,OPTIONS",
+		AllowHeaders:     "content-type, cookie, authorization, x-guest-id",
 		AllowCredentials: true,
 	}))
 
-	// Token extraction
+	// CSRF protection
+	app.Use(func(c *fiber.Ctx) error {
+		origin := c.Get("x-user-origin")
+		if !isAllowedOrigin(origin, cfg.Origins) && cfg.CSRFEnabled {
+			log.Warnf("CSRF protection: Forbidden origin: %s", origin)
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"message": ErrForbiddenOrigin.Error(),
+				"errors":  nil,
+				"data":    nil,
+			})
+		}
+
+		return c.Next()
+	})
+
+	// Authentication middleware
 	app.Use(func(c *fiber.Ctx) error {
 		var accessToken string
 
@@ -47,9 +86,17 @@ func SetupMiddleware(app *fiber.App, cfg *Config) {
 		c.Request().Header.Set("x-user-id", "")
 
 		if accessToken != "" {
-			if info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken); err == nil {
-				c.Request().Header.Set("x-user-id", info.UserID)
+			info, err := ExtractTokenInfo(cfg.JWTSecret, accessToken)
+			if err != nil {
+				log.Warnf("Authentication: Failed to extract token info: %v", err)
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"message": "Invalid token",
+					"errors":  nil,
+					"data":    nil,
+				})
 			}
+
+			c.Request().Header.Set("x-user-id", info.UserID)
 		}
 
 		return c.Next()

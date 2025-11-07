@@ -9,10 +9,11 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
+	"github.com/instrlabs/shared/modelx"
 )
 
 type SSEClient struct {
-	clientKey   string
+	identifier  string
 	connection  chan []byte
 	done        chan bool
 	connectedAt time.Time
@@ -24,26 +25,19 @@ type SSEService struct {
 	mutex   sync.Mutex
 }
 
-func getClientKey(userID, guestID string) string {
-	if userID != "" {
-		return "user:" + userID
-	}
-	return "guest:" + guestID
-}
-
 func (s *SSEService) NotificationUser(msg []byte) {
-	var notification InstructionNotification
+	var notification modelx.InstructionNotification
 	if err := json.Unmarshal(msg, &notification); err == nil {
-		var clientKey string
+		var identifier string
 		if notification.UserID != nil {
-			clientKey = "user:" + *notification.UserID
+			identifier = notification.UserID.Hex()
 		} else if notification.GuestID != nil {
-			clientKey = "guest:" + *notification.GuestID
+			identifier = *notification.GuestID
 		}
 
-		if clientKey != "" {
+		if identifier != "" {
 			s.mutex.Lock()
-			client := s.clients[clientKey]
+			client := s.clients[identifier]
 			s.mutex.Unlock()
 			if client != nil {
 				select {
@@ -66,14 +60,11 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 	userId := c.Get("x-user-id")
 	guestId := c.Get("x-guest-id")
 
-	var clientKey string
 	var identifier string
 
 	if userId != "" {
-		clientKey = "user:" + userId
 		identifier = userId
 	} else if guestId != "" {
-		clientKey = "guest:" + guestId
 		identifier = guestId
 	} else {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -91,18 +82,18 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 	doneChan := make(chan bool)
 
 	client := &SSEClient{
-		clientKey:   clientKey,
+		identifier:  identifier,
 		connection:  messageChan,
 		done:        doneChan,
 		connectedAt: time.Now().UTC(),
 	}
 
 	s.mutex.Lock()
-	if existingClient, exists := s.clients[clientKey]; exists {
+	if existingClient, exists := s.clients[identifier]; exists {
 		log.Infof("Closing existing connection for %s", identifier)
 		existingClient.done <- true
 	}
-	s.clients[clientKey] = client
+	s.clients[identifier] = client
 	s.mutex.Unlock()
 
 	log.Infof("New SSE client connected for %s. Total clients: %d", identifier, len(s.clients))
@@ -122,22 +113,22 @@ func (s *SSEService) HandleSSE(c *fiber.Ctx) error {
 			select {
 			case <-client.done:
 				s.mutex.Lock()
-				if s.clients[clientKey] == client {
-					delete(s.clients, clientKey)
+				if s.clients[identifier] == client {
+					delete(s.clients, identifier)
 				}
 				s.mutex.Unlock()
 				return
 			case <-ctx.Done():
 				s.mutex.Lock()
-				if s.clients[clientKey] == client {
-					delete(s.clients, clientKey)
+				if s.clients[identifier] == client {
+					delete(s.clients, identifier)
 				}
 				s.mutex.Unlock()
 				client.done <- true
 				log.Infof("SSE client disconnected for %s. Total clients: %d", identifier, len(s.clients))
 				return
 			case data := <-client.connection:
-				var msg InstructionNotification
+				var msg modelx.InstructionNotification
 				if err := json.Unmarshal(data, &msg); err != nil {
 					log.Infof("RunInstructionMessage: unmarshal error: %v", err)
 					return

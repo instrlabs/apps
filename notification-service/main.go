@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	cfg := internal.NewConfig()
+	cfg := internal.LoadConfig()
 
 	natsSrv := initx.NewNats(cfg.NatsURI)
 	defer natsSrv.Close()
@@ -28,6 +28,7 @@ func main() {
 	middlewarex.SetupLogger(app)
 	internal.SetupMiddleware(app, cfg)
 	middlewarex.SetupAuthentication(app)
+	internal.SetupNotificationRoutes(app, cfg, natsSrv)
 
 	app.Get("/sse", sseService.HandleSSE)
 

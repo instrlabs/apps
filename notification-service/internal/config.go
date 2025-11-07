@@ -8,24 +8,24 @@ import (
 type Config struct {
 	Environment string
 	Port        string
-
-	Origins   string
-	JWTSecret string
+	Origins     string
+	JWTSecret   string
+	CSRFEnabled bool
 
 	AuthService                 string
 	NatsURI                     string
 	NatsSubjectNotificationsSSE string
 }
 
-func NewConfig() *Config {
+func LoadConfig() *Config {
 	_ = godotenv.Load()
 
 	return &Config{
 		Environment: functionx.GetEnvString("ENVIRONMENT", "development"),
-		Port:        functionx.GetEnvString("PORT", ":3001"),
-
-		Origins:   functionx.GetEnvString("ORIGINS_ALLOWED", "http://localhost:8000"),
-		JWTSecret: functionx.GetEnvString("JWT_SECRET", ""),
+		Port:        functionx.GetEnvString("PORT", ":3000"),
+		Origins:     functionx.GetEnvString("ORIGINS_ALLOWED", "http://localhost:8000"),
+		JWTSecret:   functionx.GetEnvString("JWT_SECRET", ""),
+		CSRFEnabled: functionx.GetEnvBool("CSRF_ENABLED", false),
 
 		AuthService:                 functionx.GetEnvString("AUTH_SERVICE", "http://auth-service:3000"),
 		NatsURI:                     functionx.GetEnvString("NATS_URI", "nats://localhost:4222"),
