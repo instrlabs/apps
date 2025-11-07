@@ -1,4 +1,4 @@
-.PHONY: help build-all build-gateway build-auth build-image build-notification build-pdf build-product up up-gateway up-auth up-image up-notification up-pdf up-product down push-all push-gateway push-auth push-image push-notification push-pdf push-product clean
+.PHONY: help build-all build-gateway build-auth build-image build-notification build-pdf build-product up up-gateway up-auth up-image up-notification up-pdf up-product down push-all push-gateway push-auth push-image push-notification push-pdf push-product clean dev-mode prod-mode
 
 # Get the short commit hash
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
@@ -41,6 +41,10 @@ help:
 	@echo "  push-product        - Push product service image"
 	@echo ""
 	@echo "  clean               - Remove all built images"
+	@echo ""
+	@echo "Mode Switching:"
+	@echo "  dev-mode            Switch to development mode (use local shared library)"
+	@echo "  prod-mode           Switch to production mode (use tagged shared library)"
 	@echo ""
 	@echo "Current commit hash: $(COMMIT_HASH)"
 	@echo "Registry: $(REGISTRY)"
@@ -154,3 +158,10 @@ clean:
 	-docker rmi $(IMAGE_SERVICE_IMAGE):$(COMMIT_HASH) 2>/dev/null || true
 	-docker rmi $(NOTIFICATION_IMAGE):$(COMMIT_HASH) 2>/dev/null || true
 	@echo "Cleanup complete"
+
+# Mode switching
+dev-mode: ## Switch to development mode (use local shared library)
+	@./scripts/dev-mode.sh
+
+prod-mode: ## Switch to production mode (use tagged shared library)
+	@./scripts/prod-mode.sh
