@@ -29,6 +29,6 @@ func (h *ProductHandler) ListProducts(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "Success",
 		"errors":  nil,
-		"data":    products,
+		"data":    fiber.Map{"products": products},
 	})
 }

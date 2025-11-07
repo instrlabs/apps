@@ -60,9 +60,43 @@ func (h *InstructionHandler) deleteObject(objectName string) error {
 	return h.s3.RemoveObject(ctx, h.cfg.S3Bucket, objectName, minio.RemoveObjectOptions{})
 }
 
-func (h *InstructionHandler) publishFileNotification(userID, instrID, fileID primitive.ObjectID) error {
+func (h *InstructionHandler) getUserOrGuestID(c *fiber.Ctx) (*primitive.ObjectID, *string, error) {
+	// Check for authenticated user first
+	if userID := c.Get("x-user-id"); userID != "" {
+		objID, err := primitive.ObjectIDFromHex(userID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("invalid user ID format: %v", err)
+		}
+		return &objID, nil, nil
+	}
+
+	// Fallback to guest user
+	if guestID := c.Get("x-guest-id"); guestID != "" {
+		return nil, &guestID, nil
+	}
+
+	// Neither provided - unauthorized
+	return nil, nil, fmt.Errorf("missing user identification - provide either x-user-id or x-guest-id header")
+}
+
+func (h *InstructionHandler) validateOwnership(instr modelx.Instruction, userID *primitive.ObjectID, guestID *string) bool {
+	// Check authenticated user ownership
+	if userID != nil && instr.UserID != nil {
+		return instr.UserID.Hex() == userID.Hex()
+	}
+
+	// Check guest user ownership
+	if guestID != nil && instr.GuestID != nil {
+		return *instr.GuestID == *guestID
+	}
+
+	return false
+}
+
+func (h *InstructionHandler) publishFileNotification(userID *primitive.ObjectID, guestID *string, instrID, fileID primitive.ObjectID) error {
 	pdfNotification := modelx.InstructionNotification{
 		UserID:              userID,
+		GuestID:             guestID,
 		InstructionID:       instrID,
 		InstructionDetailID: fileID,
 		CreatedAt:           time.Now().UTC(),
@@ -106,12 +140,19 @@ func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
 		})
 	}
 
-	userID, _ := c.Locals("userId").(string)
-	userObjID, _ := primitive.ObjectIDFromHex(userID)
+	userID, guestID, err := h.getUserOrGuestID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "unauthorized",
+			"errors":  []string{err.Error()},
+			"data":    nil,
+		})
+	}
 
 	instruction := &modelx.Instruction{
 		ID:        primitive.NewObjectID(),
-		UserID:    userObjID,
+		UserID:    userID,
+		GuestID:   guestID,
 		ProductID: productID,
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
@@ -152,9 +193,16 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 		})
 	}
 
-	userIDHex, _ := c.Locals("userId").(string)
-	userID, _ := primitive.ObjectIDFromHex(userIDHex)
-	if instr.UserID != userID {
+	userID, guestID, err := h.getUserOrGuestID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "unauthorized",
+			"errors":  []string{err.Error()},
+			"data":    nil,
+		})
+	}
+
+	if !h.validateOwnership(instr, userID, guestID) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "user not authorized to create instruction details",
 			"errors":  nil,
@@ -224,6 +272,8 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 	input := &modelx.InstructionFile{
 		ID:            inputID,
 		InstructionID: instr.ID,
+		UserID:        userID,
+		GuestID:       guestID,
 		FileName:      inputFilePath,
 		FileSize:      int64(len(b)),
 		MimeType:      utils.GetMimeTypeFromName(fh.Filename),
@@ -236,6 +286,8 @@ func (h *InstructionHandler) CreateInstructionDetails(c *fiber.Ctx) error {
 	output := &modelx.InstructionFile{
 		ID:            outputID,
 		InstructionID: instr.ID,
+		UserID:        userID,
+		GuestID:       guestID,
 		FileName:      outputFilePath,
 		FileSize:      0,
 		MimeType:      utils.GetMimeTypeFromName(fh.Filename),
@@ -349,9 +401,16 @@ func (h *InstructionHandler) GetInstructionDetail(c *fiber.Ctx) error {
 		})
 	}
 
-	userIDHex, _ := c.Locals("userId").(string)
-	userID, _ := primitive.ObjectIDFromHex(userIDHex)
-	if instr.UserID != userID {
+	userID, guestID, err := h.getUserOrGuestID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "unauthorized",
+			"errors":  []string{err.Error()},
+			"data":    nil,
+		})
+	}
+
+	if !h.validateOwnership(instr, userID, guestID) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "forbidden",
 			"errors":  nil,
@@ -412,9 +471,16 @@ func (h *InstructionHandler) GetInstructionDetailFile(c *fiber.Ctx) error {
 		})
 	}
 
-	userIDHex, _ := c.Locals("userId").(string)
-	userID, _ := primitive.ObjectIDFromHex(userIDHex)
-	if instr.UserID != userID {
+	userID, guestID, err := h.getUserOrGuestID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "unauthorized",
+			"errors":  []string{err.Error()},
+			"data":    nil,
+		})
+	}
+
+	if !h.validateOwnership(instr, userID, guestID) {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "forbidden",
 			"errors":  nil,
@@ -479,46 +545,46 @@ func (h *InstructionHandler) RunInstructionMessage(data []byte) {
 		log.Info("RunInstructionMessage: Product not found")
 		_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusFailed)
 		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
-		_ = h.publishFileNotification(instr.UserID, instr.ID, input.ID)
+		_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, input.ID)
 		return
 	}
 
 	_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusProcessing)
-	_ = h.publishFileNotification(instr.UserID, instr.ID, input.ID)
+	_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, input.ID)
 
 	inputBytes, err := h.getObject(input.FilePath)
 	if err != nil {
 		log.Errorf("RunInstructionMessage: Input file missing on S3: %v", err)
 		_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusFailed)
 		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
-		_ = h.publishFileNotification(instr.UserID, instr.ID, input.ID)
+		_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, input.ID)
 		return
 	}
 
-	outputBytes, err := h.pdfSvc.Compress(inputBytes)
+	outputBytes, err := h.pdfSvc.Run(product.Key, inputBytes)
 	if err != nil {
 		log.Errorf("RunInstructionMessage: PDF processing failed: %v", err)
 		_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusFailed)
 		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
-		_ = h.publishFileNotification(instr.UserID, instr.ID, input.ID)
+		_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, input.ID)
 		return
 	}
 
 	_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusSuccess)
-	_ = h.publishFileNotification(instr.UserID, instr.ID, input.ID)
+	_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, input.ID)
 	_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusProcessing)
-	_ = h.publishFileNotification(instr.UserID, instr.ID, output.ID)
+	_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, output.ID)
 
 	if err := h.putObject(output.FileName, outputBytes); err != nil {
 		log.Errorf("RunInstructionMessage: Failed to upload output to S3: %v", err)
 		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
-		_ = h.publishFileNotification(instr.UserID, instr.ID, output.ID)
+		_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, output.ID)
 		return
 	}
 
 	_ = h.detailRepo.UpdateFileSize(output.ID, int64(len(outputBytes)))
 	_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusSuccess)
-	_ = h.publishFileNotification(instr.UserID, instr.ID, output.ID)
+	_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, output.ID)
 }
 
 func (h *InstructionHandler) CleanInstruction() {

@@ -16,6 +16,15 @@ func NewPDFService() *PDFService {
 	return &PDFService{}
 }
 
+func (s *PDFService) Run(productKey string, file []byte) ([]byte, error) {
+	switch productKey {
+	case "pdfs/compress":
+		return s.Compress(file)
+	default:
+		return nil, fmt.Errorf("unsupported product key: %s", productKey)
+	}
+}
+
 func (s *PDFService) Compress(file []byte) ([]byte, error) {
 	err := s.Validate(file)
 	if err != nil {

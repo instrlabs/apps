@@ -169,6 +169,22 @@
             "bearerAuth": []
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refresh_token": {
+                    "type": "string",
+                    "description": "Specific refresh token to invalidate. If not provided, all tokens will be invalidated."
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Logout successful",
@@ -776,36 +792,6 @@
                     "summary": "Internal server error",
                     "value": {
                       "message": "Internal server error",
-                      "errors": null,
-                      "data": null
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/check": {
-      "get": {
-        "tags": [
-          "UserHandler"
-        ],
-        "summary": "Check authentication status",
-        "responses": {
-          "200": {
-            "description": "Authentication check",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
-                },
-                "examples": {
-                  "success": {
-                    "summary": "Authentication check successful",
-                    "value": {
-                      "message": "Authentication check successful",
                       "errors": null,
                       "data": null
                     }

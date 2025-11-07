@@ -11,7 +11,8 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "format": "ObjectId", "example": "507f1f77bcf86cd799439011" },
-          "user_id": { "type": "string", "format": "ObjectId", "example": "507f1f77bcf86cd799439011" },
+          "user_id": { "type": ["string", "null"], "format": "ObjectId", "nullable": true, "example": "507f1f77bcf86cd799439011" },
+          "guest_id": { "type": ["string", "null"], "nullable": true, "example": "guest_abc123" },
           "product_id": { "type": "string", "format": "ObjectId", "example": "507f1f77bcf86cd799439011" },
           "created_at": { "type": "string", "format": "date-time", "example": "2024-01-01T00:00:00Z" },
           "updated_at": { "type": "string", "format": "date-time", "example": "2024-01-01T00:00:00Z" }
@@ -22,6 +23,8 @@
         "properties": {
           "id": { "type": "string", "format": "ObjectId", "example": "507f1f77bcf86cd799439011" },
           "instruction_id": { "type": "string", "format": "ObjectId", "example": "507f1f77bcf86cd799439011" },
+          "user_id": { "type": ["string", "null"], "format": "ObjectId", "nullable": true, "example": "507f1f77bcf86cd799439011" },
+          "guest_id": { "type": ["string", "null"], "nullable": true, "example": "guest_abc123" },
           "file_name": { "type": "string", "example": "images/6051f77bcf86cd799439011.jpg" },
           "file_path": { "type": "string", "example": "images/6051f77bcf86cd799439011.jpg" },
           "file_size": { "type": "integer", "format": "int64", "example": 1024000 },
@@ -59,7 +62,14 @@
       "x-user-id": {
         "type": "apiKey",
         "in": "header",
-        "name": "x-user-id"
+        "name": "x-user-id",
+        "description": "User ID header for authenticated users. Provide this OR x-guest-id, but at least one must be present."
+      },
+      "x-guest-id": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-guest-id",
+        "description": "Guest ID header for guest users. Provide this OR x-user-id, but at least one must be present."
       },
       "x-user-origin": {
         "type": "apiKey",
@@ -160,6 +170,18 @@
                   },
                   "missing_product": {
                     "value": { "message": "ProductID is required", "errors": null, "data": null }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StandardResponse" },
+                "examples": {
+                  "unauthorized": {
+                    "value": { "message": "unauthorized - provide either x-user-id or x-guest-id header", "errors": null, "data": null }
                   }
                 }
               }

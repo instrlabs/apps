@@ -9,12 +9,7 @@ import (
 
 func SetupNotificationRoutes(app *fiber.App, cfg *Config, natsSrv *natsgo.Conn) {
 	app.Get("/health", func(c *fiber.Ctx) error {
-		health := map[string]interface{}{
-			"status":   "ok",
-			"services": map[string]string{},
-		}
-
-		servicesStatus := health["services"].(map[string]string)
+		servicesStatus := map[string]string{}
 
 		// Check NATS connection
 		if natsSrv != nil && natsSrv.IsConnected() {
@@ -32,18 +27,21 @@ func SetupNotificationRoutes(app *fiber.App, cfg *Config, natsSrv *natsgo.Conn) 
 		}
 
 		// Overall service status
-		allOk := true
+		overallStatus := "ok"
 		for _, status := range servicesStatus {
 			if status != "ok" {
-				allOk = false
+				overallStatus = "degraded"
 				break
 			}
 		}
 
-		if !allOk {
-			health["status"] = "degraded"
-		}
-
-		return c.JSON(health)
+		return c.JSON(fiber.Map{
+			"message": "Service health check",
+			"errors":  nil,
+			"data": fiber.Map{
+				"status":   overallStatus,
+				"services": servicesStatus,
+			},
+		})
 	})
 }

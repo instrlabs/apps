@@ -12,12 +12,7 @@ import (
 
 func SetupGatewayRoutes(app *fiber.App, config *Config) {
 	app.Get("/health", func(c *fiber.Ctx) error {
-		health := map[string]interface{}{
-			"status":   "ok",
-			"services": map[string]string{},
-		}
-
-		servicesStatus := health["services"].(map[string]string)
+		servicesStatus := map[string]string{}
 
 		for _, service := range config.Services {
 			status := "ok"
@@ -29,7 +24,14 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 			servicesStatus[service.Name] = status
 		}
 
-		return c.JSON(health)
+		return c.JSON(fiber.Map{
+			"message": "Service health check",
+			"errors":  nil,
+			"data": fiber.Map{
+				"status":   "ok",
+				"services": servicesStatus,
+			},
+		})
 	})
 
 	for _, srv := range config.Services {
@@ -50,9 +52,10 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 			if err := proxy.DoTimeout(c, parsedUrl, 30*time.Second); err != nil {
 				log.Errorf("proxy error: service=%s method=%s path=%s query=%s err=%v", srv.Name, c.Method(), forwardPath, queryString, err)
 
-				return c.Status(fiber.StatusBadGateway).JSON(map[string]string{
-					"error":   "Bad Gateway",
-					"message": "The srv is currently unavailable",
+				return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+					"message": "The service is currently unavailable",
+					"errors":  nil,
+					"data":    nil,
 				})
 			}
 
@@ -65,9 +68,10 @@ func SetupGatewayRoutes(app *fiber.App, config *Config) {
 	app.Use(func(c *fiber.Ctx) error {
 		log.Warnf("No route matched: method=%s path=%s", c.Method(), c.Path())
 
-		return c.Status(fiber.StatusNotFound).JSON(map[string]string{
-			"error":   "Not Found",
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "The requested resource does not exist",
+			"errors":  nil,
+			"data":    nil,
 		})
 	})
 }
