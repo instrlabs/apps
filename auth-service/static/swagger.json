@@ -8,7 +8,7 @@
     "/login": {
       "post": {
         "tags": [
-          "UserHandler"
+          "AuthHandler"
         ],
         "summary": "User login with email and PIN",
         "requestBody": {
@@ -161,7 +161,7 @@
     "/logout": {
       "post": {
         "tags": [
-          "UserHandler"
+          "AuthHandler"
         ],
         "summary": "Logout user from current session",
         "security": [
@@ -260,9 +260,14 @@
     "/refresh": {
       "post": {
         "tags": [
-          "UserHandler"
+          "AuthHandler"
         ],
         "summary": "Refresh access token",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -417,7 +422,7 @@
     "/send-pin": {
       "post": {
         "tags": [
-          "UserHandler"
+          "PinHandler"
         ],
         "summary": "Send PIN to user email",
         "requestBody": {
@@ -641,7 +646,7 @@
     "/google": {
       "get": {
         "tags": [
-          "UserHandler"
+          "OAuthHandler"
         ],
         "summary": "Initiate Google OAuth login",
         "responses": {
@@ -662,7 +667,7 @@
     "/google/callback": {
       "get": {
         "tags": [
-          "UserHandler"
+          "OAuthHandler"
         ],
         "summary": "Google OAuth callback",
         "parameters": [
@@ -699,7 +704,7 @@
                   "missing_code": {
                     "summary": "Missing authorization code",
                     "value": {
-                      "message": "Invalid token",
+                      "message": "Missing authorization code",
                       "errors": null,
                       "data": null
                     }
@@ -829,6 +834,10 @@
                     "service": {
                       "type": "string",
                       "example": "auth-service"
+                    },
+                    "architecture": {
+                      "type": "string",
+                      "example": "simplified"
                     }
                   }
                 },
@@ -838,7 +847,8 @@
                     "value": {
                       "status": "ok",
                       "timestamp": "2023-01-01T00:00:00Z",
-                      "service": "auth-service"
+                      "service": "auth-service",
+                      "architecture": "simplified"
                     }
                   }
                 }

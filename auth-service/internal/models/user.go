@@ -1,4 +1,4 @@
-package internal
+package models
 
 import (
 	"time"
@@ -7,6 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// User represents a user entity in the system
 type User struct {
 	ID            primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Username      string             `json:"username" bson:"username"`
@@ -20,6 +21,7 @@ type User struct {
 	UpdatedAt     time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
+// NewUser creates a new user instance
 func NewUser(email string) *User {
 	now := time.Now().UTC()
 	username, _ := GenerateUniqueUsername(email)
@@ -32,12 +34,14 @@ func NewUser(email string) *User {
 	}
 }
 
+// NewGoogleUser creates a new user with Google account
 func NewGoogleUser(email, googleID string) *User {
 	user := NewUser(email)
 	user.GoogleID = &googleID
 	return user
 }
 
+// ComparePin validates the provided PIN against stored hash
 func (u *User) ComparePin(pin string) bool {
 	if u.PinHash == nil || *u.PinHash == "" {
 		return false
@@ -48,6 +52,23 @@ func (u *User) ComparePin(pin string) bool {
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(*u.PinHash), []byte(pin))
-
 	return err == nil
+}
+
+// IsPinExpired checks if the PIN has expired
+func (u *User) IsPinExpired() bool {
+	if u.PinExpires == nil || u.PinExpires.IsZero() {
+		return false
+	}
+	return time.Now().UTC().After(*u.PinExpires)
+}
+
+// HasRefreshToken checks if user has the specified refresh token
+func (u *User) HasRefreshToken(token string) bool {
+	for _, t := range u.RefreshTokens {
+		if t == token {
+			return true
+		}
+	}
+	return false
 }

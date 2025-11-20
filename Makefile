@@ -120,11 +120,11 @@ push-product:
 # Docker Compose commands
 up:
 	@echo "Starting all services..."
-	docker compose -p instrlabs up -d --build
+	docker compose -p instrlabs up -d
 
 up-gateway:
 	@echo "Starting gateway service..."
-	docker compose -p instrlabs up -d --build gateway-service
+	docker compose -p instrlabs up -d gateway-service
 
 up-auth:
 	@echo "Starting auth service..."
@@ -132,19 +132,19 @@ up-auth:
 
 up-image:
 	@echo "Starting image service..."
-	docker compose -p instrlabs up -d --build image-service
+	docker compose -p instrlabs up -d image-service
 
 up-notification:
 	@echo "Starting notification service..."
-	docker compose -p instrlabs up -d --build notification-service
+	docker compose -p instrlabs up -d notification-service
 
 up-pdf:
 	@echo "Starting PDF service..."
-	docker compose -p instrlabs up -d --build pdf-service
+	docker compose -p instrlabs up -d pdf-service
 
 up-product:
 	@echo "Starting product service..."
-	docker compose -p instrlabs up -d --build product-service
+	docker compose -p instrlabs up -d product-service
 
 down:
 	@echo "Stopping all services..."

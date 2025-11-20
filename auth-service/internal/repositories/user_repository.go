@@ -1,4 +1,4 @@
-package internal
+package repositories
 
 import (
 	"context"
@@ -7,13 +7,33 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/instrlabs/auth-service/internal/models"
 )
 
+// UserRepositoryInterface defines the interface for user repository operations
+type UserRepositoryInterface interface {
+	Create(user *models.User) error
+	FindByEmail(email string) (*models.User, error)
+	FindByID(id string) (*models.User, error)
+	FindByGoogleID(googleID string) (*models.User, error)
+	Update(user *models.User) error
+	SetPinWithExpiry(email, hashedPin string) error
+	ClearPin(userID string) error
+	SetRegisteredAt(userID string) error
+	AddRefreshToken(userID, token string) error
+	RemoveRefreshToken(userID, token string) error
+	ValidateRefreshToken(userID, token string) error
+	ClearAllRefreshTokens(userID string) error
+}
+
+// UserRepository implements UserRepositoryInterface
 type UserRepository struct {
 	db         *mongo.Database
 	collection *mongo.Collection
 }
 
+// NewUserRepository creates a new user repository
 func NewUserRepository(db *mongo.Database) *UserRepository {
 	return &UserRepository{
 		db:         db,
@@ -21,7 +41,8 @@ func NewUserRepository(db *mongo.Database) *UserRepository {
 	}
 }
 
-func (r *UserRepository) Create(user *User) error {
+// Create creates a new user in the database
+func (r *UserRepository) Create(user *models.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -29,55 +50,53 @@ func (r *UserRepository) Create(user *User) error {
 	return err
 }
 
-func (r *UserRepository) FindByEmail(email string, user *User) error {
+// FindByEmail finds a user by email
+func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(user)
-	return err
+	var user models.User
+	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
+	return &user, err
 }
 
-func (r *UserRepository) FindByID(id string, user *User) error {
+// FindByID finds a user by ID
+func (r *UserRepository) FindByID(id string) (*models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(user)
-	return err
+	var user models.User
+	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&user)
+	return &user, err
 }
 
-func (r *UserRepository) FindByGoogleID(googleID string, user *User) error {
+// FindByGoogleID finds a user by Google ID
+func (r *UserRepository) FindByGoogleID(googleID string) (*models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := r.collection.FindOne(ctx, bson.M{"google_id": googleID}).Decode(user)
-	return err
+	var user models.User
+	err := r.collection.FindOne(ctx, bson.M{"google_id": googleID}).Decode(&user)
+	return &user, err
 }
 
-func (r *UserRepository) UpdateGoogleID(userID string, googleID string) error {
+// Update updates a user in the database
+func (r *UserRepository) Update(user *models.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	objectID, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return err
-	}
+	user.UpdatedAt = time.Now().UTC()
 
-	update := bson.M{
-		"$set": bson.M{
-			"google_id":  googleID,
-			"updated_at": time.Now().UTC(),
-		},
-	}
-
-	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	_, err := r.collection.UpdateOne(ctx, bson.M{"_id": user.ID}, bson.M{"$set": user})
 	return err
 }
 
+// SetPinWithExpiry sets a PIN hash with expiry for a user
 func (r *UserRepository) SetPinWithExpiry(email, hashedPin string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -94,6 +113,7 @@ func (r *UserRepository) SetPinWithExpiry(email, hashedPin string) error {
 	return err
 }
 
+// ClearPin clears the PIN for a user
 func (r *UserRepository) ClearPin(userID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -115,6 +135,7 @@ func (r *UserRepository) ClearPin(userID string) error {
 	return err
 }
 
+// SetRegisteredAt sets the registered timestamp for a user
 func (r *UserRepository) SetRegisteredAt(userID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -136,6 +157,7 @@ func (r *UserRepository) SetRegisteredAt(userID string) error {
 	return err
 }
 
+// AddRefreshToken adds a refresh token for a user
 func (r *UserRepository) AddRefreshToken(userID, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -158,6 +180,7 @@ func (r *UserRepository) AddRefreshToken(userID, token string) error {
 	return err
 }
 
+// RemoveRefreshToken removes a specific refresh token for a user
 func (r *UserRepository) RemoveRefreshToken(userID, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -180,6 +203,7 @@ func (r *UserRepository) RemoveRefreshToken(userID, token string) error {
 	return err
 }
 
+// ValidateRefreshToken validates that a refresh token exists for a user
 func (r *UserRepository) ValidateRefreshToken(userID, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -189,7 +213,7 @@ func (r *UserRepository) ValidateRefreshToken(userID, token string) error {
 		return err
 	}
 
-	var user User
+	var user models.User
 	err = r.collection.FindOne(ctx, bson.M{
 		"_id":            objectID,
 		"refresh_tokens": token,
@@ -198,6 +222,7 @@ func (r *UserRepository) ValidateRefreshToken(userID, token string) error {
 	return err
 }
 
+// ClearAllRefreshTokens removes all refresh tokens for a user
 func (r *UserRepository) ClearAllRefreshTokens(userID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
