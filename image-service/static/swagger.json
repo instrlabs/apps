@@ -268,7 +268,7 @@
         }
       }
     },
-    "/products": {
+    "/api/v1/products": {
       "get": {
         "summary": "List available products",
         "description": "Get list of all available image processing products",
@@ -308,7 +308,7 @@
         }
       }
     },
-    "/instructions": {
+    "/api/v1/instructions": {
       "post": {
         "summary": "Create a new image processing instruction",
         "description": "Create a new instruction for processing images with a specific product. Each instruction belongs to a user and a product.",
@@ -431,7 +431,7 @@
         }
       }
     },
-    "/instructions/{id}": {
+    "/api/v1/instructions/{id}": {
       "get": {
         "summary": "Get instruction by ID",
         "description": "Retrieve a specific instruction by its ID. User must be the owner of the instruction.",
@@ -504,7 +504,7 @@
         }
       }
     },
-    "/instructions/{id}/details": {
+    "/api/v1/instructions/{id}/details": {
       "get": {
         "summary": "Get instruction details",
         "description": "Get all file details for a specific instruction. User must be the owner of the instruction.",
@@ -702,7 +702,7 @@
         }
       }
     },
-    "/instructions/{id}/details/{detailId}": {
+    "/api/v1/instructions/{id}/details/{detailId}": {
       "get": {
         "summary": "Get specific instruction detail",
         "description": "Retrieve details for a specific file within an instruction. User must be the owner of the instruction.",
@@ -794,7 +794,7 @@
         }
       }
     },
-    "/instructions/{id}/details/{detailId}/file": {
+    "/api/v1/instructions/{id}/details/{detailId}/file": {
       "get": {
         "summary": "Download file",
         "description": "Download the actual file content for a specific instruction detail. User must be the owner of the instruction.",
@@ -874,7 +874,7 @@
         }
       }
     },
-    "/files": {
+    "/api/v1/files": {
       "get": {
         "summary": "List uncleaned files",
         "description": "List files that haven't been cleaned up yet (admin/monitoring use). Returns files older than 1 hour that need cleanup.",

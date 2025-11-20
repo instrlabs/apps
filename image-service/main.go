@@ -37,7 +37,7 @@ func main() {
 	initx.SetupServiceSwagger(app, cfg.ApiUrl, "/images")
 	initx.SetupServiceHealth(app)
 	initx.SetupAuthenticated(app, []string{
-		"/products",
+		"/api/v1/products",
 	})
 
 	productRepo := internal.NewProductRepository(mongo)
@@ -64,18 +64,18 @@ func main() {
 		}
 	}()
 
-	app.Post("/instructions", instrHandler.CreateInstruction)
-	app.Post("/instructions/:id/details", instrHandler.CreateInstructionDetails)
+	app.Post("/api/v1/instructions", instrHandler.CreateInstruction)
+	app.Post("/api/v1/instructions/:id/details", instrHandler.CreateInstructionDetails)
 
-	app.Get("/instructions/:id/details/:detailId", instrHandler.GetInstructionDetail)
-	app.Get("/instructions/:id/details/:detailId/file", instrHandler.GetInstructionDetilFile)
-	app.Get("/instructions", instrHandler.ListInstructions)
-	app.Get("/instructions/:id", instrHandler.GetInstructionByID)
-	app.Get("/instructions/:id/details", instrHandler.GetInstructionDetails)
+	app.Get("/api/v1/instructions/:id/details/:detailId", instrHandler.GetInstructionDetail)
+	app.Get("/api/v1/instructions/:id/details/:detailId/file", instrHandler.GetInstructionDetilFile)
+	app.Get("/api/v1/instructions", instrHandler.ListInstructions)
+	app.Get("/api/v1/instructions/:id", instrHandler.GetInstructionByID)
+	app.Get("/api/v1/instructions/:id/details", instrHandler.GetInstructionDetails)
 
-	app.Get("/files", instrHandler.ListUncleanedFiles)
+	app.Get("/api/v1/files", instrHandler.ListUncleanedFiles)
 
-	app.Get("/products", productHandler.ListProducts)
+	app.Get("/api/v1/products", productHandler.ListProducts)
 
 	log.Fatal(app.Listen(cfg.Port))
 }
