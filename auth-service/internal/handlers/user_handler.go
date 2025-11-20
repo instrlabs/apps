@@ -20,7 +20,7 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 // GetProfile retrieves user profile
 func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 	// Get user ID from middleware
-	userID, _ := c.Locals("userId").(string)
+	userID, _ := c.Locals("userID").(string)
 	if userID == "" {
 		return h.sendErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized")
 	}

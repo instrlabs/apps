@@ -74,11 +74,7 @@ func setupRoutes(app *fiber.App, db interface{}, cfg *config.Config) {
 	// Initialize handlers
 	productHandler := handlers.NewProductHandler(productService)
 
-	// Setup routes
-	app.Get("/products", productHandler.ListProducts)
-	app.Get("/products/:id", productHandler.GetProductByID)
-
-	// Health check route
+	// Health check route (must come before wildcard routes)
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status":       "ok",
@@ -87,6 +83,10 @@ func setupRoutes(app *fiber.App, db interface{}, cfg *config.Config) {
 			"architecture": "simplified",
 		})
 	})
+
+	// Type-based routes
+	app.Get("/:type/:id", productHandler.GetProductByID)
+	app.Get("/:type", productHandler.ListProductsByType)
 }
 
 // startServer starts the server with graceful shutdown

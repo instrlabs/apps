@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Product Service API",
-    "description": "Product Service provides unified product management across InstrLabs. It manages all products with support for multiple product types (pdf, image, etc.).",
-    "version": "1.0.0",
+    "description": "Product Service provides unified product management across InstrLabs. Access products by type and key (e.g., /images/compress). Supports listing products by type with pagination.",
+    "version": "2.0.0",
     "contact": {
       "name": "InstrLabs Team"
     }
@@ -52,21 +52,47 @@
         }
       }
     },
-    "/": {
+    "/{type}": {
       "get": {
         "tags": ["Products"],
-        "summary": "List products",
-        "description": "Retrieve list of available products. Optionally filter by product type. Only active products are returned.",
-        "operationId": "listProducts",
+        "summary": "List products by type",
+        "description": "Retrieve list of products filtered by type. Only active products are returned. Supports pagination.",
+        "operationId": "listProductsByType",
         "parameters": [
           {
             "name": "type",
-            "in": "query",
-            "description": "Filter products by type (e.g., 'pdf', 'image'). If not provided, returns all product types.",
-            "required": false,
+            "in": "path",
+            "description": "Product type to filter by (only 'images' is supported)",
+            "required": true,
             "schema": {
               "type": "string",
-              "example": "pdf"
+              "enum": ["images"],
+              "example": "images"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination (default: 1)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "example": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page (default: 50, max: 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50,
+              "example": 20
             }
           }
         ],
@@ -92,19 +118,164 @@
                       "nullable": true
                     },
                     "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Product"
+                      "type": "object",
+                      "properties": {
+                        "products": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Product"
+                          }
+                        }
                       }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
                     }
                   },
-                  "required": ["message", "errors", "data"]
+                  "required": ["message", "errors", "data"],
+                  "example": {
+                    "message": "Success",
+                    "errors": null,
+                    "data": {
+                      "products": [
+                        {
+                          "id": "673e1234567890abcdef1234",
+                          "key": "compress",
+                          "name": "Compress PDF",
+                          "desc": "Compress PDF files to reduce size",
+                          "type": "images",
+                          "price": 0,
+                          "active": true,
+                          "created_at": "2024-01-01T12:00:00Z",
+                          "updated_at": "2024-01-15T14:30:00Z"
+                        },
+                        {
+                          "id": "673e1234567890abcdef1235",
+                          "key": "watermark",
+                          "name": "Watermark PDF",
+                          "desc": "Add watermarks to PDF files",
+                          "type": "images",
+                          "price": 0,
+                          "active": true,
+                          "created_at": "2024-01-02T12:00:00Z",
+                          "updated_at": "2024-01-16T14:30:00Z"
+                        }
+                      ]
+                    },
+                    "pagination": {
+                      "current_page": 1,
+                      "per_page": 20,
+                      "total": 2,
+                      "total_pages": 1,
+                      "has_next": false,
+                      "has_prev": false
+                    }
+                  }
                 }
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/{type}/{id}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Get product by type and key",
+        "description": "Retrieve a specific product by type and key. The product must match both the type (from URL path) and key (from URL path).",
+        "operationId": "getProductByTypeAndKey",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "description": "Product type (only 'images' is supported)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["images"],
+              "example": "images"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Product key (e.g., 'compress', 'watermark')",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "compress"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved product",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "errors": {
+                      "type": "null",
+                      "nullable": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "product": {
+                          "$ref": "#/components/schemas/Product"
+                        }
+                      }
+                    }
+                  },
+                  "required": ["message", "errors", "data"],
+                  "example": {
+                    "message": "Success",
+                    "errors": null,
+                    "data": {
+                      "product": {
+                        "id": "673e1234567890abcdef1234",
+                        "key": "compress",
+                        "name": "Compress PDF",
+                        "desc": "Compress PDF files to reduce size",
+                        "type": "images",
+                        "price": 0,
+                        "active": true,
+                        "created_at": "2024-01-01T12:00:00Z",
+                        "updated_at": "2024-01-15T14:30:00Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
@@ -165,9 +336,92 @@
           }
         },
         "required": ["id", "key", "name", "type", "price", "active", "createdAt", "updatedAt"]
+      },
+      "Pagination": {
+        "type": "object",
+        "description": "Pagination metadata",
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "description": "Current page number",
+            "example": 1
+          },
+          "per_page": {
+            "type": "integer",
+            "description": "Number of items per page",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items",
+            "example": 100
+          },
+          "total_pages": {
+            "type": "integer",
+            "description": "Total number of pages",
+            "example": 5
+          },
+          "has_next": {
+            "type": "boolean",
+            "description": "Whether there is a next page",
+            "example": true
+          },
+          "has_prev": {
+            "type": "boolean",
+            "description": "Whether there is a previous page",
+            "example": false
+          }
+        },
+        "required": ["current_page", "per_page", "total", "total_pages", "has_next", "has_prev"]
       }
     },
     "responses": {
+      "BadRequest": {
+        "description": "Invalid request parameters",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Invalid request parameters"
+                },
+                "errors": {
+                  "type": "string",
+                  "example": "Invalid lookup type 'invalid'. Valid types are: [products images]"
+                },
+                "data": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Product not found"
+                },
+                "errors": {
+                  "type": "string",
+                  "example": "Product with the specified identifier not found"
+                },
+                "data": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      },
       "Unauthorized": {
         "description": "Authentication required",
         "content": {

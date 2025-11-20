@@ -41,7 +41,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 // RefreshToken handles token refresh
 func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	// Get user ID from middleware
-	userID, _ := c.Locals("userId").(string)
+	userID, _ := c.Locals("userID").(string)
 	if userID == "" {
 		return h.sendErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized")
 	}
@@ -65,7 +65,7 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 // Logout handles user logout
 func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 	// Get user ID from middleware
-	userID, _ := c.Locals("userId").(string)
+	userID, _ := c.Locals("userID").(string)
 	if userID == "" {
 		return h.sendErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized")
 	}

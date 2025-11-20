@@ -12,6 +12,7 @@ import (
 type ProductServiceInterface interface {
 	ListProducts(productType string, page, limit int) (*ProductListResult, error)
 	GetProductByID(id string, productType string) (*models.Product, error)
+	GetProductByKey(key string, productType string) (*models.Product, error)
 }
 
 // ProductListResult contains the result of a product listing with pagination
@@ -106,6 +107,26 @@ func (s *productService) GetProductByID(id string, productType string) (*models.
 
 	// Get product from repository
 	product, err := s.repo.FindByID(objectID, productType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find product: %w", err)
+	}
+
+	if product == nil {
+		return nil, fmt.Errorf("product not found")
+	}
+
+	return product, nil
+}
+
+// GetProductByKey retrieves a single product by key
+func (s *productService) GetProductByKey(key string, productType string) (*models.Product, error) {
+	// Validate product key
+	if key == "" {
+		return nil, fmt.Errorf("product key is required")
+	}
+
+	// Get product from repository
+	product, err := s.repo.FindByKey(key, productType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find product: %w", err)
 	}

@@ -16,6 +16,7 @@ import (
 type ProductRepositoryInterface interface {
 	List(productType string) ([]models.Product, error)
 	FindByID(id primitive.ObjectID, productType string) (*models.Product, error)
+	FindByKey(key string, productType string) (*models.Product, error)
 }
 
 type ProductRepository struct {
@@ -71,6 +72,28 @@ func (r *ProductRepository) FindByID(id primitive.ObjectID, productType string) 
 			return nil, nil
 		}
 		log.Printf("Failed to find product by ID %s: %v", id.Hex(), err)
+		return nil, err
+	}
+
+	return &product, nil
+}
+
+func (r *ProductRepository) FindByKey(key string, productType string) (*models.Product, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"key": key, "active": true}
+	if productType != "" {
+		filter["type"] = productType
+	}
+
+	var product models.Product
+	err := r.collection.FindOne(ctx, filter).Decode(&product)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		}
+		log.Printf("Failed to find product by key %s: %v", key, err)
 		return nil, err
 	}
 

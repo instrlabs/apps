@@ -45,6 +45,27 @@ func (v *RequestValidator) ValidateProductListRequest(c *fiber.Ctx) (*ProductLis
 	return req, nil
 }
 
+// ValidateProductListRequestWithType validates product list request with type from route parameter
+func (v *RequestValidator) ValidateProductListRequestWithType(c *fiber.Ctx, lookupType string) (*ProductListRequest, error) {
+	// Validate lookup type
+	if err := v.validateLookupType(lookupType); err != nil {
+		return nil, err
+	}
+
+	req := &ProductListRequest{
+		Type:  lookupType, // Use lookup type from route parameter
+		Page:  c.QueryInt("page", 1),
+		Limit: c.QueryInt("limit", 50),
+	}
+
+	// Validate pagination parameters
+	if err := v.validatePagination(req.Page, req.Limit); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // validatePagination validates pagination parameters
 func (v *RequestValidator) validatePagination(page, limit int) error {
 	if page < 1 {
@@ -89,30 +110,51 @@ func (v *RequestValidator) ValidateProductID(c *fiber.Ctx) (primitive.ObjectID, 
 
 // ValidateGetProductRequest validates the get product request parameters
 func (v *RequestValidator) ValidateGetProductRequest(c *fiber.Ctx) (*GetProductRequest, error) {
-	objectID, err := v.ValidateProductID(c)
-	if err != nil {
+	// Get lookup type from route parameter (e.g., "images")
+	lookupType := c.Params("type")
+	if lookupType == "" {
+		return nil, fiber.NewError(fiber.StatusBadRequest, "Lookup type is required")
+	}
+
+	// Validate lookup type
+	if err := v.validateLookupType(lookupType); err != nil {
 		return nil, err
 	}
 
-	productType := c.Query("type", "")
+	// Get identifier (key) from route parameter
+	identifier := c.Params("id")
+	if identifier == "" {
+		return nil, fiber.NewError(fiber.StatusBadRequest, "Product key is required")
+	}
 
-	// Validate product type if provided
-	if productType != "" {
-		if err := v.validateProductType(productType); err != nil {
-			return nil, err
+	req := &GetProductRequest{
+		LookupType: lookupType,
+		Identifier: identifier,
+		Type:       lookupType, // Use lookup type as product type
+	}
+
+	return req, nil
+}
+
+// validateLookupType validates the lookup type parameter
+func (v *RequestValidator) validateLookupType(lookupType string) error {
+	validLookupTypes := []string{"images"}
+	for _, validType := range validLookupTypes {
+		if lookupType == validType {
+			return nil
 		}
 	}
 
-	return &GetProductRequest{
-		ID:   objectID,
-		Type: productType,
-	}, nil
+	return fiber.NewError(fiber.StatusBadRequest,
+		fmt.Sprintf("Invalid lookup type '%s'. Valid types are: %v", lookupType, validLookupTypes))
 }
 
 // GetProductRequest represents the validated parameters for getting a single product
 type GetProductRequest struct {
-	ID   primitive.ObjectID `json:"id"`
-	Type string             `json:"type"`
+	ID         primitive.ObjectID `json:"id"`
+	Type       string             `json:"type"`
+	LookupType string             `json:"lookup_type"` // "products" or "images"
+	Identifier string             `json:"identifier"`  // The raw identifier (key or id)
 }
 
 // ValidationErrorMessage represents a structured validation error
