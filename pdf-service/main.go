@@ -36,16 +36,17 @@ func main() {
 	productClient := internal.NewProductClient(cfg.ProductServiceURL)
 
 	instrHandler := internal.NewInstructionHandler(cfg, s3, nats, instrRepo, detailRepo, productClient, pdfSvc)
+	instrProcessor := internal.NewInstructionProcessor(cfg, s3, nats, instrRepo, detailRepo, productClient, pdfSvc)
 
 	_, _ = nats.Subscribe(cfg.NatsSubjectPdfRequests, func(m *natsgo.Msg) {
-		instrHandler.RunInstructionMessage(m.Data)
+		instrProcessor.RunInstructionMessage(m.Data)
 	})
 
 	go func() {
 		ticker := time.NewTicker(30 * time.Minute)
 		defer ticker.Stop()
 		for range ticker.C {
-			instrHandler.CleanInstruction()
+			instrProcessor.CleanInstruction()
 		}
 	}()
 

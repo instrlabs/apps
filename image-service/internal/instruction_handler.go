@@ -3,7 +3,6 @@ package internal
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -84,21 +83,6 @@ func (h *InstructionHandler) getObject(objectName string) ([]byte, error) {
 func (h *InstructionHandler) deleteObject(objectName string) error {
 	ctx := context.Background()
 	return h.s3.RemoveObject(ctx, h.cfg.S3Bucket, objectName, minio.RemoveObjectOptions{})
-}
-
-func (h *InstructionHandler) publishFileNotification(userID *primitive.ObjectID, guestID *string, instrID, fileID primitive.ObjectID) error {
-	imageNotification := modelx.InstructionNotification{
-		UserID:              userID,
-		GuestID:             guestID,
-		InstructionID:       instrID,
-		InstructionDetailID: fileID,
-		CreatedAt:           time.Now().UTC(),
-	}
-
-	b, _ := json.Marshal(imageNotification)
-	err := h.nats.Publish(h.cfg.NatsSubjectNotificationsSSE, b)
-
-	return err
 }
 
 func (h *InstructionHandler) CreateInstruction(c *fiber.Ctx) error {
@@ -503,83 +487,4 @@ func (h *InstructionHandler) GetInstructionDetailFile(c *fiber.Ctx) error {
 	c.Set("content-disposition", "attachment; filename="+filepath.Base(instrDetail.FileName))
 
 	return c.Status(fiber.StatusOK).Send(b)
-}
-
-func (h *InstructionHandler) RunInstructionMessage(data []byte) {
-	fileIDHex := string(bytes.TrimSpace(data))
-	fileID, err := primitive.ObjectIDFromHex(fileIDHex)
-	if err != nil {
-		log.Errorf("RunInstructionMessage: Invalid file ID: %v", err)
-		return
-	}
-
-	var input modelx.InstructionFile
-	if err := h.detailRepo.GetByID(fileID, input); err != nil {
-		log.Info("RunInstructionMessage: Input file not found")
-		return
-	}
-
-	var output modelx.InstructionFile
-	if err := h.detailRepo.GetByID(*input.OutputID, output); err != nil {
-		log.Info("RunInstructionMessage: Output file not found")
-		return
-	}
-
-	var instr modelx.Instruction
-	if err := h.instrRepo.GetByID(input.InstructionID, instr); err != nil {
-		log.Info("RunInstructionMessage: Instruction not found")
-		_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusFailed)
-		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
-		return
-	}
-
-	product, _ := h.productClient.FindByID(instr.ProductID, "image")
-	if product == nil {
-		log.Info("RunInstructionMessage: Product not found")
-		_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusFailed)
-		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
-		_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, input.ID)
-		return
-	}
-
-	_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusProcessing)
-	_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, input.ID)
-
-	inputBytes, err := h.getObject(input.FilePath)
-	if err != nil {
-		log.Errorf("RunInstructionMessage: Input file missing on S3: %v", err)
-		_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusFailed)
-		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
-		_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, input.ID)
-		return
-	}
-
-	outputBytes, err := h.imageSvc.Run(product.Key, inputBytes)
-	if err != nil {
-		log.Errorf("RunInstructionMessage: Image processing failed: %v", err)
-		_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusFailed)
-		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
-		_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, input.ID)
-		return
-	}
-
-	_ = h.detailRepo.UpdateStatus(input.ID, modelx.InstructionDetailStatusSuccess)
-	_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, input.ID)
-	_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusProcessing)
-	_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, output.ID)
-
-	if err := h.putObject(output.FileName, outputBytes); err != nil {
-		log.Errorf("RunInstructionMessage: Failed to upload output to S3: %v", err)
-		_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusFailed)
-		_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, output.ID)
-		return
-	}
-
-	_ = h.detailRepo.UpdateFileSize(output.ID, int64(len(outputBytes)))
-	_ = h.detailRepo.UpdateStatus(output.ID, modelx.InstructionDetailStatusSuccess)
-	_ = h.publishFileNotification(instr.UserID, instr.GuestID, instr.ID, output.ID)
-}
-
-func (h *InstructionHandler) CleanInstruction() {
-	log.Info("CleanInstruction: Cleaning instruction")
 }
